@@ -14,7 +14,7 @@ const config: Config = {
 
       colors: {
         // PALETA DE COLORES
-        "rojo-principal": "var(--rojo-principal)",
+        "color-interfaz": "var(--rojo-principal)",
         "rojo-oscuro": "var(--rojo-oscuro)",
         "verde-principal": "var(--verde-principal)",
         "azul-principal": "var(--azul-principal)",

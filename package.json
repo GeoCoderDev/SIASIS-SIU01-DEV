@@ -11,9 +11,12 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^2.5.1",
     "next": "15.0.0-rc.1",
+    "prisma": "^6.3.1",
     "react": "19.0.0-rc-cd22717c-20241013",
-    "react-dom": "19.0.0-rc-cd22717c-20241013"
+    "react-dom": "19.0.0-rc-cd22717c-20241013",
+    "react-redux": "^9.2.0"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.0",
