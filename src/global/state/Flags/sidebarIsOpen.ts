@@ -1,4 +1,4 @@
-import { ReduxPayload } from "@/interfaces/ReducersPayload";
+import { ReduxPayload } from "@/global/state/ReducersPayload";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 const initialState = false;

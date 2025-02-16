@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ReduxPayload } from "../../interfaces/ReducersPayload";
+import { ReduxPayload } from "../ReducersPayload";
 
 const initialState = 0;
 
@@ -13,5 +13,5 @@ const windowWidthSlice = createSlice({
   },
 });
 
-export const {setWindowWidth} = windowWidthSlice.actions;
+export const { setWindowWidth } = windowWidthSlice.actions;
 export default windowWidthSlice.reducer;

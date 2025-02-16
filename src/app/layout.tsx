@@ -1,7 +1,7 @@
 import { Roboto } from "next/font/google";
 import type { Metadata } from "next";
 import "./globals.css";
-import ProviderStore from "@/store/Provider";
+import ProviderStore from "@/global/store/Provider";
 
 // Configurando Fuente Roboto
 const roboto = Roboto({
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   title: "SIASIS | I.E. 20935",
   description:
     "Sistema de asistencia para la institucion educativa 20935 Asunción 8, Imperial, Cañete",
-  icons: "/images/svg/Logo.svg"
+  icons: "/images/svg/Logo.svg",
 };
 
 export default function RootLayout({
@@ -26,11 +26,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${roboto.variable} font-roboto antialiased`}>
-        
-        <ProviderStore>
-          {children}
-        </ProviderStore>
-
+        <ProviderStore>{children}</ProviderStore>
       </body>
     </html>
   );

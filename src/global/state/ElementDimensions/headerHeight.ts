@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ReduxPayload } from "../../interfaces/ReducersPayload";
+import { ReduxPayload } from "../ReducersPayload";
 
 const initialState = 0;
 
