@@ -48,8 +48,8 @@ const config: Config = {
         "xs-only": { min: "300px", max: "499px" },
         "sm-only": { min: "500px", max: "767px" },
         "md-only": { min: "768px", max: "975px" },
-        "lg-only": { min: "976px", max: "1439px" },
-        "xl-only": { min: "1440px" },
+        "lg-only": { min: "976px", max: "1600px" },
+        "xl-only": { min: "1600px" },
         
         'short-height': {'raw': '(max-height: 50vw)'}
 

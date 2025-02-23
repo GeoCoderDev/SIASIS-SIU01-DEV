@@ -38,7 +38,7 @@ const RolBoton = ({ href, icon, rol }: RolBotonProps) => {
 const SeleccionRoles = () => {
   return (
     <main className="w-[100vw] h-[100dvh] flex flex-col items-center justify-center max-lg:short-height:p-4 max-sm:p-6 max-lg:short-height:gap-y-[1.3vh] max-sm:gap-y-[3vh]">
-      <div className=" flex flex-col items-center justify-center shadow-[0px_0px_20px_8px_rgba(0,0,0,0.25)] max-lg:short-height:contents  max-sm:contents sm-only:max-w-[77vw] md-only:max-w-[60vw] lg-only:max-w-[53vw] xl-only:short-height:max-w-[65vw] xl-only:max-w-[40vw] lg-only:max-h-[85vh] xl-only:max-h-[85vh] py-[2rem] sm-only:px-[2rem] md-only:px-[2rem] lg-only:px-[2rem] xl-only:px-[3rem]  sm-only:gap-y-[0.9rem] md-only:gap-y-[1rem] lg-only:gap-y-[1rem] xl-only:gap-y-[1rem] rounded-[1.5rem]">
+      <div className=" flex flex-col items-center justify-center shadow-[0px_0px_20px_8px_rgba(0,0,0,0.25)] max-lg:short-height:contents  max-sm:contents sm-only:max-w-[77vw] md-only:max-w-[60vw] lg-only:max-w-[53vw]  xl-only:max-w-[40vw] lg-only:max-h-[85vh] xl-only:max-h-[85vh] py-[2rem] sm-only:px-[2rem] md-only:px-[2rem] lg-only:px-[2rem] xl-only:px-[3rem]  sm-only:gap-y-[0.9rem] md-only:gap-y-[1rem] lg-only:gap-y-[1rem] xl-only:gap-y-[1rem] rounded-[1.5rem]">
         <h1 className="text-center text-color-interfaz max-lg:short-height:text-[5.8vh] max-sm:text-[1.4rem] sm-only:text-[1.4rem] md-only:text-[1.6rem] lg-only:text-[1.7rem] xl-only:text-[2rem] [font-weight:500]">
           SIASIS | ASUNCIÓN 8 - 20935
         </h1>
