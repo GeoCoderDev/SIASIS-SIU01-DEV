@@ -2,6 +2,7 @@ import { Roboto } from "next/font/google";
 import type { Metadata } from "next";
 import "./globals.css";
 import ProviderStore from "@/global/store/Provider";
+import WindowDimensionsLabel from '../components/shared/WindowDimensionsLabel';
 
 // Configurando Fuente Roboto
 const roboto = Roboto({
@@ -26,6 +27,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${roboto.variable} font-roboto antialiased`}>
+        <WindowDimensionsLabel />
         <ProviderStore>{children}</ProviderStore>
       </body>
     </html>
