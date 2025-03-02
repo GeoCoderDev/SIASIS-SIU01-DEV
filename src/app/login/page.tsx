@@ -12,7 +12,7 @@ export type RolForSelection =
   | "Auxiliar"
   | "Profesor/Tutor (Secundaria)"
   | "Responsable (Padre/Apoderado)"
-  | "Personal de Limpieza";
+  | "Personal Administrativo";
 
 interface RolBotonProps {
   rol: RolForSelection;
@@ -88,11 +88,11 @@ const SeleccionRoles = () => {
             rol="Responsable (Padre/Apoderado)"
           />
           <RolBoton
-            href="/login/personal-limpieza"
+            href="/login/personal-administrativo"
             icon={
               <PersonalLimpiezaIcon className="max-lg:short-height:h-[8vh] max-sm:w-[1.65rem] sm-only:w-[1.9rem] md-only:w-[2rem] lg-only:w-[2.5rem] xl-only:w-[3rem]" />
             }
-            rol="Personal de Limpieza"
+            rol="Personal Administrativo"
           />
         </div>
       </div>
