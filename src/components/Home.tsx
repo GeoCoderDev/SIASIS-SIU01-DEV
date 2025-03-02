@@ -5,6 +5,8 @@ import Image from "next/image";
 
 import { useSelector } from "react-redux";
 
+import InterceptedLinkForDataThatCouldBeLost from "./shared/InterceptedLinkForDataThatCouldBeLost";
+
 const Home = () => {
   const sidebarIsOpen = useSelector(
     (state: RootState) => state.globalConstants.urlAPI
@@ -23,6 +25,16 @@ const Home = () => {
         width={200}
         height={200}
       />
+
+      <InterceptedLinkForDataThatCouldBeLost
+        href="/hola"
+        negativeCallback={() => {
+          window.alert("No se puede ir a esa pagina");
+        }}
+        className="text-azul-principal p-6"
+      >
+        Hola
+      </InterceptedLinkForDataThatCouldBeLost>
     </div>
   );
 };
