@@ -15,7 +15,7 @@ const PlantillaSegunRol = async ({
 }) => {
   // const cookieStore = await cookies();
   // const rol = cookieStore?.get("rol")?.value as RolesSistema;
-  const rol = "PP" as RolesSistema;
+  const rol = "PPA" as RolesSistema;
 
   if (rol === RolesSistema.Directivo) {
     return <PlantillaDirectivo>{children}</PlantillaDirectivo>;
@@ -43,7 +43,7 @@ const PlantillaSegunRol = async ({
     return <PlantillaPersonalAdministrativo>{children}</PlantillaPersonalAdministrativo>;
   }
 
-  return <div>Error</div>
+  return <></>
 
 };
 
