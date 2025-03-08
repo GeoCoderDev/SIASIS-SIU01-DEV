@@ -43,7 +43,7 @@ const PlantillaSegunRol = async ({
     return <PlantillaPersonalAdministrativo>{children}</PlantillaPersonalAdministrativo>;
   }
 
-  return <></>
+  return <>{children}</>
 
 };
 
