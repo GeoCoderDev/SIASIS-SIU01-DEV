@@ -6,7 +6,7 @@ import ProfesorPrimariaIcon from "@/components/icons/ProfesorPrimariaIcon";
 import ResponsableIcon from "@/components/icons/ResponsableIcon";
 import Link from "next/link";
 
-export type RolForSelection =
+export type RolForLoginSelection =
   | "Directivo"
   | "Profesor (Primaria)"
   | "Auxiliar"
@@ -15,7 +15,7 @@ export type RolForSelection =
   | "Personal Administrativo";
 
 interface RolBotonProps {
-  rol: RolForSelection;
+  rol: RolForLoginSelection;
   icon: React.ReactNode;
   href: string;
 }

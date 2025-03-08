@@ -1,4 +1,4 @@
-import { RolesSistema } from "@/interfaces/Rol";
+import { RolesSistema } from "@/interfaces/RolesSistema";
 // import { cookies } from "next/headers";
 import PlantillaDirectivo from "./PlantillaDirectivo";
 import PlantillaProfesorPrimaria from "./PlantillaProfesorPrimaria";
@@ -15,7 +15,7 @@ const PlantillaSegunRol = async ({
 }) => {
   // const cookieStore = await cookies();
   // const rol = cookieStore?.get("rol")?.value as RolesSistema;
-  const rol = "Directivo" as RolesSistema;
+  const rol = "PP" as RolesSistema;
 
   if (rol === RolesSistema.Directivo) {
     return <PlantillaDirectivo>{children}</PlantillaDirectivo>;
