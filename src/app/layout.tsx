@@ -29,10 +29,24 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const interfazColor = "#dd3524";
+
   return (
     <ViewTransitions>
       <html lang="es">
-        <body className={`${roboto.variable} font-roboto antialiased`}>
+        <body
+          className={`${roboto.variable} font-roboto antialiased min-h-[100dvh]`}
+        >
+          <style>
+            {`
+      
+        :root{
+          --color-interfaz: ${interfazColor};
+        }
+
+      `}
+          </style>
+
           <WindowDimensionsLabel />
           <ProviderStore>
             <PlantillaSegunRol>{children}</PlantillaSegunRol>

@@ -5,7 +5,6 @@ import PlantillaAuxiliar from "./PlantillaAuxiliar";
 import PlantillaTutor from "./PlantillaTutor";
 import PlantillaResponsable from "./PlantillaResponsable";
 import PlantillaPersonalAdministrativo from "./PlantillaPersonalAdministrativo";
-import Header from "./Header";
 import { cookies } from "next/headers";
 import { RolesSistema } from "@/interfaces/RolesSistema";
 
@@ -14,6 +13,8 @@ const PlantillaSegunRol = async ({
 }: {
   children: React.ReactNode;
 }) => {
+
+  //Si se ha llegado hasta este componente es porque esas cookies estaran presentes
   const cookieStore = await cookies();
   const rol = cookieStore.get("Rol");
   const nombres = cookieStore.get("Nombres");
@@ -27,58 +28,47 @@ const PlantillaSegunRol = async ({
   switch (rol.value) {
     case RolesSistema.Directivo:
       return (
-        <PlantillaDirectivo>
-          {" "}
-          <Header Nombres={nombres} Apellidos={apellidos} />
+        <PlantillaDirectivo Nombres={nombres!} Apellidos={apellidos!}>
           {children}
         </PlantillaDirectivo>
       );
     case RolesSistema.ProfesorPrimaria:
       return (
-        <PlantillaProfesorPrimaria>
-          {" "}
-          <Header Nombres={nombres} Apellidos={apellidos} />
+        <PlantillaProfesorPrimaria Nombres={nombres!} Apellidos={apellidos!}>
           {children}
         </PlantillaProfesorPrimaria>
       );
 
     case RolesSistema.Auxiliar:
       return (
-        <PlantillaAuxiliar>
-          {" "}
-          <Header Nombres={nombres} Apellidos={apellidos} />
+        <PlantillaAuxiliar Nombres={nombres!} Apellidos={apellidos!}>
           {children}
         </PlantillaAuxiliar>
       );
     case RolesSistema.ProfesorSecundaria:
       return (
-        <PlantillaProfesorSecundaria>
-          {" "}
-          <Header Nombres={nombres} Apellidos={apellidos} />
+        <PlantillaProfesorSecundaria Nombres={nombres!} Apellidos={apellidos!}>
           {children}
         </PlantillaProfesorSecundaria>
       );
     case RolesSistema.Tutor:
       return (
-        <PlantillaTutor>
-          {" "}
-          <Header Nombres={nombres} Apellidos={apellidos} />
+        <PlantillaTutor Nombres={nombres!} Apellidos={apellidos!}>
           {children}
         </PlantillaTutor>
       );
     case RolesSistema.Responsable:
       return (
-        <PlantillaResponsable>
-          {" "}
-          <Header Nombres={nombres} Apellidos={apellidos} />
+        <PlantillaResponsable Nombres={nombres!} Apellidos={apellidos!}>
           {children}
         </PlantillaResponsable>
       );
     case RolesSistema.PersonalAdministrativo:
       return (
-        <PlantillaPersonalAdministrativo>
-          {" "}
-          <Header Nombres={nombres} Apellidos={apellidos} />
+        <PlantillaPersonalAdministrativo
+          Nombres={nombres!}
+          Apellidos={apellidos!}
+        >
           {children}
         </PlantillaPersonalAdministrativo>
       );

@@ -1,5 +1,3 @@
-
-
 import { useRouter } from "next/navigation";
 
 export interface InterceptedLinkProps {
@@ -24,9 +22,9 @@ const InterceptedLink = ({
     e.preventDefault();
 
     if (predicate()) {
-      router.push(href);
-    } else {
       negativeCallback();
+    } else {
+      router.push(href);
     }
   };
 

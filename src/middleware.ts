@@ -58,12 +58,14 @@ export async function middleware(request: NextRequest) {
 
     const token = request.cookies.get("token");
     const Rol = request.cookies.get("Rol");
+    const Nombres = request.cookies.get("Nombres");
+    const Apellidos = request.cookies.get("Apellidos");
 
     if (!token && (pathname === "/login" || pathname.startsWith("/login/"))) {
       return NextResponse.next();
     }
 
-    if (!token || !Rol) {
+    if (!token || !Rol || !Nombres || !Apellidos) {
       return deleteCookies();
     }
 

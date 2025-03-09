@@ -1,9 +1,21 @@
-import React from 'react'
+import { RequestCookie } from "next/dist/compiled/@edge-runtime/cookies";
+import Header from "./Header";
 
-const PlantillaResponsable =  ({children}:{children:React.ReactNode}) => {
+const PlantillaResponsable = ({
+  children,
+  Nombres,
+  Apellidos,
+}: {
+  children: React.ReactNode;
+  Nombres: RequestCookie;
+  Apellidos: RequestCookie;
+}) => {
   return (
-    <div>{children} </div>
-  )
-}
+    <>
+      <Header Nombres={Nombres} Apellidos={Apellidos} />
+      {children}
+    </>
+  );
+};
 
-export default PlantillaResponsable
+export default PlantillaResponsable;

@@ -18,6 +18,7 @@ const InterceptedLinkForDataThatCouldBeLost = ({
     (state: RootState) => state.flags.dataCouldBeLost
   );
 
+  
   return (
     <InterceptedLink
       predicate={() => thereIsDataCoudBeLost}
