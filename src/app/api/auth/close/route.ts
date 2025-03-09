@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { serialize } from "cookie";
 
-export async function PUT(request: NextRequest, res: NextResponse) {
-  const token = request.cookies.get("myToken");
+export async function POST(request: NextRequest) {
+  const token = request.cookies.get("token");
 
   if (!token) return new Response(null, { status: 401 });
 
-  const cookieToken = serialize("myToken", "", {
+  const cookieToken = serialize("token", "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     path: "/",
@@ -14,7 +14,7 @@ export async function PUT(request: NextRequest, res: NextResponse) {
     maxAge: 0, // Expirar la cookie inmediatamente
   });
 
-  const cookieRole = serialize("myRole", "", {
+  const cookieRole = serialize("Rol", "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     path: "/",
