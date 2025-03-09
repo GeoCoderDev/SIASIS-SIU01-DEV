@@ -1,8 +1,8 @@
-import { NextApiRequest, NextApiResponse } from "next";
-import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(request: NextRequest, res: NextResponse) {
-  const token = request.cookies.get("myToken");
+import { NextRequest } from "next/server";
+
+export async function GET(request: NextRequest,) {
+  const token = request.cookies.get("token");
 
   if(!token) return new Response(null, { status: 401 });
 
