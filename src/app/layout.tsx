@@ -1,11 +1,13 @@
-import 'animate.css';
 import { Roboto } from "next/font/google";
 import type { Metadata } from "next";
 import "./globals.css";
 import ProviderStore from "@/global/store/Provider";
 import WindowDimensionsLabel from "../components/shared/WindowDimensionsLabel";
-import PlantillaSegunRol from "@/components/shared/layouts/PlantillaSegunRol";
 import { ViewTransitions } from "next-view-transitions";
+import dotenv from "dotenv";
+import PlantillaSegunRol from "@/components/shared/layouts/PlantillaSegunRol";
+
+dotenv.config();
 
 // Configurando Fuente Roboto
 const roboto = Roboto({
@@ -22,7 +24,7 @@ export const metadata: Metadata = {
   icons: "/images/svg/Logo.svg",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;

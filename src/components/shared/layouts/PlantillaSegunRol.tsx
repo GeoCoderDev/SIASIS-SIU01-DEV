@@ -1,5 +1,3 @@
-import { RolesSistema } from "@/interfaces/RolesSistema";
-// import { cookies } from "next/headers";
 import PlantillaDirectivo from "./PlantillaDirectivo";
 import PlantillaProfesorPrimaria from "./PlantillaProfesorPrimaria";
 import PlantillaProfesorSecundaria from "./PlantillaProfesorSecundaria";
@@ -7,44 +5,84 @@ import PlantillaAuxiliar from "./PlantillaAuxiliar";
 import PlantillaTutor from "./PlantillaTutor";
 import PlantillaResponsable from "./PlantillaResponsable";
 import PlantillaPersonalAdministrativo from "./PlantillaPersonalAdministrativo";
+import Header from "./Header";
+import { cookies } from "next/headers";
+import { RolesSistema } from "@/interfaces/RolesSistema";
 
 const PlantillaSegunRol = async ({
   children,
 }: {
   children: React.ReactNode;
 }) => {
-  // const cookieStore = await cookies();
-  // const rol = cookieStore?.get("rol")?.value as RolesSistema;
-  const rol = "PPA" as RolesSistema;
+  const cookieStore = await cookies();
+  const rol = cookieStore.get("Rol");
+  const nombres = cookieStore.get("Nombres");
+  const apellidos = cookieStore.get("Apellidos");
 
-  if (rol === RolesSistema.Directivo) {
-    return <PlantillaDirectivo>{children}</PlantillaDirectivo>;
-  }
-  if (rol === RolesSistema.ProfesorPrimaria) {
-    return <PlantillaProfesorPrimaria>{children}</PlantillaProfesorPrimaria>;
-  }
-  if (rol === RolesSistema.Auxiliar) {
-    return <PlantillaAuxiliar>{children}</PlantillaAuxiliar>;
-  }
-  if (rol === RolesSistema.ProfesorSecundaria) {
-    return (
-      <PlantillaProfesorSecundaria>{children}</PlantillaProfesorSecundaria>
-    );
-  }
-  if (rol === RolesSistema.Tutor) {
-    return <PlantillaTutor>{children}</PlantillaTutor>;
-  }
-  if (rol === RolesSistema.Responsable) {
-    return <PlantillaResponsable>{children}</PlantillaResponsable>;
+  if (!rol) {
+    // Redirección del lado del servidor si no hay rol y no estamos ya en /login
+    return <>{children}</>;
   }
 
-  if(rol === RolesSistema.PersonalAdministrativo){
+  switch (rol.value) {
+    case RolesSistema.Directivo:
+      return (
+        <PlantillaDirectivo>
+          {" "}
+          <Header Nombres={nombres} Apellidos={apellidos} />
+          {children}
+        </PlantillaDirectivo>
+      );
+    case RolesSistema.ProfesorPrimaria:
+      return (
+        <PlantillaProfesorPrimaria>
+          {" "}
+          <Header Nombres={nombres} Apellidos={apellidos} />
+          {children}
+        </PlantillaProfesorPrimaria>
+      );
 
-    return <PlantillaPersonalAdministrativo>{children}</PlantillaPersonalAdministrativo>;
+    case RolesSistema.Auxiliar:
+      return (
+        <PlantillaAuxiliar>
+          {" "}
+          <Header Nombres={nombres} Apellidos={apellidos} />
+          {children}
+        </PlantillaAuxiliar>
+      );
+    case RolesSistema.ProfesorSecundaria:
+      return (
+        <PlantillaProfesorSecundaria>
+          {" "}
+          <Header Nombres={nombres} Apellidos={apellidos} />
+          {children}
+        </PlantillaProfesorSecundaria>
+      );
+    case RolesSistema.Tutor:
+      return (
+        <PlantillaTutor>
+          {" "}
+          <Header Nombres={nombres} Apellidos={apellidos} />
+          {children}
+        </PlantillaTutor>
+      );
+    case RolesSistema.Responsable:
+      return (
+        <PlantillaResponsable>
+          {" "}
+          <Header Nombres={nombres} Apellidos={apellidos} />
+          {children}
+        </PlantillaResponsable>
+      );
+    case RolesSistema.PersonalAdministrativo:
+      return (
+        <PlantillaPersonalAdministrativo>
+          {" "}
+          <Header Nombres={nombres} Apellidos={apellidos} />
+          {children}
+        </PlantillaPersonalAdministrativo>
+      );
   }
-
-  return <>{children}</>
-
 };
 
 export default PlantillaSegunRol;

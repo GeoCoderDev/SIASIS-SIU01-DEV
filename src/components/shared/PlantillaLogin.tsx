@@ -1,8 +1,20 @@
+"use client";
 import Link from "next/link";
 import ContrasenaIcon from "../icons/ContrasenaIcon";
 import UsuarioIcon from "../icons/UsuarioIcon";
 import VolverIcon from "../icons/VolverIcon";
 import Image from "next/image";
+import { SiasisAPIS } from "@/interfaces/SiasisCompontes";
+import { useState } from "react";
+import useRequestAPIFeatures from "@/hooks/useRequestSiasisAPIFeatures";
+
+import {
+  ErrorResponseAPIBase,
+  ResponseSuccessLogin,
+} from "@/interfaces/SiasisAPIs";
+import Loader from "./loaders/Loader";
+import ErrorMessage1 from "./errors/ErrorMessage1";
+import SuccessMessage1 from "./successes/SuccessMessage1";
 
 export type RolForLogin =
   | "DIRECTIVO"
@@ -13,30 +25,97 @@ export type RolForLogin =
   | "PERSONAL ADMINISTRATIVO";
 
 export interface FormularioLogin {
-  nombre_usuario: string;
-  contraseña: string;
+  Nombre_Usuario: string;
+  Contraseña: string;
 }
 
 interface PlantillaLoginProps {
   rol: RolForLogin;
-  formulario: FormularioLogin;
-  setFormulario: (formulario: FormularioLogin) => void;
-  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-  intentosRestantes: number;
+  siasisAPI: SiasisAPIS;
+  endpoint: string;
 }
 
-const PlantillaLogin = ({
-  formulario,
-  handleSubmit,
-  rol,
-  setFormulario,
-  intentosRestantes,
-}: PlantillaLoginProps) => {
+const initialFormularioLogin: FormularioLogin = {
+  Nombre_Usuario: "",
+  Contraseña: "",
+};
+
+const PlantillaLogin = ({ rol, siasisAPI, endpoint }: PlantillaLoginProps) => {
+  const {
+    error,
+    fetchSiasisAPI,
+    isSomethingLoading,
+    setError,
+    setIsSomethingLoading,
+    setSuccessMessage,
+    successMessage,
+  } = useRequestAPIFeatures(siasisAPI);
+
+
+  const [formularioLogin, setFormularioLogin] = useState<FormularioLogin>(
+    initialFormularioLogin
+  );
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [intentosRestantes, setIntentosRestantes] = useState<
+    number | undefined
+  >(3);
+
   const handleChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
-    setFormulario({
-      ...formulario,
+    setError(null);
+    setFormularioLogin({
+      ...formularioLogin,
       [e.target.name]: e.target.value,
     });
+  };
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    try {
+      setIsSomethingLoading(true);
+
+      const fetchCancellable = fetchSiasisAPI(
+        endpoint,
+        "POST",
+        null,
+        JSON.stringify(formularioLogin)
+      );
+
+      const res = await fetchCancellable.fetch();
+
+      if (!res.ok) {
+        const error = (await res.json()) as ErrorResponseAPIBase;
+        setIsSomethingLoading(false);
+        throw new Error(error.message);
+      }
+
+      const response = await res.json();
+
+      const { message, data } = response as ResponseSuccessLogin;
+
+      setSuccessMessage({ message });
+
+      const resSetCookies = await fetch("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+
+      if (!resSetCookies.ok) {
+        const { message } =
+          (await resSetCookies.json()) as ErrorResponseAPIBase;
+        throw new Error(message);
+      }
+
+      setIsSomethingLoading(false);
+      window.location.href = "/";
+      
+    } catch (error) {
+      setIsSomethingLoading(false);
+      setError({
+        message:
+          (error as Error)?.message ?? "Ocurrio un error interno en el sistema",
+      });
+    }
   };
 
   return (
@@ -63,11 +142,12 @@ const PlantillaLogin = ({
               </div>
               <input
                 type="text"
-                name="nombre_usuario"
+                required
+                name="Nombre_Usuario"
                 onChange={handleChange}
-                value={formulario.nombre_usuario}
+                value={formularioLogin.Nombre_Usuario}
                 placeholder="Ingrese su nombre de usuario"
-                className="w-full text-gris-intermedio text-[1rem] outline-none bg-transparent px-3"
+                className="w-full text-negro placeholder:text-gris-intermedio text-[1rem] outline-none bg-transparent px-3"
               />
             </div>
 
@@ -77,11 +157,12 @@ const PlantillaLogin = ({
               </div>
               <input
                 type="password"
-                name="contraseña"
+                required
+                name="Contraseña"
                 onChange={handleChange}
-                value={formulario.contraseña}
+                value={formularioLogin.Contraseña}
                 placeholder="Ingrese su contraseña"
-                className="w-full text-gris-intermedio text-[1rem] outline-none bg-transparent px-3"
+                className="w-full text-negro placeholder:text-gris-intermedio text-[1rem] outline-none bg-transparent px-3"
               />
             </div>
 
@@ -90,11 +171,21 @@ const PlantillaLogin = ({
               <span className="font-bold">{intentosRestantes}</span>
             </p>
 
+            {error && <ErrorMessage1 message={error.message} />}
+
+            {successMessage && (
+              <SuccessMessage1 message={successMessage.message} />
+            )}
+
             <button
               type="submit"
-              className="mt-4 w-full bg-color-interfaz text-blanco py-2 rounded-lg text-[1rem]"
+              disabled={isSomethingLoading || Boolean(error)}
+              className="mt-4 w-full bg-color-interfaz text-blanco  rounded-lg text-[1rem] flex gap-4 items-center justify-center py-3 disabled:grayscale-[0.75] pointer"
             >
               Ingresar
+              {isSomethingLoading && !error && !successMessage && (
+                <Loader className="w-[1.5rem]" />
+              )}
             </button>
           </form>
         </div>

@@ -5,7 +5,7 @@ const PlantillaPersonalAdministrativo = ({
 }: {
   children: React.ReactNode;
 }) => {
-  return <div>PlantillaPersonalAdministrativo {children}</div>;
+  return <div> {children}</div>;
 };
 
 export default PlantillaPersonalAdministrativo;

@@ -5,7 +5,7 @@ const PlantillaProfesorPrimaria = ({
 }: {
   children: React.ReactNode;
 }) => {
-  return <div>PlantillaProfesorPrimaria {children}</div>;
+  return <div> {children}</div>;
 };
 
 export default PlantillaProfesorPrimaria;
