@@ -10,7 +10,6 @@ import ResponsableIcon from "@/components/icons/ResponsableIcon";
 import AuxiliarIcon from "@/components/icons/AuxiliarIcon";
 import PersonalAdministrativoIcon from "@/components/icons/PersonalLimpiezaIcon";
 import RegistrosIcon from "@/components/icons/RegistrosIcon";
-import TardanzasIcon from "@/components/icons/TardanzasIcon";
 import ReportesIcon from "@/components/icons/ReportesIcon";
 import { RankingsIcon } from "@/components/icons/RankingsIcon";
 import ProgramacionIcon from "@/components/icons/ProgramacionIcon";

@@ -14,7 +14,8 @@ import { useDelegacionEventos } from "@/hooks/useDelegacionDeEventos";
 import { RolesSistema } from "@/interfaces/RolesSistema";
 import { RequestCookie } from "next/dist/compiled/@edge-runtime/cookies";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+
 import { useDispatch, useSelector } from "react-redux";
 
 const Header = ({
@@ -36,7 +37,7 @@ const Header = ({
   const dispatch = useDispatch();
 
   //Estado para controlar la visibilidad del menú desplegable
-  const [menuVisible, setMenuVisible] = useState(false);
+  // const [menuVisible, setMenuVisible] = useState(false);
 
   // Función para cambiar la visibilidad del menú
   // const toggleMenu = () => {
@@ -85,7 +86,7 @@ const Header = ({
       "mouseup",
       "#Menu-deplegable, #Menu-deplegable *",
       () => {
-        setMenuVisible(false);
+        // setMenuVisible(false);
       },
       true
     );
