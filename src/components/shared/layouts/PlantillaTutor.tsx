@@ -1,6 +1,7 @@
 import { RequestCookie } from "next/dist/compiled/@edge-runtime/cookies";
 import React from "react";
 import Header from "./Header";
+import { RolesSistema } from "@/interfaces/RolesSistema";
 
 const PlantillaTutor = ({
   children,
@@ -13,7 +14,11 @@ const PlantillaTutor = ({
 }) => {
   return (
     <>
-      <Header Nombres={Nombres} Apellidos={Apellidos} />
+      <Header
+        Nombres={Nombres}
+        Apellidos={Apellidos}
+        Rol={RolesSistema.Tutor}
+      />
       {children}
     </>
   );
