@@ -7,10 +7,12 @@ const PlantillaProfesorSecundaria = ({
   children,
   Nombres,
   Apellidos,
+  Google_Drive_Foto_ID,
 }: {
   children: React.ReactNode;
   Nombres: RequestCookie;
   Apellidos: RequestCookie;
+  Google_Drive_Foto_ID: RequestCookie | undefined;
 }) => {
   return (
     <>
@@ -18,6 +20,7 @@ const PlantillaProfesorSecundaria = ({
         Nombres={Nombres}
         Apellidos={Apellidos}
         Rol={RolesSistema.ProfesorSecundaria}
+        Google_Drive_Foto_ID={Google_Drive_Foto_ID}
       />
       {children}
     </>

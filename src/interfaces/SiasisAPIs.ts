@@ -17,7 +17,9 @@ export interface SuccessLoginData {
   Apellidos: string;
   Rol: RolesSistema;
   token: string;
+  Google_Drive_Foto_ID: string | null;
 }
+
 
 export type ResponseSuccessLogin = ApiResponseBase & {
   data: SuccessLoginData;
