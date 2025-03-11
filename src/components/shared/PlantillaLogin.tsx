@@ -15,7 +15,7 @@ import {
 import Loader from "./loaders/Loader";
 import ErrorMessage1 from "./errors/ErrorMessage1";
 import SuccessMessage1 from "./successes/SuccessMessage1";
-import  { useIndexedDB } from "@/hooks/useIndexedDB";
+import { useIndexedDB } from "@/hooks/useIndexedDB";
 import directivoModel, {
   DirectivoModel,
   IDirectivo,
@@ -176,92 +176,122 @@ const PlantillaLogin = ({ rol, siasisAPI, endpoint }: PlantillaLoginProps) => {
   };
 
   return (
-    <main className="w-full h-full min-h-screen bg-gris-claro max-sm:bg-blanco flex items-center justify-center max-sm:p-0">
+    <>
+      {/* SECCION DE EXPERIMENTOS CON INDEXED DB */}
+      <div className="p-4 -hidden">
+        <button
+          onClick={handleCreateMockedDirectivo}
+          disabled={isCreating || loading}
+          className="bg-color-interfaz text-blanco rounded-lg px-4 py-2 disabled:grayscale-[0.75]"
+        >
+          {isCreating ? "Creando directivo..." : "Crear Directivo de Prueba"}
+        </button>
 
-      <div className="flex flex-row max-sm:flex-col bg-blanco shadow-[0px_0px_23.5px_5px_rgba(0,0,0,0.25)] max-sm:shadow-none max-sm:rounded-none max-sm:w-full max-sm:h-full p-8 max-sm:p-2 w-full max-w-2xl">
-        {/* Sección Izquierda: Formulario de Inicio de Sesión */}
-        <div className="w-1/2 pr-4 max-sm:w-full max-sm:px-4 max-sm:py-2 max-sm:order-2">
-          <Link href="/login">
-            <button className="flex items-center text-blanco bg-color-interfaz px-4 py-2 rounded-lg">
-              <VolverIcon className="w-5 h-5 mr-2" />
-              Volver
-            </button>
-          </Link>
-  
-          <h2 className="text-[0.8rem] text-gris-oscuro mt-3">
-            Inicio de Sesión
-          </h2>
-          <h3 className="text-[1.5rem] font-bold text-gris-oscuro">{rol}</h3>
-  
-          <form className="mt-4" onSubmit={handleSubmit}>
-            <div className="mb-3 flex items-center border border-color-interfaz rounded-lg overflow-hidden">
-              <div className="bg-color-interfaz p-2 flex items-center">
-                <UsuarioIcon className="w-6 h-6" />
-              </div>
-              <input
-                type="text"
-                required
-                name="Nombre_Usuario"
-                onChange={handleChange}
-                value={formularioLogin.Nombre_Usuario}
-                placeholder="Ingrese su nombre de usuario"
-                className="w-full text-negro placeholder:text-gris-intermedio text-[1rem] outline-none bg-transparent px-2"
-              />
-            </div>
-  
-            <div className="mb-3 flex items-center border border-color-interfaz rounded-lg overflow-hidden">
-              <div className="bg-color-interfaz p-2 flex items-center">
-                <ContrasenaIcon className="w-6 h-6" />
-              </div>
-              <input
-                type="password"
-                required
-                name="Contraseña"
-                onChange={handleChange}
-                value={formularioLogin.Contraseña}
-                placeholder="Ingrese su contraseña"
-                className="w-full text-negro placeholder:text-gris-intermedio text-[1rem] outline-none bg-transparent px-2"
-              />
-            </div>
-  
-            <p className="text-gris-oscuro text-[0.9rem]">
-              Intentos disponibles:{" "}
-              <span className="font-bold">{intentosRestantes}</span>
-            </p>
-  
-            {error && <ErrorMessage1 message={error.message} />}
-  
-            {successMessage && (
-              <SuccessMessage1 message={successMessage.message} />
-            )}
-  
-            <button
-              type="submit"
-              disabled={isSomethingLoading || Boolean(error)}
-              className="mt-3 w-full bg-color-interfaz text-blanco rounded-lg text-[1rem] flex gap-4 items-center justify-center py-3 disabled:grayscale-[0.75] pointer"
-            >
-              Ingresar
-              {isSomethingLoading && !error && !successMessage && (
-                <Loader className="w-[1.5rem]" />
-              )}
-            </button>
-          </form>
-        </div>
-  
-        {/* Sección Derecha: Logo (en desktop) / Superior: Logo (en mobile) */}
-        <div className="w-1/2 flex justify-center items-center max-sm:w-full max-sm:pt-4 max-sm:pb-2 max-sm:order-1">
-          <Image
-            src="/images/svg/Logo.svg"
-            alt="Colegio Asuncion 8 Logo"
-            width={396}
-            height={396}
-            className="max-sm:w-[160px] max-sm:h-auto"
-          />
-        </div>
+        {/* Mostrar error del hook si existe */}
+        {error && (
+          <div className="mt-4 p-3 rounded-lg bg-red-100 text-red-800">
+            Error en el hook: {error2}
+          </div>
+        )}
+
+        {/* Mostrar resultado de la operación */}
+        {result && (
+          <div
+            className={`mt-4 p-3 rounded-lg ${
+              result.success
+                ? "bg-green-100 text-green-800"
+                : "bg-red-100 text-red-800"
+            }`}
+          >
+            {result.message}
+          </div>
+        )}
       </div>
-    </main>
-  );
+      <main className="w-full h-full min-h-screen bg-gris-claro max-sm:bg-blanco flex items-center justify-center max-sm:p-0">
+        <div className="flex flex-row max-sm:flex-col bg-blanco shadow-[0px_0px_23.5px_5px_rgba(0,0,0,0.25)] max-sm:shadow-none max-sm:rounded-none max-sm:w-full max-sm:h-full p-8 max-sm:p-2 w-full max-w-2xl">
+          {/* Sección Izquierda: Formulario de Inicio de Sesión */}
+          <div className="w-1/2 pr-4 max-sm:w-full max-sm:px-4 max-sm:py-2 max-sm:order-2">
+            <Link href="/login">
+              <button className="flex items-center text-blanco bg-color-interfaz px-4 py-2 rounded-lg">
+                <VolverIcon className="w-5 h-5 mr-2" />
+                Volver
+              </button>
+            </Link>
 
+            <h2 className="text-[0.8rem] text-gris-oscuro mt-3">
+              Inicio de Sesión
+            </h2>
+            <h3 className="text-[1.5rem] font-bold text-gris-oscuro">{rol}</h3>
+
+            <form className="mt-4" onSubmit={handleSubmit}>
+              <div className="mb-3 flex items-center border border-color-interfaz rounded-lg overflow-hidden">
+                <div className="bg-color-interfaz p-2 flex items-center">
+                  <UsuarioIcon className="w-6 h-6" />
+                </div>
+                <input
+                  type="text"
+                  required
+                  name="Nombre_Usuario"
+                  onChange={handleChange}
+                  value={formularioLogin.Nombre_Usuario}
+                  placeholder="Ingrese su nombre de usuario"
+                  className="w-full text-negro placeholder:text-gris-intermedio text-[1rem] outline-none bg-transparent px-2"
+                />
+              </div>
+
+              <div className="mb-3 flex items-center border border-color-interfaz rounded-lg overflow-hidden">
+                <div className="bg-color-interfaz p-2 flex items-center">
+                  <ContrasenaIcon className="w-6 h-6" />
+                </div>
+                <input
+                  type="password"
+                  required
+                  name="Contraseña"
+                  onChange={handleChange}
+                  value={formularioLogin.Contraseña}
+                  placeholder="Ingrese su contraseña"
+                  className="w-full text-negro placeholder:text-gris-intermedio text-[1rem] outline-none bg-transparent px-2"
+                />
+              </div>
+
+              <p className="text-gris-oscuro text-[0.9rem]">
+                Intentos disponibles:{" "}
+                <span className="font-bold">{intentosRestantes}</span>
+              </p>
+
+              {error && <ErrorMessage1 message={error.message} />}
+
+              {successMessage && (
+                <SuccessMessage1 message={successMessage.message} />
+              )}
+
+              <button
+                type="submit"
+                disabled={isSomethingLoading || Boolean(error)}
+                className="mt-3 w-full bg-color-interfaz text-blanco rounded-lg text-[1rem] flex gap-4 items-center justify-center py-3 disabled:grayscale-[0.75] pointer"
+              >
+                Ingresar
+                {isSomethingLoading && !error && !successMessage && (
+                  <Loader className="w-[1.5rem]" />
+                )}
+              </button>
+            </form>
+          </div>
+
+          {/* Sección Derecha: Logo (en desktop) / Superior: Logo (en mobile) */}
+          <div className="w-1/2 flex justify-center items-center max-sm:w-full max-sm:pt-4 max-sm:pb-2 max-sm:order-1">
+            <Image
+              src="/images/svg/Logo.svg"
+              alt="Colegio Asuncion 8 Logo"
+              width={396}
+              height={396}
+              className="max-sm:w-[160px] max-sm:h-auto"
+            />
+          </div>
+        </div>
+      </main>
+    </>
+  );
 };
 
 export default PlantillaLogin;
