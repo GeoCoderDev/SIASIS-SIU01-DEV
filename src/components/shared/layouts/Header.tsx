@@ -173,7 +173,7 @@ const Header = ({
               {Nombres.value.split(" ").shift()}{" "}
               {Apellidos.value.split(" ").shift()}
             </h1>
-            <p className="text-blanco text-left text-[0.9rem] leading-4 sm:hidden">
+            <p className="text-blanco text-left text-[0.9rem] leading-4 sm:hidden italic">
               {RolesTextos[Rol as keyof typeof RolesTextos].mobile}
             </p>
             <p className="text-blanco text-left text-[0.9rem] leading-4 italic max-sm:hidden">
@@ -183,13 +183,13 @@ const Header = ({
 
           <img
             style={{ boxShadow: "0 0px 8px rgba(0, 0, 0, 0.2)" }}
-            className="aspect-square w-12  max-md:mr-2  rounded-[50%] border border-[#ffffff60] bg-contain object-cover bg-no-repeat bg-center"
+            className="aspect-square w-12 max-h-12  max-md:mr-2  rounded-[50%] border border-[#ffffff60] bg-contain object-cover bg-no-repeat bg-center"
             src={
               Google_Drive_Foto_ID
                 ? `https://drive.google.com/thumbnail?id=${Google_Drive_Foto_ID.value}`
                 : "/images/svg/No-Foto-Perfil.svg"
             }
-            alt="Tu foto de perfil"
+            alt="Foto"
           />
 
           <div id="despliegue-icon" onClick={toggleMenu} className="relative">
