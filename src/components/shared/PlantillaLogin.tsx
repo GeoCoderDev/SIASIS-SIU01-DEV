@@ -178,7 +178,7 @@ const PlantillaLogin = ({ rol, siasisAPI, endpoint }: PlantillaLoginProps) => {
   return (
     <>
       {/* SECCION DE EXPERIMENTOS CON INDEXED DB */}
-      <div className="p-4 -hidden">
+      <div className="p-4 hidden">
         <button
           onClick={handleCreateMockedDirectivo}
           disabled={isCreating || loading}
@@ -207,6 +207,9 @@ const PlantillaLogin = ({ rol, siasisAPI, endpoint }: PlantillaLoginProps) => {
           </div>
         )}
       </div>
+
+
+
       <main className="w-full h-full min-h-screen bg-gris-claro max-sm:bg-blanco flex items-center justify-center max-sm:p-0">
         <div className="flex flex-row max-sm:flex-col bg-blanco shadow-[0px_0px_23.5px_5px_rgba(0,0,0,0.25)] max-sm:shadow-none max-sm:rounded-none max-sm:w-full max-sm:h-full p-8 max-sm:p-2 w-full max-w-2xl">
           {/* Sección Izquierda: Formulario de Inicio de Sesión */}
