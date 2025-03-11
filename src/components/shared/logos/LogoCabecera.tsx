@@ -1,11 +1,24 @@
-import React from 'react'
+import { Julee } from "next/font/google";
+import React from "react";
 
+// Inicializar la fuente Julee
+const julee = Julee({
+  weight: "400", // Ajusta según las opciones disponibles para esta fuente
+  subsets: ["latin"],
+  display: "swap",
+});
 const LogoCabecera = () => {
   return (
-    <div>
-        <img src="/images/svg/Logo.svg" className=''/>
-    </div>
-  )
-}
+    <div className="flex items-center gap-2 max-w-[10rem] justify-center bg-white rounded-[10px] px-3 py-2">
+      <img
+        src="/images/svg/Logo.svg"
+        alt="Colegio Asuncion 8 Logo"
+        className="w-[3.2rem]"
+      />
 
-export default LogoCabecera
+      <span className={`${julee.className} text-[1.1rem] max-sm:hidden`}>Asunción 8 20935</span>
+    </div>
+  );
+};
+
+export default LogoCabecera;

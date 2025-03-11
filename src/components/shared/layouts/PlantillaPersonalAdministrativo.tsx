@@ -7,10 +7,12 @@ const PlantillaPersonalAdministrativo = ({
   children,
   Nombres,
   Apellidos,
+  Google_Drive_Foto_ID,
 }: {
   children: React.ReactNode;
   Nombres: RequestCookie;
   Apellidos: RequestCookie;
+  Google_Drive_Foto_ID: RequestCookie | undefined;
 }) => {
   return (
     <>
@@ -18,6 +20,7 @@ const PlantillaPersonalAdministrativo = ({
         Nombres={Nombres}
         Apellidos={Apellidos}
         Rol={RolesSistema.PersonalAdministrativo}
+        Google_Drive_Foto_ID={Google_Drive_Foto_ID}
       />
       {children}
     </>

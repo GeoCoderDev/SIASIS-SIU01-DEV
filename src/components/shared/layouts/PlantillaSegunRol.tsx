@@ -13,12 +13,12 @@ const PlantillaSegunRol = async ({
 }: {
   children: React.ReactNode;
 }) => {
-
   //Si se ha llegado hasta este componente es porque esas cookies estaran presentes
   const cookieStore = await cookies();
   const rol = cookieStore.get("Rol");
   const nombres = cookieStore.get("Nombres");
   const apellidos = cookieStore.get("Apellidos");
+  const googleDriveFotoId = cookieStore.get("Google_Drive_Foto_ID");
 
   if (!rol) {
     // Redirección del lado del servidor si no hay rol y no estamos ya en /login
@@ -28,38 +28,62 @@ const PlantillaSegunRol = async ({
   switch (rol.value) {
     case RolesSistema.Directivo:
       return (
-        <PlantillaDirectivo Nombres={nombres!} Apellidos={apellidos!}>
+        <PlantillaDirectivo
+          Nombres={nombres!}
+          Apellidos={apellidos!}
+          Google_Drive_Foto_ID={googleDriveFotoId}
+        >
           {children}
         </PlantillaDirectivo>
       );
     case RolesSistema.ProfesorPrimaria:
       return (
-        <PlantillaProfesorPrimaria Nombres={nombres!} Apellidos={apellidos!}>
+        <PlantillaProfesorPrimaria
+          Nombres={nombres!}
+          Apellidos={apellidos!}
+          Google_Drive_Foto_ID={googleDriveFotoId}
+        >
           {children}
         </PlantillaProfesorPrimaria>
       );
 
     case RolesSistema.Auxiliar:
       return (
-        <PlantillaAuxiliar Nombres={nombres!} Apellidos={apellidos!}>
+        <PlantillaAuxiliar
+          Nombres={nombres!}
+          Apellidos={apellidos!}
+          Google_Drive_Foto_ID={googleDriveFotoId}
+        >
           {children}
         </PlantillaAuxiliar>
       );
     case RolesSistema.ProfesorSecundaria:
       return (
-        <PlantillaProfesorSecundaria Nombres={nombres!} Apellidos={apellidos!}>
+        <PlantillaProfesorSecundaria
+          Nombres={nombres!}
+          Apellidos={apellidos!}
+          Google_Drive_Foto_ID={googleDriveFotoId}
+        >
           {children}
         </PlantillaProfesorSecundaria>
       );
     case RolesSistema.Tutor:
       return (
-        <PlantillaTutor Nombres={nombres!} Apellidos={apellidos!}>
+        <PlantillaTutor
+          Nombres={nombres!}
+          Apellidos={apellidos!}
+          Google_Drive_Foto_ID={googleDriveFotoId}
+        >
           {children}
         </PlantillaTutor>
       );
     case RolesSistema.Responsable:
       return (
-        <PlantillaResponsable Nombres={nombres!} Apellidos={apellidos!}>
+        <PlantillaResponsable
+          Nombres={nombres!}
+          Apellidos={apellidos!}
+          Google_Drive_Foto_ID={googleDriveFotoId}
+        >
           {children}
         </PlantillaResponsable>
       );
@@ -68,6 +92,7 @@ const PlantillaSegunRol = async ({
         <PlantillaPersonalAdministrativo
           Nombres={nombres!}
           Apellidos={apellidos!}
+          Google_Drive_Foto_ID={googleDriveFotoId}
         >
           {children}
         </PlantillaPersonalAdministrativo>

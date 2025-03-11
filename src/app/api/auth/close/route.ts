@@ -22,8 +22,18 @@ export async function POST(request: NextRequest) {
     maxAge: 0, // Expirar la cookie inmediatamente
   });
 
+  const googleDriveFotoId = serialize("Google_Drive_Foto_ID", "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    sameSite: "strict",
+    maxAge: 0, // Expirar la cookie inmediatamente
+  });
+
   return new Response(null, {
     status: 200,
-    headers: { "Set-Cookie": `${cookieToken}, ${cookieRole}` },
+    headers: {
+      "Set-Cookie": `${cookieToken}, ${cookieRole}, ${googleDriveFotoId}`,
+    },
   });
 }

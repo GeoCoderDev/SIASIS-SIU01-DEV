@@ -14,18 +14,25 @@ import { useDelegacionEventos } from "@/hooks/useDelegacionDeEventos";
 import { RolesSistema } from "@/interfaces/RolesSistema";
 import { RequestCookie } from "next/dist/compiled/@edge-runtime/cookies";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { useDispatch, useSelector } from "react-redux";
+import LogoCabecera from "../logos/LogoCabecera";
+import { Link } from "next-view-transitions";
+import { logout } from "@/lib/helpers/logout";
+import DespliegueIcon from "@/components/icons/DespliegueIcon";
+import { RolesTextos } from "@/Assets/RolesTextos";
 
 const Header = ({
   Nombres,
   Apellidos,
   Rol,
+  Google_Drive_Foto_ID,
 }: {
   Nombres: RequestCookie;
   Apellidos: RequestCookie;
   Rol: RolesSistema;
+  Google_Drive_Foto_ID: RequestCookie | undefined;
 }) => {
   const sidebarIsOpen = useSelector(
     (state: RootState) => state.flags.sidebarIsOpen
@@ -36,13 +43,13 @@ const Header = ({
 
   const dispatch = useDispatch();
 
-  //Estado para controlar la visibilidad del menú desplegable
-  // const [menuVisible, setMenuVisible] = useState(false);
+  // Estado para controlar la visibilidad del menú desplegable
+  const [menuVisible, setMenuVisible] = useState(false);
 
   // Función para cambiar la visibilidad del menú
-  // const toggleMenu = () => {
-  //   setMenuVisible(!menuVisible);
-  // };
+  const toggleMenu = () => {
+    setMenuVisible(!menuVisible);
+  };
 
   const { delegarEvento } = useDelegacionEventos();
   // const { UserSessionData } = useUserSessionData() as {
@@ -131,7 +138,7 @@ const Header = ({
       <header
         style={{ boxShadow: "0 0px 2px 2px rgba(0,0,0,0.2)" }}
         id="header"
-        className="flex w-full items-center text-center z-[1000] bg-verde-spotify py-2.5 sticky top-0 left-0 max-w-full pl-4 pr-2 sm:pl-6 sm:pr-4 text-xs sm:text-base min-h-[5rem] bg-color-interfaz"
+        className="flex w-full items-center gap-x-4 text-center z-[1000] bg-verde-spotify py-3 sticky top-0 left-0 max-w-full px-4 sm:pl-6 sm:pr-4 text-xs sm:text-base min-h-[5rem] bg-color-interfaz justify-start"
       >
         <div
           className="cursor-pointer select-none"
@@ -144,7 +151,72 @@ const Header = ({
               color="white"
             />
           ) : (
-            <FooterIcon className="w-10" color="white" />
+            <FooterIcon
+              className="w-10"
+              color="white"
+              title={
+                sidebarIsOpen
+                  ? "Ocultar Barra Inferior"
+                  : "Mostrar Barra Inferior"
+              }
+            />
+          )}
+        </div>
+
+        <LogoCabecera />
+
+        <div className="flex-1"></div>
+
+        <div className="justify-self-end flex items-center justify-center gap-4">
+          <div className="flex flex-col items-start mr-2 justify-center gap-y-1">
+            <h1 className="text-blanco font-extrabold text-left text-[1.1rem] leading-5">
+              {Nombres.value.split(" ").shift()}{" "}
+              {Apellidos.value.split(" ").shift()}
+            </h1>
+            <p className="text-blanco text-left text-[0.9rem] leading-4 sm:hidden">
+              {RolesTextos[Rol as keyof typeof RolesTextos].mobile}
+            </p>
+            <p className="text-blanco text-left text-[0.9rem] leading-4 italic max-sm:hidden">
+              {RolesTextos[Rol as keyof typeof RolesTextos].desktop}
+            </p>
+          </div>
+
+          <img
+            style={{ boxShadow: "0 0px 8px rgba(0, 0, 0, 0.2)" }}
+            className="aspect-square w-12  max-md:mr-2  rounded-[50%] border border-[#ffffff60] bg-contain object-cover bg-no-repeat bg-center"
+            src={
+              Google_Drive_Foto_ID
+                ? `https://drive.google.com/thumbnail?id=${Google_Drive_Foto_ID.value}`
+                : "/images/svg/No-Foto-Perfil.svg"
+            }
+            alt="Tu foto de perfil"
+          />
+
+          <div id="despliegue-icon" onClick={toggleMenu} className="relative">
+            <DespliegueIcon className="text-blanco aspect-auto sm:w-7 w-10 hover:cursor-pointer" />
+          </div>
+
+          {menuVisible && (
+            <ul
+              id="Menu-deplegable"
+              style={{ boxShadow: "0px 0px 4px 2px rgba(0,0,0,0.2)" }}
+              className="absolute bg-white w-auto max-w-[90vw] min-w-[9rem] flex flex-col items-center justify-center mt-3 rounded-lg top-full"
+              onClick={() => {
+                setMenuVisible(false);
+              }}
+            >
+              <Link href={"/editar_perfil"} as={"/editar-perfil"}>
+                <li className="hover:font-bold cursor-pointer h-10 flex items-center justify-center px-3 border-t border-gray-200 w-[8rem]">
+                  Editar Perfil
+                </li>
+              </Link>
+              <li
+                className="border-t border-gray-200 h-10 hover:font-bold cursor-pointer flex items-center justify-center px-3 w-[8rem]"
+                onClick={logout}
+              >
+                Cerrar Sesión
+              </li>
+            </ul>
           )}
         </div>
       </header>
