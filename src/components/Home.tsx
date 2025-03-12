@@ -6,14 +6,23 @@ import Image from "next/image";
 import { useSelector } from "react-redux";
 
 import InterceptedLinkForDataThatCouldBeLost from "./shared/InterceptedLinkForDataThatCouldBeLost";
+import userStorage from "@/lib/utils/local/db/models/UserStorage";
 
 const Home = () => {
   const sidebarIsOpen = useSelector(
     (state: RootState) => state.globalConstants.urlAPI
   );
+  const getData = async () => {
+    return await userStorage.getUserData();
+  };
 
   return (
     <div>
+      <div>
+        <button onClick={getData} className="ring-2">
+          GET DATA
+        </button>
+      </div>
       <h1 className="text-[2rem] hover:text-azul-principal">
         REGISTRAR RESPONSABLES
       </h1>

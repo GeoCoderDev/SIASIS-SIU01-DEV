@@ -120,18 +120,8 @@ const PlantillaLogin = ({ rol, siasisAPI, endpoint }: PlantillaLoginProps) => {
     }
   };
 
-  const getData = async () => {
-    return await userStorage.getUserData();
-  };
-
   return (
     <>
-      <div>
-        <button onClick={getData} className="ring-2">
-          GET DATA
-        </button>
-      </div>
-
       <main className="w-full h-full min-h-screen bg-gris-claro max-sm:bg-blanco flex items-center justify-center max-sm:p-0">
         <div className="flex flex-row max-sm:flex-col bg-blanco shadow-[0px_0px_23.5px_5px_rgba(0,0,0,0.25)] max-sm:shadow-none max-sm:rounded-none max-sm:w-full max-sm:h-full p-8 max-sm:p-2 w-full max-w-2xl">
           {/* Sección Izquierda: Formulario de Inicio de Sesión */}
