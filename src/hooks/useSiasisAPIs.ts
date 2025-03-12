@@ -1,13 +1,13 @@
 import { useState, useCallback } from "react";
 
-import { ObjetoConStringYNumber } from "@/interfaces/CustomObjects";
+import { QueryParams } from "@/interfaces/CustomObjects";
 import { FetchCancelable } from "@/lib/utils/FetchCancellable";
 import { MethodHTTP } from "@/interfaces/MethodsHTTP";
 import { SiasisAPIS } from "@/interfaces/SiasisCompontes";
 import getRandomAPI01IntanceURL from "@/lib/helpers/functions/getRandomAPI01InstanceURL";
 import getRandomAPI02IntanceURL from "@/lib/helpers/functions/getRandomAPI02Instance";
 
-const useSiasisAPIs = (siasisAPI: SiasisAPIS ) => {
+const useSiasisAPIs = (siasisAPI: SiasisAPIS) => {
   const urlAPI =
     siasisAPI == "API01" ? getRandomAPI01IntanceURL : getRandomAPI02IntanceURL;
 
@@ -19,7 +19,7 @@ const useSiasisAPIs = (siasisAPI: SiasisAPIS ) => {
     (
       endpoint: string,
       method: MethodHTTP = "GET",
-      queryParams: ObjetoConStringYNumber | null = null,
+      queryParams: QueryParams | null = null,
       body: BodyInit | string | null = null,
       JSONBody: boolean = true
     ) => {
@@ -36,7 +36,7 @@ const useSiasisAPIs = (siasisAPI: SiasisAPIS ) => {
           headers,
           body,
         },
-        queryParams as ObjetoConStringYNumber
+        queryParams as QueryParams
       );
 
       setFetchCancelables((prev) => [...prev, fetchCancelable]);
