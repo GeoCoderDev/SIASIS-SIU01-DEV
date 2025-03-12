@@ -13,7 +13,8 @@ const Home = () => {
     (state: RootState) => state.globalConstants.urlAPI
   );
   const getData = async () => {
-    return await userStorage.getUserData();
+    const f = await userStorage.getUserData();
+    console.log(f);
   };
 
   return (
@@ -62,7 +63,7 @@ const Home = () => {
       <h1 className="text-[2rem] hover:text-azul-principal">
         REGISTRAR RESPONSABLES
       </h1>
-      <p data-testId="desc">This is my description</p>
+  
       <p>This is a test {sidebarIsOpen}</p>
       <Image
         src="/images/svg/Logo.svg"
