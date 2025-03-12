@@ -1,4 +1,3 @@
-// IndexedDBConnection.ts - Clase singleton para manejar la conexión a IndexedDB
 
 export class IndexedDBConnection {
   private static instance: IndexedDBConnection;
@@ -10,6 +9,13 @@ export class IndexedDBConnection {
 
   // Definición de las colecciones y sus configuraciones
   private stores = {
+    user_data: {
+      keyPath: null,  // No usamos keyPath porque usamos keys explícitas ('current_user')
+      autoIncrement: false,
+      indexes: [
+        // No necesitamos índices ya que solo almacenamos un registro con key fija
+      ]
+    },
     directivos: {
       keyPath: "Id_Directivo",
       autoIncrement: true,

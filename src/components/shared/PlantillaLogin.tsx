@@ -15,11 +15,8 @@ import {
 import Loader from "./loaders/Loader";
 import ErrorMessage1 from "./errors/ErrorMessage1";
 import SuccessMessage1 from "./successes/SuccessMessage1";
-import { useIndexedDB } from "@/hooks/useIndexedDB";
-import directivoModel, {
-  DirectivoModel,
-  IDirectivo,
-} from "@/lib/utils/local/db/models/Directivo";
+import directivoModel from "@/lib/utils/local/db/models/DirectivoIDB";
+import userStorage from "@/lib/utils/local/db/models/UserStorage";
 
 export type RolForLogin =
   | "DIRECTIVO"
@@ -121,94 +118,24 @@ const PlantillaLogin = ({ rol, siasisAPI, endpoint }: PlantillaLoginProps) => {
     }
   };
 
-  const [isCreating, setIsCreating] = useState(false);
-  interface Result {
-    success: boolean;
-    message: string;
-  }
+  const pruebaModel = async () => {
+    const localDirectivos = await directivoModel.getAll();
 
-  const [result, setResult] = useState<Result | null>(null);
+    console.log(localDirectivos);
 
-  // Usar el hook personalizado para el modelo de directivo
-  const {
-    create,
-    error: error2,
-    loading,
-  } = useIndexedDB<IDirectivo, DirectivoModel>(directivoModel, {
-    loadOnInit: false, // No cargar datos al iniciar
-  });
+    await userStorage.saveUserData({ Apellidos: "Juan" });
 
-  const handleCreateMockedDirectivo = async () => {
-    setIsCreating(true);
-    setResult(null);
-
-    try {
-      // Datos mockeados del directivo
-      const mockedDirectivo: IDirectivo = {
-        Nombres: "María Isabel",
-        Apellidos: "Sánchez Rodríguez",
-        Genero: "F",
-        DNI: "45872369",
-        Nombre_Usuario: "director.asuncion8",
-        Correo_Electronico: "directora@asuncion8.edu.pe",
-        Celular: "987654321",
-        Contraseña: "Admin123",
-      };
-
-      // Usar el método create del hook para agregar el directivo
-      const id = await create(mockedDirectivo);
-
-      setResult({
-        success: true,
-        message: `Directivo creado exitosamente con ID: ${id}`,
-      });
-    } catch (error) {
-      setResult({
-        success: false,
-        message:
-          error instanceof Error
-            ? error.message
-            : "Error desconocido al crear directivo",
-      });
-    } finally {
-      setIsCreating(false);
-    }
+    const datauser = await userStorage.getUserData();
+    console.log(datauser);
   };
 
   return (
     <>
       {/* SECCION DE EXPERIMENTOS CON INDEXED DB */}
-      <div className="p-4 hidden">
-        <button
-          onClick={handleCreateMockedDirectivo}
-          disabled={isCreating || loading}
-          className="bg-color-interfaz text-blanco rounded-lg px-4 py-2 disabled:grayscale-[0.75]"
-        >
-          {isCreating ? "Creando directivo..." : "Crear Directivo de Prueba"}
-        </button>
-
-        {/* Mostrar error del hook si existe */}
-        {error && (
-          <div className="mt-4 p-3 rounded-lg bg-red-100 text-red-800">
-            Error en el hook: {error2}
-          </div>
-        )}
-
-        {/* Mostrar resultado de la operación */}
-        {result && (
-          <div
-            className={`mt-4 p-3 rounded-lg ${
-              result.success
-                ? "bg-green-100 text-green-800"
-                : "bg-red-100 text-red-800"
-            }`}
-          >
-            {result.message}
-          </div>
-        )}
+      <div className="p-4 -hidden">
+        <button onClick={pruebaModel}>PROBANDOOOOOOOOO</button>
+        <button />
       </div>
-
-
 
       <main className="w-full h-full min-h-screen bg-gris-claro max-sm:bg-blanco flex items-center justify-center max-sm:p-0">
         <div className="flex flex-row max-sm:flex-col bg-blanco shadow-[0px_0px_23.5px_5px_rgba(0,0,0,0.25)] max-sm:shadow-none max-sm:rounded-none max-sm:w-full max-sm:h-full p-8 max-sm:p-2 w-full max-w-2xl">
@@ -237,7 +164,7 @@ const PlantillaLogin = ({ rol, siasisAPI, endpoint }: PlantillaLoginProps) => {
                   name="Nombre_Usuario"
                   onChange={handleChange}
                   value={formularioLogin.Nombre_Usuario}
-                  placeholder="Ingrese su nombre de usuario"
+                  // placeholder="Ingrese su nombre de usuario"
                   className="w-full text-negro placeholder:text-gris-intermedio text-[1rem] outline-none bg-transparent px-2"
                 />
               </div>
