@@ -32,7 +32,7 @@ const SideBarElementDirectivo = ({
       {etiquetaSuperior && <span className="ml-6 mt-6 mb-2 text-[0.85rem]">{etiquetaSuperior}</span>}
 
       <InterceptedLinkForDataThatCouldBeLost
-        negativeCallback={() => {}}
+
         href={`${route}`}
       >
         <li

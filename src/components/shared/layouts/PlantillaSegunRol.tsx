@@ -15,9 +15,10 @@ const PlantillaSegunRol = async ({
 }) => {
   //Si se ha llegado hasta este componente es porque esas cookies estaran presentes
   const cookieStore = await cookies();
-  const rol = cookieStore.get("Rol");
-  const nombres = cookieStore.get("Nombres");
-  const apellidos = cookieStore.get("Apellidos");
+  const rol = cookieStore.get("Rol")!;
+  const nombres = cookieStore.get("Nombres")!;
+  const apellidos = cookieStore.get("Apellidos")!;
+  const genero = cookieStore.get("Genero")!;
   const googleDriveFotoId = cookieStore.get("Google_Drive_Foto_ID");
 
   if (!rol) {
@@ -29,8 +30,9 @@ const PlantillaSegunRol = async ({
     case RolesSistema.Directivo:
       return (
         <PlantillaDirectivo
-          Nombres={nombres!}
-          Apellidos={apellidos!}
+          Genero={genero}
+          Nombres={nombres}
+          Apellidos={apellidos}
           Google_Drive_Foto_ID={googleDriveFotoId}
         >
           {children}
@@ -39,8 +41,9 @@ const PlantillaSegunRol = async ({
     case RolesSistema.ProfesorPrimaria:
       return (
         <PlantillaProfesorPrimaria
-          Nombres={nombres!}
-          Apellidos={apellidos!}
+          Genero={genero}
+          Nombres={nombres}
+          Apellidos={apellidos}
           Google_Drive_Foto_ID={googleDriveFotoId}
         >
           {children}
@@ -50,8 +53,9 @@ const PlantillaSegunRol = async ({
     case RolesSistema.Auxiliar:
       return (
         <PlantillaAuxiliar
-          Nombres={nombres!}
-          Apellidos={apellidos!}
+          Genero={genero}
+          Nombres={nombres}
+          Apellidos={apellidos}
           Google_Drive_Foto_ID={googleDriveFotoId}
         >
           {children}
@@ -60,8 +64,9 @@ const PlantillaSegunRol = async ({
     case RolesSistema.ProfesorSecundaria:
       return (
         <PlantillaProfesorSecundaria
-          Nombres={nombres!}
-          Apellidos={apellidos!}
+          Genero={genero}
+          Nombres={nombres}
+          Apellidos={apellidos}
           Google_Drive_Foto_ID={googleDriveFotoId}
         >
           {children}
@@ -70,8 +75,9 @@ const PlantillaSegunRol = async ({
     case RolesSistema.Tutor:
       return (
         <PlantillaTutor
-          Nombres={nombres!}
-          Apellidos={apellidos!}
+          Genero={genero}
+          Nombres={nombres}
+          Apellidos={apellidos}
           Google_Drive_Foto_ID={googleDriveFotoId}
         >
           {children}
@@ -80,8 +86,9 @@ const PlantillaSegunRol = async ({
     case RolesSistema.Responsable:
       return (
         <PlantillaResponsable
-          Nombres={nombres!}
-          Apellidos={apellidos!}
+          Genero={genero}
+          Nombres={nombres}
+          Apellidos={apellidos}
           Google_Drive_Foto_ID={googleDriveFotoId}
         >
           {children}
@@ -90,8 +97,9 @@ const PlantillaSegunRol = async ({
     case RolesSistema.PersonalAdministrativo:
       return (
         <PlantillaPersonalAdministrativo
-          Nombres={nombres!}
-          Apellidos={apellidos!}
+          Genero={genero}
+          Nombres={nombres}
+          Apellidos={apellidos}
           Google_Drive_Foto_ID={googleDriveFotoId}
         >
           {children}

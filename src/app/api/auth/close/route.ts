@@ -6,12 +6,26 @@ export async function POST(request: NextRequest) {
 
   if (!token) return new Response(null, { status: 401 });
 
-  const cookieToken = serialize("token", "", {
+  const cookieNombres = serialize("Nombres", "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    sameSite: "strict",
-    maxAge: 0, // Expirar la cookie inmediatamente
+    sameSite: "lax",
+    maxAge: 0,
+  });
+  const cookieApellidos = serialize("Apellidos", "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    sameSite: "lax",
+    maxAge: 0,
+  });
+  const cookieGenero = serialize("Genero", "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    sameSite: "lax",
+    maxAge: 0,
   });
 
   const cookieRole = serialize("Rol", "", {
@@ -21,7 +35,13 @@ export async function POST(request: NextRequest) {
     sameSite: "strict",
     maxAge: 0, // Expirar la cookie inmediatamente
   });
-
+  const cookieToken = serialize("token", "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    sameSite: "strict",
+    maxAge: 0, // Expirar la cookie inmediatamente
+  });
   const googleDriveFotoId = serialize("Google_Drive_Foto_ID", "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -33,7 +53,7 @@ export async function POST(request: NextRequest) {
   return new Response(null, {
     status: 200,
     headers: {
-      "Set-Cookie": `${cookieToken}, ${cookieRole}, ${googleDriveFotoId}`,
+      "Set-Cookie": `${cookieNombres}, ${cookieApellidos}, ${cookieGenero}, ${cookieToken}, ${cookieRole}, ${googleDriveFotoId}`,
     },
   });
 }

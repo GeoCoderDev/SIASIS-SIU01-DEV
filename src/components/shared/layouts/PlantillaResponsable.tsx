@@ -7,10 +7,12 @@ const PlantillaResponsable = ({
   Nombres,
   Apellidos,
   Google_Drive_Foto_ID,
+  Genero,
 }: {
   children: React.ReactNode;
   Nombres: RequestCookie;
   Apellidos: RequestCookie;
+  Genero: RequestCookie;
   Google_Drive_Foto_ID: RequestCookie | undefined;
 }) => {
   return (
@@ -18,6 +20,7 @@ const PlantillaResponsable = ({
       <Header
         Nombres={Nombres}
         Apellidos={Apellidos}
+        Genero={Genero}
         Rol={RolesSistema.Responsable}
         Google_Drive_Foto_ID={Google_Drive_Foto_ID}
       />

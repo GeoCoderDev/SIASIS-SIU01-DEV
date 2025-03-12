@@ -1,4 +1,4 @@
-import Home from "@/components/Home";
+import Home from "@/components/BienvenidaCompo";
 import { render, screen } from "@testing-library/react";
 
 function sum(a: number, b: number) {

@@ -1,48 +1,88 @@
-// Definimos una interfaz para cada entrada de rol
-interface RolFormat {
-  desktop: string;
-  mobile: string;
+import { Genero } from "@/interfaces/Genero";
+import { RolesSistema } from "@/interfaces/RolesSistema";
+
+// Interfaz para el formato específico de cada rol por género
+type GeneroFormat = Record<Genero, string>;
+
+// Interfaz para el formato por dispositivo
+interface DispositivoFormat {
+  desktop: GeneroFormat;
+  mobile: GeneroFormat;
 }
 
-// Definimos una interfaz para el objeto completo de roles
-export interface RolesEspañolType {
-  D: RolFormat;
-  PP: RolFormat;
-  A: RolFormat;
-  PS: RolFormat;
-  T: RolFormat;
-  R: RolFormat;
-  PA: RolFormat;
-}
+// Definimos el tipo completo usando Records
+export type RolesEspañolType = Record<RolesSistema, DispositivoFormat>;
 
-// Objeto de roles con versiones para desktop y mobile
+// Implementación con Records
 export const RolesTextos: RolesEspañolType = {
   D: {
-    desktop: "Directivo",
-    mobile: "Directivo",
+    desktop: {
+      F: "Directiva",
+      M: "Directivo",
+    },
+    mobile: {
+      F: "Directiva",
+      M: "Directivo",
+    },
   },
   PP: {
-    desktop: "Profesor de Primaria",
-    mobile: "Prof. Primaria",
+    desktop: {
+      F: "Profesora de Primaria",
+      M: "Profesor de Primaria",
+    },
+    mobile: {
+      F: "Prof. Primaria",
+      M: "Prof. Primaria",
+    },
   },
   A: {
-    desktop: "Auxiliar",
-    mobile: "Auxiliar",
+    desktop: {
+      F: "Auxiliar",
+      M: "Auxiliar",
+    },
+    mobile: {
+      F: "Auxiliar",
+      M: "Auxiliar",
+    },
   },
   PS: {
-    desktop: "Profesor de Secundaria",
-    mobile: "Prof. Secundaria",
+    desktop: {
+      F: "Profesora de Secundaria",
+      M: "Profesor de Secundaria",
+    },
+    mobile: {
+      F: "Prof. Secundaria",
+      M: "Prof. Secundaria",
+    },
   },
   T: {
-    desktop: "Tutor de Secundaria",
-    mobile: "Tutor Sec.",
+    desktop: {
+      F: "Tutora de Secundaria",
+      M: "Tutor de Secundaria",
+    },
+    mobile: {
+      F: "Tutora Sec.",
+      M: "Tutor Sec.",
+    },
   },
   R: {
-    desktop: "Responsable",
-    mobile: "Responsable",
+    desktop: {
+      F: "Responsable",
+      M: "Responsable",
+    },
+    mobile: {
+      F: "Responsable",
+      M: "Responsable",
+    },
   },
   PA: {
-    desktop: "Personal de Limpieza",
-    mobile: "P. Limpieza",
+    desktop: {
+      F: "Personal de Limpieza",
+      M: "Personal de Limpieza",
+    },
+    mobile: {
+      F: "P. Limpieza",
+      M: "P. Limpieza",
+    },
   },
 };

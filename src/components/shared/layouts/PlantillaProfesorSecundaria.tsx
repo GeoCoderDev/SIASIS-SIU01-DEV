@@ -7,16 +7,19 @@ const PlantillaProfesorSecundaria = ({
   children,
   Nombres,
   Apellidos,
+  Genero,
   Google_Drive_Foto_ID,
 }: {
   children: React.ReactNode;
   Nombres: RequestCookie;
   Apellidos: RequestCookie;
+  Genero: RequestCookie;
   Google_Drive_Foto_ID: RequestCookie | undefined;
 }) => {
   return (
     <>
       <Header
+        Genero={Genero}
         Nombres={Nombres}
         Apellidos={Apellidos}
         Rol={RolesSistema.ProfesorSecundaria}

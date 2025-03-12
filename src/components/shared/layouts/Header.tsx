@@ -18,19 +18,22 @@ import { useEffect, useState } from "react";
 
 import { useDispatch, useSelector } from "react-redux";
 import LogoCabecera from "../logos/LogoCabecera";
-import { Link } from "next-view-transitions";
 import { logout } from "@/lib/helpers/logout";
 import DespliegueIcon from "@/components/icons/DespliegueIcon";
 import { RolesTextos } from "@/Assets/RolesTextos";
+import InterceptedLinkForDataThatCouldBeLost from "../InterceptedLinkForDataThatCouldBeLost";
+import { Genero } from "@/interfaces/Genero";
 
 const Header = ({
   Nombres,
   Apellidos,
+  Genero,
   Rol,
   Google_Drive_Foto_ID,
 }: {
   Nombres: RequestCookie;
   Apellidos: RequestCookie;
+  Genero: RequestCookie;
   Rol: RolesSistema;
   Google_Drive_Foto_ID: RequestCookie | undefined;
 }) => {
@@ -90,10 +93,10 @@ const Header = ({
     resizeObserverHeader.observe(headerHTML);
 
     delegarEvento(
-      "mouseup",
-      "#Menu-deplegable, #Menu-deplegable *",
+      "mousedown",
+      "#Menu-deplegable, #Menu-deplegable *, #despliegue-icon, #despliegue-icon *",
       () => {
-        // setMenuVisible(false);
+        setMenuVisible(false);
       },
       true
     );
@@ -174,10 +177,18 @@ const Header = ({
               {Apellidos.value.split(" ").shift()}
             </h1>
             <p className="text-blanco text-left text-[0.9rem] leading-4 sm:hidden italic">
-              {RolesTextos[Rol as keyof typeof RolesTextos].mobile}
+              {
+                RolesTextos[Rol as keyof typeof RolesTextos].mobile[
+                  Genero.value as Genero
+                ]
+              }
             </p>
             <p className="text-blanco text-left text-[0.9rem] leading-4 italic max-sm:hidden">
-              {RolesTextos[Rol as keyof typeof RolesTextos].desktop}
+              {
+                RolesTextos[Rol as keyof typeof RolesTextos].desktop[
+                  Genero.value as Genero
+                ]
+              }
             </p>
           </div>
 
@@ -205,11 +216,11 @@ const Header = ({
                 setMenuVisible(false);
               }}
             >
-              <Link href={"/editar_perfil"} as={"/editar-perfil"}>
+              <InterceptedLinkForDataThatCouldBeLost href={"/mis-datos"}>
                 <li className="hover:font-bold cursor-pointer h-10 flex items-center justify-center px-3 border-t border-gray-200 w-[8rem]">
                   Editar Perfil
                 </li>
-              </Link>
+              </InterceptedLinkForDataThatCouldBeLost>
               <li
                 className="border-t border-gray-200 h-10 hover:font-bold cursor-pointer flex items-center justify-center px-3 w-[8rem]"
                 onClick={logout}

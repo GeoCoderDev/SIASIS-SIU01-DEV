@@ -8,15 +8,18 @@ const PlantillaAuxiliar = ({
   Nombres,
   Apellidos,
   Google_Drive_Foto_ID,
+  Genero,
 }: {
   children: React.ReactNode;
   Nombres: RequestCookie;
   Apellidos: RequestCookie;
+  Genero: RequestCookie;
   Google_Drive_Foto_ID: RequestCookie | undefined;
 }) => {
   return (
     <>
       <Header
+        Genero={Genero}
         Google_Drive_Foto_ID={Google_Drive_Foto_ID}
         Nombres={Nombres}
         Apellidos={Apellidos}

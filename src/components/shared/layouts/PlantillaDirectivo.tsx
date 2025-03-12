@@ -3,20 +3,24 @@ import { RequestCookie } from "next/dist/compiled/@edge-runtime/cookies";
 import SidebarDirectivo from "./sidebars/SidebarDirectivo";
 import { RolesSistema } from "@/interfaces/RolesSistema";
 
+
 const PlantillaDirectivo = ({
   children,
   Nombres,
   Apellidos,
-  Google_Drive_Foto_ID,
+  Google_Drive_Foto_ID,Genero
 }: {
   children: React.ReactNode;
   Nombres: RequestCookie;
   Apellidos: RequestCookie;
+  Genero: RequestCookie;
+
   Google_Drive_Foto_ID: RequestCookie | undefined;
 }) => {
   return (
     <section className="max-w-screen grid  grid-rows-[min-content_1fr] min-h-[100dvh] -border-2 border-blue-500">
       <Header
+        Genero={Genero}
         Nombres={Nombres}
         Apellidos={Apellidos}
         Rol={RolesSistema.Directivo}

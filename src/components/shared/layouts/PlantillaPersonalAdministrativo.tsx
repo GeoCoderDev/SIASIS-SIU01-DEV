@@ -8,15 +8,18 @@ const PlantillaPersonalAdministrativo = ({
   Nombres,
   Apellidos,
   Google_Drive_Foto_ID,
+  Genero,
 }: {
   children: React.ReactNode;
   Nombres: RequestCookie;
   Apellidos: RequestCookie;
+  Genero: RequestCookie;
   Google_Drive_Foto_ID: RequestCookie | undefined;
 }) => {
   return (
     <>
       <Header
+        Genero={Genero}
         Nombres={Nombres}
         Apellidos={Apellidos}
         Rol={RolesSistema.PersonalAdministrativo}

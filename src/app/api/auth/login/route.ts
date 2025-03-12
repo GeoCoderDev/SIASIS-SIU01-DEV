@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
 
     const jsonData = JSON.parse(bodyString);
 
-    const { Apellidos, Nombres, Rol, token, Google_Drive_Foto_ID } =
+    const { Apellidos, Nombres, Rol, token, Google_Drive_Foto_ID, Genero } =
       jsonData as SuccessLoginData;
 
     if (!Nombres || !Apellidos || !Rol || !token) {
@@ -26,6 +26,13 @@ export async function POST(req: NextRequest) {
       maxAge: getExpirationSessionForRolInSeg(Rol),
     });
     const apellidosSerialize = serialize("Apellidos", Apellidos, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      sameSite: "lax",
+      maxAge: getExpirationSessionForRolInSeg(Rol),
+    });
+    const generoSerialize = serialize("Genero", Genero, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       path: "/",
@@ -62,7 +69,7 @@ export async function POST(req: NextRequest) {
     return new Response(null, {
       status: 201,
       headers: {
-        "Set-Cookie": `${nombresSerialize}, ${apellidosSerialize}, ${rolSerialize}, ${tokenSerialize}, ${
+        "Set-Cookie": `${nombresSerialize}, ${apellidosSerialize}, ${rolSerialize}, ${tokenSerialize}, ${generoSerialize}, ${
           Google_Drive_Foto_ID_Serialize || ""
         }`,
       },

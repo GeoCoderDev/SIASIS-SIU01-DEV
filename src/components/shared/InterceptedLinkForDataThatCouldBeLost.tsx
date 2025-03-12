@@ -5,20 +5,20 @@ import { useSelector } from "react-redux";
 
 type InterceptedLinkForDataThatCouldBeLostProps = Omit<
   InterceptedLinkProps,
-  "predicate"
+  "predicate" | "negativeCallback"
 >;
 
 const InterceptedLinkForDataThatCouldBeLost = ({
   children,
   href,
-  negativeCallback,
   className,
 }: InterceptedLinkForDataThatCouldBeLostProps) => {
   const thereIsDataCoudBeLost = useSelector(
     (state: RootState) => state.flags.dataCouldBeLost
   );
 
-  
+  const negativeCallback = () => {};
+
   return (
     <InterceptedLink
       predicate={() => thereIsDataCoudBeLost}
