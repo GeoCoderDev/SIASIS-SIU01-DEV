@@ -176,20 +176,20 @@ const Header = ({
               {Nombres.value.split(" ").shift()}{" "}
               {Apellidos.value.split(" ").shift()}
             </h1>
-            <p className="text-blanco text-left text-[0.9rem] leading-4 sm:hidden italic">
+            <i className="text-blanco text-left text-[0.9rem] leading-4 sm:hidden italic">
               {
                 RolesTextos[Rol as keyof typeof RolesTextos].mobile[
                   Genero.value as Genero
                 ]
               }
-            </p>
-            <p className="text-blanco text-left text-[0.9rem] leading-4 italic max-sm:hidden">
+            </i>
+            <i className="text-blanco text-left text-[0.9rem] leading-4 italic max-sm:hidden">
               {
                 RolesTextos[Rol as keyof typeof RolesTextos].desktop[
                   Genero.value as Genero
                 ]
               }
-            </p>
+            </i>
           </div>
 
           <img
