@@ -15,7 +15,6 @@ import {
 import Loader from "./loaders/Loader";
 import ErrorMessage1 from "./errors/ErrorMessage1";
 import SuccessMessage1 from "./successes/SuccessMessage1";
-import directivoModel from "@/lib/utils/local/db/models/DirectivoIDB";
 import userStorage from "@/lib/utils/local/db/models/UserStorage";
 
 export type RolForLogin =
@@ -107,6 +106,9 @@ const PlantillaLogin = ({ rol, siasisAPI, endpoint }: PlantillaLoginProps) => {
         throw new Error(message);
       }
 
+      //Guadando data en IndexedDB
+      await userStorage.saveUserData(data);
+
       setIsSomethingLoading(false);
       window.location.href = "/";
     } catch (error) {
@@ -118,23 +120,16 @@ const PlantillaLogin = ({ rol, siasisAPI, endpoint }: PlantillaLoginProps) => {
     }
   };
 
-  const pruebaModel = async () => {
-    const localDirectivos = await directivoModel.getAll();
-
-    console.log(localDirectivos);
-
-    await userStorage.saveUserData({ Apellidos: "Juan" });
-
-    const datauser = await userStorage.getUserData();
-    console.log(datauser);
+  const getData = async () => {
+    return await userStorage.getUserData();
   };
 
   return (
     <>
-      {/* SECCION DE EXPERIMENTOS CON INDEXED DB */}
-      <div className="p-4 -hidden">
-        <button onClick={pruebaModel}>PROBANDOOOOOOOOO</button>
-        <button />
+      <div>
+        <button onClick={getData} className="ring-2">
+          GET DATA
+        </button>
       </div>
 
       <main className="w-full h-full min-h-screen bg-gris-claro max-sm:bg-blanco flex items-center justify-center max-sm:p-0">
@@ -164,7 +159,7 @@ const PlantillaLogin = ({ rol, siasisAPI, endpoint }: PlantillaLoginProps) => {
                   name="Nombre_Usuario"
                   onChange={handleChange}
                   value={formularioLogin.Nombre_Usuario}
-                  // placeholder="Ingrese su nombre de usuario"
+                  placeholder="Ingrese su nombre de usuario"
                   className="w-full text-negro placeholder:text-gris-intermedio text-[1rem] outline-none bg-transparent px-2"
                 />
               </div>

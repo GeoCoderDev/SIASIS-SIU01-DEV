@@ -1,19 +1,11 @@
-import { RolesSistema } from "@/interfaces/RolesSistema";
-import dbConnection from "../IndexxedDBConnection";
 
-// Definimos una interfaz base con los campos comunes
-export interface BaseUserData {
-  Nombres: string;
-  Apellidos: string;
-  Rol: RolesSistema;
-  Genero: string;
-  Nombre_Usuario: string;
-  Google_Drive_Foto_ID?: string | null;
-  token: string;
-}
+import dbConnection from "../IndexxedDBConnection";
+import { SuccessLoginData } from "@/interfaces/SiasisAPIs";
+
+
 
 // El tipo UserData puede tener cualquier propiedad adicional
-export type UserData = BaseUserData & Record<string, string | null>;
+export type UserData = SuccessLoginData & Record<string, string | null>;
 
 class UserStorage {
   private storeName: string = "user_data";
@@ -23,7 +15,9 @@ class UserStorage {
    * @param userData Datos del usuario a guardar
    * @returns Promise que se resuelve cuando los datos se han guardado
    */
-  public async saveUserData(userData: Partial<BaseUserData>): Promise<void> {
+  public async saveUserData(
+    userData: Partial<SuccessLoginData>
+  ): Promise<void> {
     try {
       // Asegurarnos de que la conexión está inicializada
       await dbConnection.init();
