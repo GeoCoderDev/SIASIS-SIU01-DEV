@@ -33,7 +33,7 @@ const Header = ({
 }: {
   Nombres: RequestCookie;
   Apellidos: RequestCookie;
-  Genero: RequestCookie;
+  Genero?: RequestCookie;
   Rol: RolesSistema;
   Google_Drive_Foto_ID: RequestCookie | undefined;
 }) => {
@@ -179,14 +179,14 @@ const Header = ({
             <i className="text-blanco text-left text-[0.9rem] leading-4 sm:hidden italic">
               {
                 RolesTextos[Rol as keyof typeof RolesTextos].mobile[
-                  Genero.value as Genero
+                  Genero ? (Genero.value as Genero) : ("M" as Genero)
                 ]
               }
             </i>
             <i className="text-blanco text-left text-[0.9rem] leading-4 italic max-sm:hidden">
               {
                 RolesTextos[Rol as keyof typeof RolesTextos].desktop[
-                  Genero.value as Genero
+                  Genero ? (Genero.value as Genero) : ("M" as Genero)
                 ]
               }
             </i>

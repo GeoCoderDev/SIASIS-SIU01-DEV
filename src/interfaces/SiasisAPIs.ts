@@ -16,7 +16,7 @@ export interface ErrorResponseAPIBase {
 export interface SuccessLoginData {
   Nombres: string;
   Apellidos: string;
-  Genero: Genero;
+  Genero?: Genero;
   Rol: RolesSistema;
   token: string;
   Google_Drive_Foto_ID: string | null;

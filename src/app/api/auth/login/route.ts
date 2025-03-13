@@ -32,13 +32,16 @@ export async function POST(req: NextRequest) {
       sameSite: "lax",
       maxAge: getExpirationSessionForRolInSeg(Rol),
     });
-    const generoSerialize = serialize("Genero", Genero, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      sameSite: "lax",
-      maxAge: getExpirationSessionForRolInSeg(Rol),
-    });
+
+    const generoSerialize = Genero
+      ? serialize("Genero", Genero, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          path: "/",
+          sameSite: "lax",
+          maxAge: getExpirationSessionForRolInSeg(Rol),
+        })
+      : undefined;
 
     const rolSerialize = serialize("Rol", Rol, {
       httpOnly: true,
@@ -69,9 +72,9 @@ export async function POST(req: NextRequest) {
     return new Response(null, {
       status: 201,
       headers: {
-        "Set-Cookie": `${nombresSerialize}, ${apellidosSerialize}, ${rolSerialize}, ${tokenSerialize}, ${generoSerialize}, ${
-          Google_Drive_Foto_ID_Serialize || ""
-        }`,
+        "Set-Cookie": `${nombresSerialize}, ${apellidosSerialize}, ${rolSerialize}, ${tokenSerialize}, ${
+          generoSerialize ? generoSerialize + "," : ""
+        } ${Google_Drive_Foto_ID_Serialize || ""}`,
       },
     });
   } catch (error) {

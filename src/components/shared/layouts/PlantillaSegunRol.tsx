@@ -86,7 +86,6 @@ const PlantillaSegunRol = async ({
     case RolesSistema.Responsable:
       return (
         <PlantillaResponsable
-          Genero={genero}
           Nombres={nombres}
           Apellidos={apellidos}
           Google_Drive_Foto_ID={googleDriveFotoId}

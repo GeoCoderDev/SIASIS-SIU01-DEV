@@ -77,12 +77,12 @@ export const RolesTextos: RolesEspañolType = {
   },
   PA: {
     desktop: {
-      F: "Personal de Limpieza",
-      M: "Personal de Limpieza",
+      F: "Personal Administrativo",
+      M: "Personal Administrativo",
     },
     mobile: {
-      F: "P. Limpieza",
-      M: "P. Limpieza",
+      F: "P. Administrativo",
+      M: "P. Administrativo",
     },
   },
 };
