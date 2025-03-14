@@ -1,0 +1,3 @@
+[submodule "src/interfaces/shared-types"]
+	path = src/interfaces/shared-types
+	url = https://github.com/GeoCoderDev/Siasis-Shared-Types.git
