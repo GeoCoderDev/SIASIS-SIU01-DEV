@@ -4,18 +4,18 @@ import ContrasenaIcon from "../icons/ContrasenaIcon";
 import UsuarioIcon from "../icons/UsuarioIcon";
 import VolverIcon from "../icons/VolverIcon";
 import Image from "next/image";
-import { SiasisAPIS } from "@/interfaces/SiasisCompontes";
+import { SiasisAPIS } from "@/interfaces/shared/SiasisCompontes";
 import { useState } from "react";
 import useRequestAPIFeatures from "@/hooks/useRequestSiasisAPIFeatures";
 
-import {
-  ErrorResponseAPIBase,
-  ResponseSuccessLogin,
-} from "@/interfaces/SiasisAPIs";
 import Loader from "./loaders/Loader";
 import ErrorMessage1 from "./errors/ErrorMessage1";
 import SuccessMessage1 from "./successes/SuccessMessage1";
 import userStorage from "@/lib/utils/local/db/models/UserStorage";
+import {
+  ErrorResponseAPIBase,
+  ResponseSuccessLogin,
+} from "@/interfaces/shared/SiasisAPIs";
 
 export type RolForLogin =
   | "DIRECTIVO"
@@ -74,14 +74,14 @@ const PlantillaLogin = ({ rol, siasisAPI, endpoint }: PlantillaLoginProps) => {
     try {
       setIsSomethingLoading(true);
 
-      const fetchCancellable = fetchSiasisAPI(
+      const fetchCancellable = fetchSiasisAPI({
         endpoint,
-        "POST",
-        null,
-        JSON.stringify(formularioLogin)
-      );
+        method: "POST",
+        body: JSON.stringify(formularioLogin),
+        userAutheticated: false,
+      });
 
-      const res = await fetchCancellable.fetch();
+      const res = await (await fetchCancellable)!.fetch();
 
       if (!res.ok) {
         const error = (await res.json()) as ErrorResponseAPIBase;

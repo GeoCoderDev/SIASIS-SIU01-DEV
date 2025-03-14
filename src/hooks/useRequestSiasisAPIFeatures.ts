@@ -1,10 +1,8 @@
 import { useState } from "react";
-import {
-  ApiResponseBase,
-  SuccessResponseAPIBase,
-} from "@/interfaces/SiasisAPIs";
+
 import useSiasisAPIs from "./useSiasisAPIs";
-import { SiasisAPIS } from "@/interfaces/SiasisCompontes";
+import { SiasisAPIS } from "@/interfaces/shared/SiasisCompontes";
+import { ApiResponseBase, SuccessResponseAPIBase } from "@/interfaces/shared/SiasisAPIs";
 
 const useRequestAPIFeatures = (siasisAPI: SiasisAPIS) => {
   const [isSomethingLoading, setIsSomethingLoading] = useState(false);

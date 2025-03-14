@@ -1,5 +1,5 @@
-import { Genero } from "@/interfaces/Genero";
-import { RolesSistema } from "@/interfaces/RolesSistema";
+import { Genero } from "@/interfaces/shared/Genero";
+import { RolesSistema } from "@/interfaces/shared/RolesSistema";
 
 // Interfaz para el formato específico de cada rol por género
 type GeneroFormat = Record<Genero, string>;

@@ -1,4 +1,4 @@
-import { RolesSistema } from "@/interfaces/RolesSistema";
+import { RolesSistema } from "@/interfaces/shared/RolesSistema";
 
 export const DIRECTIVO_SESSION_EXPIRATION_seg = 60 * 60 * 5; // 5 horas
 export const PROFESOR_PRIMARIA_SESSION_EXPIRATION_seg = 60 * 60 * 5; // 5 horas

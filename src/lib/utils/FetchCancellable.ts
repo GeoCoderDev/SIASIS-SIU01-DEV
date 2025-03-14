@@ -1,13 +1,13 @@
-import { QueryParams } from "@/interfaces/CustomObjects";
+import { QueryParams } from "@/interfaces/shared/CustomObjects";
 
 export class FetchCancelable {
   public url: string;
   public options: RequestInit;
   public controller: AbortController;
   public signal: AbortSignal;
-  public queryParams: QueryParams;
+  public queryParams?: QueryParams;
 
-  constructor(url: string, options: RequestInit, queryParams: QueryParams) {
+  constructor(url: string, options: RequestInit, queryParams?: QueryParams) {
     let query = "";
 
     if (queryParams) {

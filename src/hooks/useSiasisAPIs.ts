@@ -1,34 +1,72 @@
 import { useState, useCallback } from "react";
 
-import { QueryParams } from "@/interfaces/CustomObjects";
-import { FetchCancelable } from "@/lib/utils/FetchCancellable";
+import { QueryParams } from "@/interfaces/shared/CustomObjects";
 import { MethodHTTP } from "@/interfaces/MethodsHTTP";
-import { SiasisAPIS } from "@/interfaces/SiasisCompontes";
+import { SiasisAPIS } from "@/interfaces/shared/SiasisCompontes";
 import getRandomAPI01IntanceURL from "@/lib/helpers/functions/getRandomAPI01InstanceURL";
 import getRandomAPI02IntanceURL from "@/lib/helpers/functions/getRandomAPI02Instance";
 
+import userStorage from "@/lib/utils/local/db/models/UserStorage";
+import { logout } from "@/lib/helpers/logout";
+import { FetchCancelable } from "@/lib/utils/FetchCancellable";
+
+interface FetchSiasisAPIs {
+  endpoint: string;
+  method: MethodHTTP;
+  queryParams?: QueryParams;
+  body?: BodyInit | string | null;
+  JSONBody?: boolean;
+  userAutheticated?: boolean;
+}
+
 const useSiasisAPIs = (siasisAPI: SiasisAPIS) => {
   const urlAPI =
-    siasisAPI == "API01" ? getRandomAPI01IntanceURL : getRandomAPI02IntanceURL;
+    siasisAPI === "API01" ? getRandomAPI01IntanceURL : getRandomAPI02IntanceURL;
 
   const [fetchCancelables, setFetchCancelables] = useState<FetchCancelable[]>(
     []
   );
 
   const fetchSiasisAPI = useCallback(
-    (
-      endpoint: string,
-      method: MethodHTTP = "GET",
-      queryParams: QueryParams | null = null,
-      body: BodyInit | string | null = null,
-      JSONBody: boolean = true
-    ) => {
-      const headers: { ["Content-Type"]?: string } = {};
+    async ({
+      JSONBody = true,
+      body = null,
+      endpoint,
+      method = "GET",
+      queryParams,
+      userAutheticated = true,
+    }: FetchSiasisAPIs) => {
+      // Obtener token de manera asíncrona si el usuario debe estar autenticado
+      let token: string | null = null;
+
+      if (userAutheticated) {
+        try {
+          token = await userStorage.getAuthToken();
+
+          // Si se requiere autenticación pero no hay token, hacer logout
+          if (!token) {
+            logout();
+            return;
+          }
+        } catch (error) {
+          console.error("Error al obtener el token:", error);
+          logout();
+          return;
+        }
+      }
+
+      // Preparar headers
+      const headers: Record<string, string> = {};
 
       if (JSONBody) {
         headers["Content-Type"] = "application/json";
       }
 
+      if (token && userAutheticated) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      // Crear la instancia FetchCancelable
       const fetchCancelable = new FetchCancelable(
         `${urlAPI()}${endpoint}`,
         {
@@ -36,16 +74,24 @@ const useSiasisAPIs = (siasisAPI: SiasisAPIS) => {
           headers,
           body,
         },
-        queryParams as QueryParams
+        queryParams
       );
 
+      // Registrar la instancia para poder cancelarla posteriormente si es necesario
       setFetchCancelables((prev) => [...prev, fetchCancelable]);
+
       return fetchCancelable;
     },
     [urlAPI]
   );
 
-  return { fetchSiasisAPI, fetchCancelables };
+  // Función para cancelar todas las peticiones pendientes
+  const cancelAllRequests = useCallback(() => {
+    fetchCancelables.forEach((fetchCancelable) => fetchCancelable.cancel());
+    setFetchCancelables([]);
+  }, [fetchCancelables]);
+
+  return { fetchSiasisAPI, fetchCancelables, cancelAllRequests };
 };
 
 export default useSiasisAPIs;

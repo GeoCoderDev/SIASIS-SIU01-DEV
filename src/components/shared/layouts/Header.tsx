@@ -11,7 +11,7 @@ import {
 } from "@/global/state/Flags/sidebarIsOpen";
 import { RootState } from "@/global/store";
 import { useDelegacionEventos } from "@/hooks/useDelegacionDeEventos";
-import { RolesSistema } from "@/interfaces/RolesSistema";
+import { RolesSistema } from "@/interfaces/shared/RolesSistema";
 import { RequestCookie } from "next/dist/compiled/@edge-runtime/cookies";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -22,7 +22,7 @@ import { logout } from "@/lib/helpers/logout";
 import DespliegueIcon from "@/components/icons/DespliegueIcon";
 import { RolesTextos } from "@/Assets/RolesTextos";
 import InterceptedLinkForDataThatCouldBeLost from "../InterceptedLinkForDataThatCouldBeLost";
-import { Genero } from "@/interfaces/Genero";
+import { Genero } from "@/interfaces/shared/Genero";
 
 const Header = ({
   Nombres,

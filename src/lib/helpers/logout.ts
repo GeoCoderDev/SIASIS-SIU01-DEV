@@ -1,6 +1,11 @@
+import { LogoutTypes } from "@/interfaces/LogoutTypes";
 import userStorage from "../utils/local/db/models/UserStorage";
 
-export const logout = async () => {
+export const logout = async (
+  logoutType: LogoutTypes = LogoutTypes.DECISION_USUARIO
+) => {
+  console.log(logoutType);
+
   try {
     await fetch("/api/auth/close", { method: "POST" });
     localStorage.clear();

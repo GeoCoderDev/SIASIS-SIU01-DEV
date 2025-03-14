@@ -1,5 +1,9 @@
 import UserCard from "../../../components/shared/cards/UserCard";
 const MisDatos = () => {
+
+  
+
+
   return (
     <div className="border-2 border-blue-500 w-full max-w-[75rem] h-full grid grid-cols-7 grid-rows-[min-content_1fr]">
       <div className="flex col-span-full border-2">

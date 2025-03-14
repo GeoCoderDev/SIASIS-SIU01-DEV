@@ -1,6 +1,6 @@
 import { ReactElement } from "react";
 
-import { RolesSistema } from "@/interfaces/RolesSistema";
+import { RolesSistema } from "@/interfaces/shared/RolesSistema";
 import { IconProps } from "@/interfaces/IconProps";
 import AulaIcon from "@/components/icons/AulaIcon";
 import EstudianteIcon from "@/components/icons/EstudianteIcon";
@@ -142,7 +142,6 @@ const allSiasisModules: SiasisModule[] = [
     },
     allowedRoles: [RolesSistema.Directivo],
   },
-
 ];
 
 export default allSiasisModules;

@@ -6,7 +6,7 @@ import PlantillaTutor from "./PlantillaTutor";
 import PlantillaResponsable from "./PlantillaResponsable";
 import PlantillaPersonalAdministrativo from "./PlantillaPersonalAdministrativo";
 import { cookies } from "next/headers";
-import { RolesSistema } from "@/interfaces/RolesSistema";
+import { RolesSistema } from "@/interfaces/shared/RolesSistema";
 
 const PlantillaSegunRol = async ({
   children,

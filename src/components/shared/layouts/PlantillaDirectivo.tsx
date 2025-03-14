@@ -1,14 +1,14 @@
 import Header from "./Header";
 import { RequestCookie } from "next/dist/compiled/@edge-runtime/cookies";
 import SidebarDirectivo from "./sidebars/SidebarDirectivo";
-import { RolesSistema } from "@/interfaces/RolesSistema";
-
+import { RolesSistema } from "@/interfaces/shared/RolesSistema";
 
 const PlantillaDirectivo = ({
   children,
   Nombres,
   Apellidos,
-  Google_Drive_Foto_ID,Genero
+  Google_Drive_Foto_ID,
+  Genero,
 }: {
   children: React.ReactNode;
   Nombres: RequestCookie;

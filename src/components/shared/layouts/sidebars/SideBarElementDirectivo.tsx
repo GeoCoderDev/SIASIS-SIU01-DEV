@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import InterceptedLinkForDataThatCouldBeLost from "../../InterceptedLinkForDataThatCouldBeLost";
 import { SiasisModule } from "@/Assets/routes/modules.routes";
-import { RolesSistema } from "@/interfaces/RolesSistema";
+import { RolesSistema } from "@/interfaces/shared/RolesSistema";
 
 const SideBarElementDirectivo = ({
   IconTSX,
@@ -29,12 +29,13 @@ const SideBarElementDirectivo = ({
 
   return renderizar ? (
     <>
-      {etiquetaSuperior && <span className="ml-6 mt-6 mb-2 text-[0.85rem]">{etiquetaSuperior}</span>}
+      {etiquetaSuperior && (
+        <span className="ml-6 mt-6 mb-2 text-[0.85rem]">
+          {etiquetaSuperior}
+        </span>
+      )}
 
-      <InterceptedLinkForDataThatCouldBeLost
-
-        href={`${route}`}
-      >
+      <InterceptedLinkForDataThatCouldBeLost href={`${route}`}>
         <li
           className={` flex items-center pl-5 pr-8 overflow-hidden min-w-[12.5rem] max-w-[25rem]  ${
             !isSelected && "hover:bg-gray-200"

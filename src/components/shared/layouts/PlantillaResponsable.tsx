@@ -1,6 +1,6 @@
 import { RequestCookie } from "next/dist/compiled/@edge-runtime/cookies";
 import Header from "./Header";
-import { RolesSistema } from "@/interfaces/RolesSistema";
+import { RolesSistema } from "@/interfaces/shared/RolesSistema";
 
 const PlantillaResponsable = ({
   children,

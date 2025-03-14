@@ -20,6 +20,9 @@
   --negro: #000;
 }
 
+
+/* ESTILOS TOTALES 👁️ ============================================================================*/
+
 * {
   box-sizing: border-box;
 }
@@ -27,10 +30,16 @@
 body {
 }
 
+/* AUTOCOMPLETADO TRANSPARENTE */
 input:-webkit-autofill {
   transition: background-color 5000s ease-in-out 0s;
 }
 
+
+/* CLASES UTILES 🔁 ==============================================================================*/
+
+
+/* LOADER */
 .loader {
   aspect-ratio: 1;
   border-radius: 50%;
@@ -44,5 +53,23 @@ input:-webkit-autofill {
 @keyframes FadeRotate {
   to {
     transform: rotate(1turn);
+  }
+}
+
+
+/* ANIMACION DE SKELETO */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
   }
 }

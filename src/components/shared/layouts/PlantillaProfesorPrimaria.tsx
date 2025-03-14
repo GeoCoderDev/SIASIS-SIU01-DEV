@@ -1,7 +1,7 @@
 import { RequestCookie } from "next/dist/compiled/@edge-runtime/cookies";
 import React from "react";
 import Header from "./Header";
-import { RolesSistema } from "@/interfaces/RolesSistema";
+import { RolesSistema } from "@/interfaces/shared/RolesSistema";
 
 const PlantillaProfesorPrimaria = ({
   children,
