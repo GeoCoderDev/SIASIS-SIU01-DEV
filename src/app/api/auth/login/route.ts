@@ -1,5 +1,6 @@
 import { getExpirationSessionForRolInSeg } from "@/constants/expirations";
-import { SuccessLoginData } from "@/interfaces/shared/SiasisAPIs";
+import { SuccessLoginData } from "@/interfaces/shared/apis/shared/login/types";
+
 
 import { serialize } from "cookie";
 import { NextRequest } from "next/server";
