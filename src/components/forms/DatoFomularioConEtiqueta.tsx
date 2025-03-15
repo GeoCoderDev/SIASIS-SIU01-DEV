@@ -9,6 +9,7 @@ interface DatoFomularioConEtiquetaProps<T, R> {
   className?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   fullWidth?: boolean;
+  skeletonClassName?: { className: string };
 }
 
 const DatoFomularioConEtiqueta = <T, R>({
@@ -20,6 +21,7 @@ const DatoFomularioConEtiqueta = <T, R>({
   className = "",
   onChange,
   fullWidth = false,
+  skeletonClassName,
 }: DatoFomularioConEtiquetaProps<T, R>) => {
   return (
     <label
@@ -29,8 +31,10 @@ const DatoFomularioConEtiqueta = <T, R>({
     >
       {etiqueta}:
       <div
-        className={`min-h-[2rem] min-w-[8rem] text-[1.2rem] ${
-          valor === undefined ? "skeleton" : ""
+        className={`min-h-[2rem] text-[1.2rem] ${
+          valor === undefined
+            ? `skeleton min-w-[8rem] ${skeletonClassName?.className}`
+            : ""
         }`}
       >
         {valor !== undefined ? (

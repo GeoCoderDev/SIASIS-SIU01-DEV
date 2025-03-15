@@ -122,7 +122,7 @@ const MisDatosDirectivo = ({
                 etiqueta="DNI"
                 nombreDato="DNI"
                 valor={misDatosDirectivo.DNI}
-                modificable={false}
+                modificable={true}
                 className="text-[1.6rem]"
                 fullWidth
               />
@@ -145,9 +145,10 @@ const MisDatosDirectivo = ({
                 modoEdicion={modoEdicion}
                 etiqueta="Género"
                 nombreDato="Genero"
+                skeletonClassName={{className:"min-w-[1rem]"}}
                 valor={misDatosDirectivo.Genero}
                 modificable={false}
-                className="-text-[1.6rem] w-full mt-2"
+                className="-text-[1.6rem] w-min mt-2"
               />
               <DatoFomularioConEtiqueta<string, MisDatosDirectivo>
                 modoEdicion={modoEdicion}
@@ -160,6 +161,24 @@ const MisDatosDirectivo = ({
             </FormSection>
 
             <FormSection titulo="Informacion del Usuario">
+              <DatoFomularioConEtiqueta<string, MisDatosDirectivo> 
+                modoEdicion={modoEdicion}
+                etiqueta="Nombre de Usuario"
+                nombreDato="Nombre_Usuario"
+                valor={misDatosDirectivo.Nombre_Usuario}
+                modificable={false}
+                onChange={handleChange}
+                className="-text-[1.6rem] w-full mt-2"
+              />
+              <DatoFomularioConEtiqueta<string, MisDatosDirectivo> 
+                modoEdicion={modoEdicion}
+                etiqueta="Nombre de Usuario"
+                nombreDato="Nombre_Usuario"
+                valor={misDatosDirectivo.Nombre_Usuario}
+                modificable={false}
+                onChange={handleChange}
+                className="-text-[1.6rem] w-full mt-2"
+              />
               <DatoFomularioConEtiqueta<string, MisDatosDirectivo> 
                 modoEdicion={modoEdicion}
                 etiqueta="Nombre de Usuario"
