@@ -51,7 +51,7 @@ const MisDatosDirectivo = ({
           },
         });
 
-        if (!fetchCancelable) throw new Error("Fetch cancelado");
+        if (!fetchCancelable) throw new Error();
 
         const res = await fetchCancelable.fetch();
         const responseJson = (await res.json()) as ApiResponseBase;
@@ -160,7 +160,7 @@ const MisDatosDirectivo = ({
             </FormSection>
 
             <FormSection titulo="Informacion del Usuario">
-              <DatoFomularioConEtiqueta<string, MisDatosDirectivo>
+              <DatoFomularioConEtiqueta<string, MisDatosDirectivo> 
                 modoEdicion={modoEdicion}
                 etiqueta="Nombre de Usuario"
                 nombreDato="Nombre_Usuario"

@@ -13,14 +13,14 @@ export interface ApiResponseBase extends MessageProperty {
 }
 
 export interface SuccessResponseAPIBase extends ApiResponseBase {
-  readonly success: true;
+  success: true;
   message: string;
   data?: any;
 }
 
 export interface ErrorResponseAPIBase extends ApiResponseBase {
   message: string;
-  readonly success: false;
+  success: false;
   details?: any;
   errorType?: AllErrorTypes;
 }

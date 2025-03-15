@@ -30,7 +30,7 @@ export interface FormularioLogin {
 
 interface PlantillaLoginProps {
   rol: RolForLogin;
-  siasisAPI: SiasisAPIS ;
+  siasisAPI: SiasisAPIS;
   endpoint: string;
 }
 
@@ -109,11 +109,13 @@ const PlantillaLogin = ({ rol, siasisAPI, endpoint }: PlantillaLoginProps) => {
 
       setIsSomethingLoading(false);
       window.location.href = "/";
-    } catch (error) {
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (e) {
       setIsSomethingLoading(false);
       setError({
-        message:
-          (error as Error)?.message ?? "Ocurrio un error interno en el sistema",
+        message: "Ocurrio un error interno en el sistema",
+        success: false,
       });
     }
   };
@@ -172,7 +174,7 @@ const PlantillaLogin = ({ rol, siasisAPI, endpoint }: PlantillaLoginProps) => {
                 <span className="font-bold">{intentosRestantes}</span>
               </p>
 
-              {error && <ErrorMessage1 message={error.message} />}
+              {error && <ErrorMessage1 {...error} />}
 
               {successMessage && (
                 <SuccessMessage1 message={successMessage.message} />
