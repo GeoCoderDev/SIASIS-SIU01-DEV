@@ -1,5 +1,5 @@
-import { SuccessLoginData } from "@/interfaces/shared/SiasisAPIs";
-import dbConnection from "../IndexxedDBConnection";
+import { SuccessLoginData } from "@/interfaces/shared/apis/shared/login/types";
+import dbConnection from "../IndexedDBConnection";
 
 // El tipo UserData puede tener cualquier propiedad adicional
 export type UserData = SuccessLoginData & Record<string, string | null>;
