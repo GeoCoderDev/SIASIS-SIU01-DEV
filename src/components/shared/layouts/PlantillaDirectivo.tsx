@@ -15,7 +15,7 @@ const PlantillaDirectivo = ({
   Apellidos: RequestCookie;
   Genero: RequestCookie;
 
-  Google_Drive_Foto_ID: RequestCookie | undefined;
+  Google_Drive_Foto_ID: string | null;
 }) => {
   return (
     <section className="max-w-screen grid  grid-rows-[min-content_1fr] min-h-[100dvh] -border-2 border-blue-500">

@@ -14,7 +14,7 @@ const PlantillaProfesorPrimaria = ({
   Nombres: RequestCookie;
   Apellidos: RequestCookie;
   Genero: RequestCookie;
-  Google_Drive_Foto_ID: RequestCookie | undefined;
+  Google_Drive_Foto_ID: string | null;
 }) => {
   return (
     <>

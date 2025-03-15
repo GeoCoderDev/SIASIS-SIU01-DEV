@@ -19,7 +19,8 @@ const PlantillaSegunRol = async ({
   const nombres = cookieStore.get("Nombres")!;
   const apellidos = cookieStore.get("Apellidos")!;
   const genero = cookieStore.get("Genero")!;
-  const googleDriveFotoId = cookieStore.get("Google_Drive_Foto_ID");
+  const googleDriveFotoId =
+    cookieStore.get("Google_Drive_Foto_ID")?.value || null;
 
   if (!rol) {
     // Redirección del lado del servidor si no hay rol y no estamos ya en /login

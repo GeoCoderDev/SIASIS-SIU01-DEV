@@ -1,0 +1,5 @@
+export enum LogoutTypes {
+  DECISION_USUARIO,
+  SESION_EXPIRADA,
+  ERROR_SISTEMA,
+}

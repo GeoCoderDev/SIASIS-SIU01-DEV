@@ -12,4 +12,5 @@ export type TypeEventAvailable =
   | "change"
   | "input"
   | "keyup"
-  | "keydown";
+  | "keydown"
+  | "error";

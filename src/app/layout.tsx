@@ -6,6 +6,9 @@ import WindowDimensionsLabel from "../components/shared/WindowDimensionsLabel";
 import { ViewTransitions } from "next-view-transitions";
 import dotenv from "dotenv";
 import PlantillaSegunRol from "@/components/shared/layouts/PlantillaSegunRol";
+import NextTopLoader from "nextjs-toploader";
+import { ColorHexadecimal } from "@/interfaces/Colors";
+import { getRandomContrastColor } from "@/lib/helpers/colors/getRandomContrastColor";
 
 dotenv.config();
 
@@ -29,7 +32,9 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const interfazColor = "#dd3524";
+  
+  const interfazColor: ColorHexadecimal = "#dd3524";
+  const contrastColor = getRandomContrastColor(interfazColor);
 
   return (
     <ViewTransitions>
@@ -39,13 +44,24 @@ export default async function RootLayout({
         >
           <style>
             {`
-      
-        :root{
-          --color-interfaz: ${interfazColor};
-        }
+            
+              :root{
+                --color-interfaz: ${interfazColor};
+              }
 
-      `}
+            `}
           </style>
+          <NextTopLoader
+            color={contrastColor}
+            initialPosition={0.08}
+            crawlSpeed={200}
+            height={3}
+            crawl={true}
+            showSpinner={false}
+            easing="ease"
+            speed={200}
+            shadow={`0 0 10px ${contrastColor},0 0 5px ${contrastColor}`}
+          />
 
           <WindowDimensionsLabel />
           <ProviderStore>

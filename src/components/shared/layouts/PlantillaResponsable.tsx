@@ -11,7 +11,7 @@ const PlantillaResponsable = ({
   children: React.ReactNode;
   Nombres: RequestCookie;
   Apellidos: RequestCookie;
-  Google_Drive_Foto_ID: RequestCookie | undefined;
+  Google_Drive_Foto_ID: string | null;
 }) => {
   return (
     <>

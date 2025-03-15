@@ -4,7 +4,6 @@ import ContrasenaIcon from "../icons/ContrasenaIcon";
 import UsuarioIcon from "../icons/UsuarioIcon";
 import VolverIcon from "../icons/VolverIcon";
 import Image from "next/image";
-import { SiasisAPIS } from "@/interfaces/shared/SiasisCompontes";
 import { useState } from "react";
 import useRequestAPIFeatures from "@/hooks/useRequestSiasisAPIFeatures";
 
@@ -12,10 +11,9 @@ import Loader from "./loaders/Loader";
 import ErrorMessage1 from "./errors/ErrorMessage1";
 import SuccessMessage1 from "./successes/SuccessMessage1";
 import userStorage from "@/lib/utils/local/db/models/UserStorage";
-import {
-  ErrorResponseAPIBase,
-  ResponseSuccessLogin,
-} from "@/interfaces/shared/SiasisAPIs";
+import { SiasisAPIS } from "@/interfaces/shared/SiasisComponents";
+import { ErrorResponseAPIBase } from "@/interfaces/shared/apis/types";
+import { ResponseSuccessLogin } from "@/interfaces/shared/apis/shared/login/types";
 
 export type RolForLogin =
   | "DIRECTIVO"
@@ -32,7 +30,7 @@ export interface FormularioLogin {
 
 interface PlantillaLoginProps {
   rol: RolForLogin;
-  siasisAPI: SiasisAPIS;
+  siasisAPI: SiasisAPIS ;
   endpoint: string;
 }
 

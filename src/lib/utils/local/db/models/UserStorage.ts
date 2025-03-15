@@ -1,8 +1,5 @@
-
+import { SuccessLoginData } from "@/interfaces/shared/SiasisAPIs";
 import dbConnection from "../IndexxedDBConnection";
-import { SuccessLoginData } from "@/interfaces/SiasisAPIs";
-
-
 
 // El tipo UserData puede tener cualquier propiedad adicional
 export type UserData = SuccessLoginData & Record<string, string | null>;
@@ -102,7 +99,7 @@ class UserStorage {
       // Actualizar solo el token
       await this.saveUserData({
         ...userData,
-        token: token,
+        token,
       });
     } catch (error) {
       console.error("Error al actualizar token de autenticación:", error);
@@ -117,7 +114,7 @@ class UserStorage {
   public async getAuthToken(): Promise<string | null> {
     try {
       const userData = await this.getUserData();
-      return userData?.AuthToken || null;
+      return userData?.token || null;
     } catch (error) {
       console.error("Error al obtener token de autenticación:", error);
       throw error;

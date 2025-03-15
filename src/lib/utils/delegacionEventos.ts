@@ -9,8 +9,6 @@ export const initializeDelegacion = () => {
   // ELEMENTO HTML , ASI QUE DARA FALSO SIEMPRE QUE SE DEA ESTE CASO YA QUE NUNCA SE PASARIA BODY COMO SELECTOR
   // Y SE PROCEDERIA A LA SIGUIENTE PROPOSICION LA CUAL SERIA EXCLUSIVAMENTE PARA ELEMENTOS HTML
 
-
-
   interface EventPayload {
     selectorOElementoHTML: string | HTMLElement;
     callback: (e: Event) => void;
@@ -495,6 +493,47 @@ export const initializeDelegacion = () => {
     });
   });
 
+  // EVENTO ERROR (para imágenes, scripts, etc.)
+  const mapaDeEventosError = new Map<number, EventPayload>();
+  let eventosErrorID = 0;
+
+  function agregarEventoError(
+    querySelectorOElementoHTML: string | HTMLElement,
+    callback: (e: Event) => void,
+    except: boolean
+  ) {
+    mapaDeEventosError.set(eventosErrorID, {
+      selectorOElementoHTML: querySelectorOElementoHTML,
+      callback: callback,
+      except,
+    });
+    return eventosErrorID++;
+  }
+
+  document.addEventListener(
+    "error",
+    (e: Event) => {
+      // El evento error en el documento sólo se propaga cuando está en elementos que se cargan
+      // como imágenes, scripts, iframes, etc.
+      mapaDeEventosError.forEach((Evento) => {
+        const target = e.target as HTMLElement;
+
+        const matchesSelector =
+          typeof Evento.selectorOElementoHTML === "string"
+            ? target.matches(Evento.selectorOElementoHTML)
+            : target === Evento.selectorOElementoHTML;
+
+        const shouldExecuteCallback = Evento.except
+          ? !matchesSelector
+          : matchesSelector;
+
+        if (shouldExecuteCallback) {
+          Evento.callback(e);
+        }
+      });
+    }
+  );
+
   /**
    *
    * @param {TypeEventAvailable} typeEvent aqui escoges que tipo de evento quieres agregar, ejemplo: click,mousemove,etc
@@ -558,6 +597,8 @@ export const initializeDelegacion = () => {
 
       case "keydown":
         return agregarEventoKeydown(querySelectorOrElement, callback, except);
+      case "error":
+        return agregarEventoError(querySelectorOrElement, callback, except);
     }
   }
 
@@ -623,6 +664,8 @@ export const initializeDelegacion = () => {
       case "keydown":
         mapaDeEventosKeydown.delete(idEvento);
         break;
+      case "error":
+        mapaDeEventosError.delete(idEvento);
     }
   }
 

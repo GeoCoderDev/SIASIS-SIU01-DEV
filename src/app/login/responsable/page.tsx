@@ -6,7 +6,7 @@ export default function ResponsableLogin() {
   return (
     <PlantillaLogin
       endpoint="/api/login/responsable"
-      rol="PROFESOR DE PRIMARIA"
+      rol="RESPONSABLE(Padre/Apoderado)"
       siasisAPI="API02"
     />
   );

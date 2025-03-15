@@ -23,6 +23,7 @@ import DespliegueIcon from "@/components/icons/DespliegueIcon";
 import { RolesTextos } from "@/Assets/RolesTextos";
 import InterceptedLinkForDataThatCouldBeLost from "../InterceptedLinkForDataThatCouldBeLost";
 import { Genero } from "@/interfaces/shared/Genero";
+import FotoPerfilSideServer from "../../utils/photos/FotoPerfilClientSide";
 
 const Header = ({
   Nombres,
@@ -35,7 +36,7 @@ const Header = ({
   Apellidos: RequestCookie;
   Genero?: RequestCookie;
   Rol: RolesSistema;
-  Google_Drive_Foto_ID: RequestCookie | undefined;
+  Google_Drive_Foto_ID: string | null;
 }) => {
   const sidebarIsOpen = useSelector(
     (state: RootState) => state.flags.sidebarIsOpen
@@ -55,9 +56,6 @@ const Header = ({
   };
 
   const { delegarEvento } = useDelegacionEventos();
-  // const { UserSessionData } = useUserSessionData() as {
-  //   UserSessionData: UserData;
-  // };
 
   useEffect(() => {
     // if (!UserSessionData) return;
@@ -101,38 +99,11 @@ const Header = ({
       true
     );
 
-    // const getPhotoPerfilImage = async () => {
-    //   if (isLoginPage) return;
-
-    //   const resToken = await fetch("/api/auth/myToken");
-    //   if (!resToken.ok) return;
-
-    //   const { token } = await resToken.json();
-
-    //   const resImage = await fetch(`${urlAPI}/api/auth/me/image`, {
-    //     method: "GET",
-    //     headers: { Authorization: token },
-    //   });
-
-    //   if (resImage.ok) {
-    //     const { Foto_Perfil_URL } = await resImage.json();
-    //     UserSessionData.urlImage = Foto_Perfil_URL;
-    //   }
-    // };
-
-    // Solicitando la imagen de perfil del usuario
-    // if (
-    //   UserSessionData.role === "student" ||
-    //   UserSessionData.role === "teacher"
-    // ) {
-    //   getPhotoPerfilImage();
-    // }
-
     return () => {
       resizeObserverHeader.observe(headerHTML);
       window.removeEventListener("resize", handleResize);
     };
-  }, [delegarEvento /* UserSessionData*/]);
+  }, [delegarEvento]);
 
   return isLoginPage ? (
     <></>
@@ -141,7 +112,7 @@ const Header = ({
       <header
         style={{ boxShadow: "0 0px 2px 2px rgba(0,0,0,0.2)" }}
         id="header"
-        className="flex w-full items-center gap-x-4 text-center z-[1000] bg-verde-spotify py-3 sticky top-0 left-0 max-w-full px-4 sm:pl-6 sm:pr-4 text-xs sm:text-base min-h-[5rem] bg-color-interfaz justify-start"
+        className="-opacity-[0] flex w-full items-center gap-x-4 text-center z-[1000] bg-verde-spotify py-3 sticky top-0 left-0 max-w-full px-4 sm:pl-6 sm:pr-4 text-xs sm:text-base min-h-[5rem] bg-color-interfaz justify-start"
       >
         <div
           className="cursor-pointer select-none"
@@ -192,16 +163,7 @@ const Header = ({
             </i>
           </div>
 
-          <img
-            style={{ boxShadow: "0 0px 8px rgba(0, 0, 0, 0.2)" }}
-            className="aspect-square w-12 max-h-12  max-md:mr-2  rounded-[50%] border border-[#ffffff60] bg-contain object-cover bg-no-repeat bg-center"
-            src={
-              Google_Drive_Foto_ID
-                ? `https://drive.google.com/thumbnail?id=${Google_Drive_Foto_ID.value}`
-                : "/images/svg/No-Foto-Perfil.svg"
-            }
-            alt="Foto"
-          />
+          <FotoPerfilSideServer Google_Drive_Foto_ID={Google_Drive_Foto_ID} />
 
           <div id="despliegue-icon" onClick={toggleMenu} className="relative">
             <DespliegueIcon className="text-blanco aspect-auto sm:w-7 w-10 hover:cursor-pointer" />

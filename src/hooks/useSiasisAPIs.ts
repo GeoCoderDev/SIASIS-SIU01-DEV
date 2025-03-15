@@ -2,13 +2,14 @@ import { useState, useCallback } from "react";
 
 import { QueryParams } from "@/interfaces/shared/CustomObjects";
 import { MethodHTTP } from "@/interfaces/MethodsHTTP";
-import { SiasisAPIS } from "@/interfaces/shared/SiasisCompontes";
 import getRandomAPI01IntanceURL from "@/lib/helpers/functions/getRandomAPI01InstanceURL";
 import getRandomAPI02IntanceURL from "@/lib/helpers/functions/getRandomAPI02Instance";
 
 import userStorage from "@/lib/utils/local/db/models/UserStorage";
 import { logout } from "@/lib/helpers/logout";
 import { FetchCancelable } from "@/lib/utils/FetchCancellable";
+import { LogoutTypes } from "@/interfaces/LogoutTypes";
+import { SiasisAPIS } from "@/interfaces/shared/SiasisComponents";
 
 interface FetchSiasisAPIs {
   endpoint: string;
@@ -45,12 +46,12 @@ const useSiasisAPIs = (siasisAPI: SiasisAPIS) => {
 
           // Si se requiere autenticación pero no hay token, hacer logout
           if (!token) {
-            logout();
+            logout(LogoutTypes.SESION_EXPIRADA);
             return;
           }
         } catch (error) {
           console.error("Error al obtener el token:", error);
-          logout();
+          logout(LogoutTypes.ERROR_SISTEMA);
           return;
         }
       }

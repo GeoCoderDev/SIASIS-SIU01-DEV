@@ -1,12 +1,17 @@
 import { useState } from "react";
 
 import useSiasisAPIs from "./useSiasisAPIs";
-import { SiasisAPIS } from "@/interfaces/shared/SiasisCompontes";
-import { ApiResponseBase, SuccessResponseAPIBase } from "@/interfaces/shared/SiasisAPIs";
+
+import {
+  
+  ErrorResponseAPIBase,
+  SuccessResponseAPIBase,
+} from "@/interfaces/shared/apis/types";
+import { SiasisAPIS } from "@/interfaces/shared/SiasisComponents";
 
 const useRequestAPIFeatures = (siasisAPI: SiasisAPIS) => {
   const [isSomethingLoading, setIsSomethingLoading] = useState(false);
-  const [error, setError] = useState<ApiResponseBase | null>(null);
+  const [error, setError] = useState<ErrorResponseAPIBase | null>(null);
   const [successMessage, setSuccessMessage] =
     useState<SuccessResponseAPIBase | null>(null);
   const { fetchSiasisAPI, fetchCancelables } = useSiasisAPIs(siasisAPI);
