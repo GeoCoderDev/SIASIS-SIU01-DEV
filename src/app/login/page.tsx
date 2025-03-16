@@ -55,42 +55,42 @@ const SeleccionRoles = () => {
           <RolBoton
             href="/login/directivo"
             icon={
-              <DirectivoIcon className="max-lg:short-height:h-[7.5vh] max-sm:w-[1.7rem] sm-only:w-[1.85rem] md-only:w-[2rem] lg-only:w-[2.6rem] xl-only:w-[3.4rem]" />
+              <DirectivoIcon className="max-lg:short-height:h-[7.5vh] max-sm:w-[1.7rem] sm-only:w-[1.85rem] md-only:w-[2rem] lg-only:w-[2.6rem] xl-only:w-[3.4rem] text-negro" />
             }
             rol="Directivo"
           />
           <RolBoton
             href="/login/profesor-primaria"
             icon={
-              <ProfesorPrimariaIcon className="max-lg:short-height:h-[7.5vh] max-sm:w-[1.65rem] sm-only:w-[2.1rem] md-only:w-[2rem] lg-only:w-[2.4rem] xl-only:w-[3rem]" />
+              <ProfesorPrimariaIcon className="max-lg:short-height:h-[7.5vh] max-sm:w-[1.65rem] sm-only:w-[2.1rem] md-only:w-[2rem] lg-only:w-[2.4rem] xl-only:w-[3rem] text-negro" />
             }
             rol="Profesor (Primaria)"
           />
           <RolBoton
             href="/login/auxiliar"
             icon={
-              <AuxiliarIcon className="max-lg:short-height:h-[7.75vh] max-sm:w-[1.55rem] sm-only:w-[1.7rem] md-only:w-[1.75rem] lg-only:w-[2rem] xl-only:w-[2.5rem]" />
+              <AuxiliarIcon className="max-lg:short-height:h-[7.75vh] max-sm:w-[1.55rem] sm-only:w-[1.7rem] md-only:w-[1.75rem] lg-only:w-[2rem] xl-only:w-[2.5rem] text-negro" />
             }
             rol="Auxiliar"
           />
           <RolBoton
             href="/login/profesor-tutor-secundaria"
             icon={
-              <ProfesorOTutorIcon className="max-lg:short-height:h-[7vh] max-sm:w-[1.5rem] sm-only:w-[1.7rem] md-only:w-[2rem] lg-only:w-[2rem] xl-only:w-[2.5rem]" />
+              <ProfesorOTutorIcon className="max-lg:short-height:h-[7vh] max-sm:w-[1.5rem] sm-only:w-[1.7rem] md-only:w-[2rem] lg-only:w-[2rem] xl-only:w-[2.5rem] text-negro" />
             }
             rol="Profesor/Tutor (Secundaria)"
           />
           <RolBoton
             href="/login/responsable"
             icon={
-              <ResponsableIcon className="max-lg:short-height:h-[8vh] max-sm:w-[1.5rem] sm-only:w-[1.7rem] md-only:w-[1.7rem] lg-only:w-[1.9rem] xl-only:w-[2.3rem]" />
+              <ResponsableIcon className="max-lg:short-height:h-[8vh] max-sm:w-[1.5rem] sm-only:w-[1.7rem] md-only:w-[1.7rem] lg-only:w-[1.9rem] xl-only:w-[2.3rem] text-negro" />
             }
             rol="Responsable (Padre/Apoderado)"
           />
           <RolBoton
             href="/login/personal-administrativo"
             icon={
-              <PersonalLimpiezaIcon className="max-lg:short-height:h-[8vh] max-sm:w-[1.65rem] sm-only:w-[1.9rem] md-only:w-[2rem] lg-only:w-[2.5rem] xl-only:w-[3rem]" />
+              <PersonalLimpiezaIcon className="max-lg:short-height:h-[8vh] max-sm:w-[1.65rem] sm-only:w-[1.9rem] md-only:w-[2rem] lg-only:w-[2.5rem] xl-only:w-[3rem] text-negro" />
             }
             rol="Personal Administrativo"
           />

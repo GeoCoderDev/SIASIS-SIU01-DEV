@@ -141,7 +141,7 @@ const PlantillaLogin = ({ rol, siasisAPI, endpoint }: PlantillaLoginProps) => {
             <form className="mt-4" onSubmit={handleSubmit}>
               <div className="mb-3 flex items-center border border-color-interfaz rounded-lg overflow-hidden">
                 <div className="bg-color-interfaz p-2 flex items-center">
-                  <UsuarioIcon className="w-6 h-6" />
+                  <UsuarioIcon className="w-6 h-6 text-white" />
                 </div>
                 <input
                   type="text"
@@ -156,7 +156,7 @@ const PlantillaLogin = ({ rol, siasisAPI, endpoint }: PlantillaLoginProps) => {
 
               <div className="mb-3 flex items-center border border-color-interfaz rounded-lg overflow-hidden">
                 <div className="bg-color-interfaz p-2 flex items-center">
-                  <ContrasenaIcon className="w-6 h-6" />
+                  <ContrasenaIcon className="w-6 h-6 text-white" />
                 </div>
                 <input
                   type="password"

@@ -121,13 +121,11 @@ const Header = ({
           {Rol === RolesSistema.Directivo ? (
             <HamburguesaIcon
               title={sidebarIsOpen ? "Ocultar Sidebar" : "Mostrar Sidebar"}
-              className="aspect-auto w-10 -border-2 "
-              color="white"
+              className="aspect-auto w-10 -border-2 text-white"
             />
           ) : (
             <FooterIcon
-              className="w-10"
-              color="white"
+              className="w-10 text-white"
               title={
                 sidebarIsOpen
                   ? "Ocultar Barra Inferior"

@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { RolesTextos } from "@/Assets/RolesTextos";
 import { Genero } from "@/interfaces/shared/Genero";
 import { RolesSistema } from "@/interfaces/shared/RolesSistema";
@@ -34,7 +35,7 @@ const Home = async () => {
           <h3 className="text-negro text-[1.8rem] max-sm:text-[1.6rem]">
             {nombres.split(" ").shift()} {apellidos.split(" ").shift()}
           </h3>
-        </div>n
+        </div>
         <div className="flex justify-center items-center max-sm:mt-6">
           <img
             src={imagenesBienvenida[rol]}
