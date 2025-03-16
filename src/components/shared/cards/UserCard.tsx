@@ -1,3 +1,4 @@
+import BotonConIcono from "@/components/buttons/BotonConIcono";
 import FotoPerfilSideServer from "../../utils/photos/FotoPerfilClientSide";
 
 const MyUserCard = ({
@@ -19,7 +20,9 @@ const MyUserCard = ({
       />
 
       <div className="flex flex-col gap-2">
-        <div className="w-full text-[1.2rem] text-center">
+        <BotonConIcono />
+        
+        <div className={`w-full text-[1.2rem] text-center ${Nombres || Apellidos || ""}`}>
           {Nombres} {Apellidos}
         </div>
         <div className=" font-semibold text-center w-full">

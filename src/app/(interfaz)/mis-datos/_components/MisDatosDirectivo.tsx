@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import MyUserCard from "@/components/shared/cards/UserCard";
 
@@ -16,12 +17,23 @@ import ErrorMessage1 from "@/components/shared/errors/ErrorMessage1";
 import BotonConIcono from "@/components/buttons/BotonConIcono";
 import LapizIcon from "@/components/icons/LapizIcon";
 import FormSection from "@/components/forms/FormSection";
+import { T_Directivos } from "@prisma/client";
+import CandadoUpdate from "@/components/icons/CandadoUpdate";
+import CorreoUpdate from "@/components/icons/CorreoUpdate";
+import EquisIcon from "@/components/icons/EquisIcon";
 
 const MisDatosDirectivo = ({
   googleDriveFotoIdCookieValue,
 }: {
   googleDriveFotoIdCookieValue: string | null;
 }) => {
+  const [modoEdicion, setModoEdicion] = useState(false);
+
+  const [cambiarFotoModal, setCambiarFotoModal] = useState(false);
+  const [cambiarCorreoElectronicoModal, setCambiarCorreoElectronicoModal] =
+    useState(false);
+  const [cambiarContraseñaModal, setCambiarContraseñaModal] = useState(false);
+
   const [misDatosDirectivo, setMisDatosDirectivo] = useState<
     Partial<MisDatosDirectivo>
   >({
@@ -34,9 +46,9 @@ const MisDatosDirectivo = ({
     fetchSiasisAPI,
     isSomethingLoading,
     setIsSomethingLoading,
-  } = useRequestAPIFeatures("API01");
-  const [modoEdicion, setModoEdicion] = useState(false);
+  } = useRequestAPIFeatures("API01", true);
 
+  // setIsSomethingLoading(true);
   useEffect(() => {
     if (!fetchSiasisAPI) return;
 
@@ -94,112 +106,134 @@ const MisDatosDirectivo = ({
   };
 
   return (
-    <div className="border-2 border-blue-500 w-full max-w-[75rem] h-full grid grid-cols-7 grid-rows-[min-content_1fr] gap-y-4 md:gap-0">
+    <div className="-border-2 border-blue-500 w-full max-w-[75rem] h-full grid grid-cols-7 grid-rows-[min-content_1fr] gap-y-4 md:gap-0">
       {error && <ErrorMessage1 {...error} />}
 
       {/* SECCION DE BOTONES */}
-      <div className="flex col-span-full border-2 flex-wrap py-2 justify-start items-center gap-x-6 gap-y-2">
-        <h1 className="font-medium text-[2.5rem]">MIS DATOS</h1>
+      <div className="flex col-span-full -border-2 flex-wrap py-2 justify-start items-center gap-x-6 gap-y-2">
+        <h1
+          className="font-medium 
+  sxs-only:text-[1.55rem] xs-only:text-[1.65rem] sm-only:text-[1.75rem] md-only:text-[1.9rem] lg-only:text-[2.1rem] xl-only:text-[2.4rem]"
+        >
+          MIS DATOS
+        </h1>
         {!isSomethingLoading && (
           <BotonConIcono
             texto={modoEdicion ? "Cancelar Edición" : "Editar Datos"}
             IconTSX={
-              !modoEdicion ? <LapizIcon className="w-[1.1rem]" /> : <></>
+              !modoEdicion ? (
+                <LapizIcon className="w-[0.95rem]" />
+              ) : (
+                <EquisIcon className="text-blanco w-[0.85rem]" />
+              )
             }
             onClick={() => setModoEdicion(!modoEdicion)}
-            className="bg-amarillo-ediciones text-negro gap-2 content-center font-bold px-3 py-2 rounded-[10px] "
+            className={`${
+              modoEdicion
+                ? "bg-rojo-oscuro text-blanco"
+                : "bg-amarillo-ediciones text-negro"
+            }  gap-[0.5rem] content-center font-semibold px-[0.6rem] py-[0.35rem] rounded-[6px] 
+    sxs-only:text-[0.75rem] xs-only:text-[0.8rem] sm-only:text-[0.85rem] md-only:text-[0.9rem] lg-only:text-[0.95rem] xl-only:text-[1rem]`}
           />
         )}
       </div>
 
       {/* SECCION DEL FORMULARIO */}
-      <div className="col-span-full  md:col-span-4 border-2">
+      <div className="col-span-full md:col-span-4 -border-2">
         <form onSubmit={handleSubmit}>
-          <div className="space-y-4">
+          <div className="space-y-5">
             <FormSection titulo="Información Personal">
-              <DatoFomularioConEtiqueta<string, MisDatosDirectivo>
+              <DatoFomularioConEtiqueta<string, T_Directivos>
+                isSomethingLoading={isSomethingLoading}
                 modoEdicion={modoEdicion}
                 etiqueta="DNI"
                 nombreDato="DNI"
                 valor={misDatosDirectivo.DNI}
-                modificable={true}
-                className="text-[1.6rem]"
+                modificable
+                onChange={handleChange}
+                className="sxs-only:text-[1.105rem] xs-only:text-[1.17rem] sm-only:text-[1.235rem] md-only:text-[1.3rem] lg-only:text-[1.365rem] xl-only:text-[1.43rem]"
                 fullWidth
               />
-              <DatoFomularioConEtiqueta<string, MisDatosDirectivo>
+              <DatoFomularioConEtiqueta<string, T_Directivos>
+                isSomethingLoading={isSomethingLoading}
                 modoEdicion={modoEdicion}
                 etiqueta="Nombres"
                 nombreDato="Nombres"
+                modificable
+                onChange={handleChange}
                 valor={misDatosDirectivo.Nombres}
-                modificable={false}
               />
-              <DatoFomularioConEtiqueta<string, MisDatosDirectivo>
+              <DatoFomularioConEtiqueta<string, T_Directivos>
+                isSomethingLoading={isSomethingLoading}
                 modoEdicion={modoEdicion}
                 etiqueta="Apellidos"
                 nombreDato="Apellidos"
+                modificable
+                onChange={handleChange}
                 valor={misDatosDirectivo.Apellidos}
-                modificable={false}
-                className="-text-[1.6rem] w-full mt-2"
               />
-              <DatoFomularioConEtiqueta<string, MisDatosDirectivo>
+              <DatoFomularioConEtiqueta<string, T_Directivos>
+                isSomethingLoading={isSomethingLoading}
                 modoEdicion={modoEdicion}
                 etiqueta="Género"
                 nombreDato="Genero"
-                skeletonClassName={{className:"min-w-[1rem]"}}
+                modificable
+                onChange={handleChange}
+                skeletonClassName={{ className: "min-w-[1.1rem]" }}
                 valor={misDatosDirectivo.Genero}
-                modificable={false}
-                className="-text-[1.6rem] w-min mt-2"
               />
-              <DatoFomularioConEtiqueta<string, MisDatosDirectivo>
+              <DatoFomularioConEtiqueta<string, T_Directivos>
+                isSomethingLoading={isSomethingLoading}
                 modoEdicion={modoEdicion}
                 etiqueta="Celular"
                 nombreDato="Celular"
+                modificable
+                onChange={handleChange}
                 valor={misDatosDirectivo.Celular}
-                modificable={false}
-                className="-text-[1.6rem] w-full mt-2"
               />
             </FormSection>
-
-            <FormSection titulo="Informacion del Usuario">
-              <DatoFomularioConEtiqueta<string, MisDatosDirectivo> 
-                modoEdicion={modoEdicion}
-                etiqueta="Nombre de Usuario"
-                nombreDato="Nombre_Usuario"
-                valor={misDatosDirectivo.Nombre_Usuario}
-                modificable={false}
-                onChange={handleChange}
-                className="-text-[1.6rem] w-full mt-2"
-              />
-              <DatoFomularioConEtiqueta<string, MisDatosDirectivo> 
-                modoEdicion={modoEdicion}
-                etiqueta="Nombre de Usuario"
-                nombreDato="Nombre_Usuario"
-                valor={misDatosDirectivo.Nombre_Usuario}
-                modificable={false}
-                onChange={handleChange}
-                className="-text-[1.6rem] w-full mt-2"
-              />
-              <DatoFomularioConEtiqueta<string, MisDatosDirectivo> 
-                modoEdicion={modoEdicion}
-                etiqueta="Nombre de Usuario"
-                nombreDato="Nombre_Usuario"
-                valor={misDatosDirectivo.Nombre_Usuario}
-                modificable={false}
-                onChange={handleChange}
-                className="-text-[1.6rem] w-full mt-2"
-              />
-            </FormSection>
-
-            {/* Agrega más campos aquí según tu interfaz MisDatosDirectivo */}
-
+            
             {modoEdicion && (
               <button
                 type="submit"
-                className="bg-green-500 text-white px-4 py-2 rounded mt-4"
+                className="bg-green-500 text-white px-4 py-2 rounded mt-5
+                  sxs-only:text-[0.9rem] xs-only:text-[0.95rem] sm-only:text-[1rem] md-only:text-[1.05rem] lg-only:text-[1.1rem] xl-only:text-[1.15rem]"
               >
                 Guardar Cambios
               </button>
             )}
+
+            <FormSection titulo="Informacion del Usuario">
+              <DatoFomularioConEtiqueta<string, T_Directivos>
+                isSomethingLoading={isSomethingLoading}
+                modoEdicion={modoEdicion}
+                etiqueta="Nombre de Usuario"
+                nombreDato="Nombre_Usuario"
+                valor={misDatosDirectivo.Nombre_Usuario}
+              />
+              <DatoFomularioConEtiqueta<string, T_Directivos>
+                isSomethingLoading={isSomethingLoading}
+                modoEdicion={modoEdicion}
+                etiqueta="Contraseña"
+                nombreDato="Contraseña"
+                valorOculto
+                onChange={handleChange}
+                modificableConModal
+                IconTSX={<CandadoUpdate className="text-negro w-[1.3rem]" />}
+                setModalVisibility={setCambiarContraseñaModal}
+              />
+              <DatoFomularioConEtiqueta<string, T_Directivos>
+                isSomethingLoading={isSomethingLoading}
+                modoEdicion={modoEdicion}
+                etiqueta="Correo Electronico"
+                nombreDato="Correo_Electronico"
+                valor={misDatosDirectivo.Correo_Electronico}
+                IconTSX={<CorreoUpdate className="w-[1.3rem]" />}
+                onChange={handleChange}
+                modificableConModal
+                setModalVisibility={setCambiarCorreoElectronicoModal}
+              />
+            </FormSection>
           </div>
         </form>
       </div>

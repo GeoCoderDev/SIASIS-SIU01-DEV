@@ -8,8 +8,12 @@ import {
 } from "@/interfaces/shared/apis/types";
 import { SiasisAPIS } from "@/interfaces/shared/SiasisComponents";
 
-const useRequestAPIFeatures = (siasisAPI: SiasisAPIS) => {
-  const [isSomethingLoading, setIsSomethingLoading] = useState(false);
+const useRequestAPIFeatures = (
+  siasisAPI: SiasisAPIS,
+  initialStateLoading: boolean = false
+) => {
+  const [isSomethingLoading, setIsSomethingLoading] =
+    useState(initialStateLoading);
   const [error, setError] = useState<ErrorResponseAPIBase | null>(null);
   const [successMessage, setSuccessMessage] = useState<MessageProperty | null>(
     null

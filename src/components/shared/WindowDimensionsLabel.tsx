@@ -24,7 +24,7 @@ const WindowDimensionsLabel = () => {
   return (
     windowsHeight &&
     windowsWidth && (
-      <div className="border-2 border-[rgba(0,0,0,0.5)] border-dashed rounded-[0.5rem] flex flex-row items-center gap-4 justify-center fixed top-0 right-0  bg-white text-black z-50 w-min p-3 opacity-60">
+      <div className="border-2 border-[rgba(0,0,0,0.5)] border-dashed rounded-[0.5rem] flex flex-row items-center gap-4 justify-center fixed  top-0 right-0  bg-white text-black z-[1000] w-min p-3 opacity-60">
         <span className="flex">
           Ancho: <b>{windowsWidth}</b>
         </span>
