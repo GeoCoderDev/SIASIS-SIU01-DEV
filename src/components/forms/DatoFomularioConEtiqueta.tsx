@@ -73,11 +73,14 @@ const DatoFomularioConEtiqueta = <T, R>({
                 className={` 
                   w-full font-normal
                   sxs-only:max-w-[7rem] xs-only:max-w-[8rem] sm-only:max-w-[9rem] md-only:max-w-[10rem] lg-only:max-w-[11rem] xl-only:max-w-[12rem]
-                  border border-color-interfaz px-1.5 py-0.5 rounded 
+                  border-2 border-color-interfaz px-2 py-1 rounded-md 
+                  shadow-sm focus:ring-2 focus:ring-amarillo-ediciones focus:border-amarillo-ediciones
+                  bg-white/90 hover:bg-white transition-colors
                   ${className ?? "sxs-only:text-[0.85rem] xs-only:text-[0.9rem] sm-only:text-[0.95rem] md-only:text-[1rem] lg-only:text-[1.05rem] xl-only:text-[1.1rem]"}`}
                 name={nombreDato as string}
                 value={valor as string}
                 onChange={onChange}
+                placeholder={`Ingrese ${etiqueta.toLowerCase()}`}
               />
             ) : (
               <span

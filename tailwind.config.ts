@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import containerQueries from "@tailwindcss/container-queries";
 
 const config: Config = {
   content: [
@@ -43,22 +44,17 @@ const config: Config = {
         "max-lg": { max: "976px" },
         "max-xl": { max: "1440px" },
 
-    
         "sxs-only": { min: "0px", max: "300px" },
         "xs-only": { min: "300px", max: "499px" },
         "sm-only": { min: "500px", max: "767px" },
         "md-only": { min: "768px", max: "975px" },
         "lg-only": { min: "976px", max: "1600px" },
         "xl-only": { min: "1600px" },
-        
-        'short-height': {'raw': '(max-height: 50vw)'}
 
+        "short-height": { raw: "(max-height: 50vw)" },
       },
-
-
-
     },
   },
-  plugins: [],
+  plugins: [containerQueries],
 };
 export default config;

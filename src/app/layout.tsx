@@ -32,7 +32,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  
   const interfazColor: ColorHexadecimal = "#dd3524";
   const contrastColor = getRandomContrastColor(interfazColor);
 
@@ -40,7 +39,7 @@ export default async function RootLayout({
     <ViewTransitions>
       <html lang="es">
         <body
-          className={`${roboto.variable} font-roboto antialiased min-h-[100dvh]`}
+          className={`${roboto.variable} font-roboto antialiased min-h-[100dvh] portrait:min-h-screen`}
         >
           <style>
             {`

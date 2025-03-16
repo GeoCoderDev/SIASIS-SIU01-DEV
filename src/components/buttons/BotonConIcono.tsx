@@ -16,7 +16,7 @@ const BotonConIcono = ({
   typeButton = "button",
 }: BotonConIconoProps) => {
   return (
-    <button onClick={onClick} type={typeButton} className={`flex flex-wrap items-center ${className}`}>
+    <button onClick={onClick} type={typeButton} className={`flex flex-wrap items-center justify-center ${className}`}>
       {texto} {IconTSX}
     </button>
   );

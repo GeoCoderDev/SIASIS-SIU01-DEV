@@ -21,6 +21,7 @@ import { T_Directivos } from "@prisma/client";
 import CandadoUpdate from "@/components/icons/CandadoUpdate";
 import CorreoUpdate from "@/components/icons/CorreoUpdate";
 import EquisIcon from "@/components/icons/EquisIcon";
+import MemoriaIcon from "@/components/icons/MemoriaIcon";
 
 const MisDatosDirectivo = ({
   googleDriveFotoIdCookieValue,
@@ -48,7 +49,6 @@ const MisDatosDirectivo = ({
     setIsSomethingLoading,
   } = useRequestAPIFeatures("API01", true);
 
-  // setIsSomethingLoading(true);
   useEffect(() => {
     if (!fetchSiasisAPI) return;
 
@@ -106,7 +106,7 @@ const MisDatosDirectivo = ({
   };
 
   return (
-    <div className="-border-2 border-blue-500 w-full max-w-[75rem] h-full grid grid-cols-7 grid-rows-[min-content_1fr] gap-y-4 md:gap-0">
+    <div className="@container -border-2 border-blue-500 w-full max-w-[75rem] h-full grid grid-cols-7 grid-rows-[min-content_1fr] gap-y-4 md:gap-0">
       {error && <ErrorMessage1 {...error} />}
 
       {/* SECCION DE BOTONES */}
@@ -139,9 +139,9 @@ const MisDatosDirectivo = ({
       </div>
 
       {/* SECCION DEL FORMULARIO */}
-      <div className="col-span-full md:col-span-4 -border-2">
+      <div className="col-span-full @lg:col-span-4 -border-2 justify-center">
         <form onSubmit={handleSubmit}>
-          <div className="space-y-5">
+          <div className="flex flex-col gap-6 justify-center items-center">
             <FormSection titulo="Información Personal">
               <DatoFomularioConEtiqueta<string, T_Directivos>
                 isSomethingLoading={isSomethingLoading}
@@ -192,15 +192,18 @@ const MisDatosDirectivo = ({
                 valor={misDatosDirectivo.Celular}
               />
             </FormSection>
-            
+
             {modoEdicion && (
-              <button
-                type="submit"
-                className="bg-green-500 text-white px-4 py-2 rounded mt-5
-                  sxs-only:text-[0.9rem] xs-only:text-[0.95rem] sm-only:text-[1rem] md-only:text-[1.05rem] lg-only:text-[1.1rem] xl-only:text-[1.15rem]"
-              >
-                Guardar Cambios
-              </button>
+              <BotonConIcono
+                onClick={() => {
+                  setCambiarFotoModal(true);
+                }}
+                className="w-max content-center font-semibold p-3 py-2 rounded-[10px] bg-amarillo-ediciones gap-2 sxs-only:text-[0.75rem] xs-only:text-[0.8rem] sm-only:text-[0.85rem] md-only:text-[0.9rem] lg-only:text-[0.95rem] xl-only:text-[1rem]"
+                texto="Guardar Cambios"
+                IconTSX={
+                  <MemoriaIcon className="w-[1.4rem] sxs-only:w-[0.85rem] xs-only:w-[0.9rem] sm-only:w-[0.95rem] md-only:w-[1rem] lg-only:w-[1.1rem] xl-only:w-[1.2rem]" />
+                }
+              />
             )}
 
             <FormSection titulo="Informacion del Usuario">
@@ -238,9 +241,11 @@ const MisDatosDirectivo = ({
         </form>
       </div>
 
-      {/* SECCION DE USER CARD */}
-      <div className="flex w-full h-full justify-center items-start row-start-2 col-span-full md:row-auto md:col-span-3 p-4">
+      {/* SECCION DE USER CARD - Ahora usa container queries */}
+      <div className="flex w-full h-full justify-center items-start @lg:row-auto row-start-2 col-span-full @lg:col-span-3 @lg:order-none order-2 p-4">
         <MyUserCard
+          setCambiarFotoModal={setCambiarFotoModal}
+          isSomethingLoading={isSomethingLoading}
           Nombres={misDatosDirectivo.Nombres}
           Apellidos={misDatosDirectivo.Apellidos}
           Nombre_Usuario={misDatosDirectivo.Nombre_Usuario}
