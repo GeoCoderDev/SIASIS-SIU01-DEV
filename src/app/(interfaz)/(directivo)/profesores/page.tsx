@@ -1,10 +1,8 @@
 import ModuloEnDesarrollo from "@/components/shared/MensajeModuloEnDesarrollo";
 import React from "react";
 
-const Estudiantes = () => {
-  return <>
-  <ModuloEnDesarrollo />
-  </>;
+const ProfesoresMenu = () => {
+  return <ModuloEnDesarrollo />;
 };
 
-export default Estudiantes;
+export default ProfesoresMenu;
