@@ -12,8 +12,12 @@ import ErrorMessage1 from "./errors/ErrorMessage1";
 import SuccessMessage1 from "./successes/SuccessMessage1";
 import userStorage from "@/lib/utils/local/db/models/UserStorage";
 import { SiasisAPIS } from "@/interfaces/shared/SiasisComponents";
-import { ErrorResponseAPIBase } from "@/interfaces/shared/apis/types";
+import {
+  ApiResponseBase,
+  ErrorResponseAPIBase,
+} from "@/interfaces/shared/apis/types";
 import { ResponseSuccessLogin } from "@/interfaces/shared/apis/shared/login/types";
+import { MisDatosErrorResponseAPI01 } from "@/interfaces/shared/apis/api01/mis-datos/types";
 
 export type RolForLogin =
   | "DIRECTIVO"
@@ -72,24 +76,25 @@ const PlantillaLogin = ({ rol, siasisAPI, endpoint }: PlantillaLoginProps) => {
     try {
       setIsSomethingLoading(true);
 
-      const fetchCancellable = fetchSiasisAPI({
+      const fetchCancellable = await fetchSiasisAPI({
         endpoint,
         method: "POST",
         body: JSON.stringify(formularioLogin),
         userAutheticated: false,
       });
 
-      const res = await (await fetchCancellable)!.fetch();
+      if (!fetchCancellable) throw new Error();
 
-      if (!res.ok) {
-        const error = (await res.json()) as ErrorResponseAPIBase;
+      const res = await fetchCancellable.fetch();
+
+      const responseJson = (await res.json()) as ApiResponseBase;
+
+      if (!responseJson.success) {
         setIsSomethingLoading(false);
-        throw new Error(error.message);
+        return setError(responseJson as MisDatosErrorResponseAPI01);
       }
 
-      const response = await res.json();
-
-      const { message, data } = response as ResponseSuccessLogin;
+      const { data, message } = responseJson as ResponseSuccessLogin;
 
       setSuccessMessage({ message });
 

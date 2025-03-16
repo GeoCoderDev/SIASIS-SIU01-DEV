@@ -66,6 +66,7 @@ const MisDatosDirectivo = ({
         if (!fetchCancelable) throw new Error();
 
         const res = await fetchCancelable.fetch();
+        
         const responseJson = (await res.json()) as ApiResponseBase;
 
         if (!responseJson.success) {
