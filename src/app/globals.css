@@ -34,6 +34,33 @@ input:-webkit-autofill {
   transition: background-color 5000s ease-in-out 0s;
 }
 
+
+
+/* Esto ayuda a dar la impresión de que el dropdown tiene bordes redondeados */
+
+select option {
+  padding: 12px 12px;
+  border-bottom: 1px solid #eaeaea;
+  background-color: white;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+/* Para Firefox */
+select option:hover {
+  box-shadow: 0 0 10px 100px #f8f8f8 inset;
+}
+
+select option:checked {
+  box-shadow: 0 0 10px 100px #ffcc00 inset;
+}
+
+/* Algunos navegadores soportan esta propiedad no estándar */
+select::-webkit-listbox {
+  @apply top-4;
+  border-radius: 1rem;
+}
+
 /* CLASES UTILES 🔁 ==============================================================================*/
 
 /* LOADER */

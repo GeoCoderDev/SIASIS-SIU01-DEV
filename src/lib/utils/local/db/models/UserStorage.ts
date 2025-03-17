@@ -7,49 +7,53 @@ export type UserData = SuccessLoginData & Record<string, string | null>;
 class UserStorage {
   private storeName: string = "user_data";
 
-  /**
-   * Guarda los datos del usuario en IndexedDB
-   * @param userData Datos del usuario a guardar
-   * @returns Promise que se resuelve cuando los datos se han guardado
-   */
-  public async saveUserData(
-    userData: Partial<SuccessLoginData>
-  ): Promise<void> {
-    try {
-      // Asegurarnos de que la conexión está inicializada
-      await dbConnection.init();
+/**
+ * Guarda los datos del usuario en IndexedDB, actualizando solo las propiedades proporcionadas
+ * @param userData Datos parciales del usuario a guardar
+ * @returns Promise que se resuelve cuando los datos se han guardado
+ */
+public async saveUserData(
+  userData: Partial<SuccessLoginData>
+): Promise<void> {
+  try {
+    // Asegurarnos de que la conexión está inicializada
+    await dbConnection.init();
 
-      // Obtener el almacén de datos
-      const store = await dbConnection.getStore(this.storeName, "readwrite");
+    // Primero, obtenemos los datos actuales (si existen)
+    const currentUserData = await this.getUserData();
 
-      // Agregamos la marca de tiempo
-      const dataToSave = {
-        ...userData,
-        last_updated: Date.now(),
+    // Obtener el almacén de datos
+    const store = await dbConnection.getStore(this.storeName, "readwrite");
+
+    // Combinamos los datos actuales con los nuevos datos
+    // Si currentUserData es null, usamos un objeto vacío
+    const dataToSave = {
+      ...(currentUserData || {}),
+      ...userData, // Solo se sobrescriben las propiedades incluidas en userData
+      last_updated: Date.now(),
+    };
+
+    // Usamos un ID fijo 'current_user' para siempre actualizar los mismos datos
+    return new Promise((resolve, reject) => {
+      const request = store.put(dataToSave, "current_user");
+
+      request.onsuccess = () => {
+        resolve();
       };
 
-      // Usamos un ID fijo 'current_user' para siempre sobrescribir los datos
-      return new Promise((resolve, reject) => {
-        const request = store.put(dataToSave, "current_user");
-
-        request.onsuccess = () => {
-          resolve();
-        };
-
-        request.onerror = (event) => {
-          reject(
-            `Error al guardar datos de usuario: ${
-              (event.target as IDBRequest).error
-            }`
-          );
-        };
-      });
-    } catch (error) {
-      console.error("Error al guardar datos de usuario:", error);
-      throw error;
-    }
+      request.onerror = (event) => {
+        reject(
+          `Error al guardar datos de usuario: ${
+            (event.target as IDBRequest).error
+          }`
+        );
+      };
+    });
+  } catch (error) {
+    console.error("Error al guardar datos de usuario:", error);
+    throw error;
   }
-
+}
   /**
    * Obtiene los datos del usuario almacenados
    * @returns Promise que se resuelve con los datos del usuario o null si no hay datos

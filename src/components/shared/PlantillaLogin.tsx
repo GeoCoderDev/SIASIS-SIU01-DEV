@@ -1,5 +1,4 @@
 "use client";
-import Link from "next/link";
 import ContrasenaIcon from "../icons/ContrasenaIcon";
 import UsuarioIcon from "../icons/UsuarioIcon";
 import VolverIcon from "../icons/VolverIcon";
@@ -18,6 +17,7 @@ import {
 } from "@/interfaces/shared/apis/types";
 import { ResponseSuccessLogin } from "@/interfaces/shared/apis/shared/login/types";
 import { MisDatosErrorResponseAPI01 } from "@/interfaces/shared/apis/api01/mis-datos/types";
+import { Link } from "next-view-transitions";
 
 export type RolForLogin =
   | "DIRECTIVO"

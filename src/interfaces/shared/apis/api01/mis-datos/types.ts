@@ -11,6 +11,7 @@ import {
   T_Profesores_Secundaria,
 } from "@prisma/client";
 import { ErrorResponseAPIBase, SuccessResponseAPIBase } from "../../types";
+import { Genero } from "../../../Genero";
 
 // -----------------------------------------
 // Tipos Base para Roles (sin contraseña)
@@ -19,7 +20,9 @@ import { ErrorResponseAPIBase, SuccessResponseAPIBase } from "../../types";
 /**
  * Datos de Directivo
  */
-export type MisDatosDirectivo = Omit<T_Directivos, "Contraseña">;
+export type MisDatosDirectivo = Omit<T_Directivos, "Contraseña"> & {
+  Genero: Genero;
+};
 
 /**
  * Datos de Profesor Primaria con aula opcional
@@ -28,6 +31,7 @@ export type MisDatosProfesorPrimaria = Omit<
   T_Profesores_Primaria,
   "Contraseña"
 > & {
+  Genero: Genero;
   Aula: Omit<
     T_Aulas,
     "DNI_Profesor_Primaria" | "DNI_Profesor_Secundaria"
@@ -37,7 +41,9 @@ export type MisDatosProfesorPrimaria = Omit<
 /**
  * Datos de Auxiliar
  */
-export type MisDatosAuxiliar = Omit<T_Auxiliares, "Contraseña">;
+export type MisDatosAuxiliar = Omit<T_Auxiliares, "Contraseña"> & {
+  Genero: Genero;
+};
 
 /**
  * Datos de Profesor Secundaria
@@ -45,12 +51,13 @@ export type MisDatosAuxiliar = Omit<T_Auxiliares, "Contraseña">;
 export type MisDatosProfesorSecundaria = Omit<
   T_Profesores_Secundaria,
   "Contraseña"
->;
+> & { Genero: Genero };
 
 /**
  * Datos de Tutor (Profesor secundaria con aula)
  */
 export type MisDatosTutor = Omit<T_Profesores_Secundaria, "Contraseña"> & {
+  Genero: Genero;
   Aula: Omit<T_Aulas, "DNI_Profesor_Primaria" | "DNI_Profesor_Secundaria">;
 };
 
@@ -60,7 +67,7 @@ export type MisDatosTutor = Omit<T_Profesores_Secundaria, "Contraseña"> & {
 export type MisDatosPersonalAdministrativo = Omit<
   T_Personal_Administrativo,
   "Contraseña"
->;
+> & { Genero: Genero };
 
 // -----------------------------------------
 // Respuestas según endpoint
@@ -82,4 +89,4 @@ export interface MisDatosSuccessResponseAPI01 extends SuccessResponseAPIBase {
   data: MisDatosSuccessAPI01Data;
 }
 
-export interface MisDatosErrorResponseAPI01 extends ErrorResponseAPIBase{}
+export type MisDatosErrorResponseAPI01 = ErrorResponseAPIBase;

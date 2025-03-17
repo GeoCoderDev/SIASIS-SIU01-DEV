@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { serialize } from "cookie";
 
-export async function POST(request: NextRequest) {
+export async function DELETE(request: NextRequest) {
   const token = request.cookies.get("token");
 
   if (!token) return new Response(null, { status: 401 });

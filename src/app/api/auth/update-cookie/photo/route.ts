@@ -1,5 +1,3 @@
-
-
 import { serialize } from "cookie";
 import { NextRequest } from "next/server";
 
@@ -13,22 +11,17 @@ export async function PUT(req: NextRequest) {
       Google_Drive_Foto_ID?: string;
     };
 
-    if (!Google_Drive_Foto_ID) {
-      return new Response(
-        JSON.stringify({ message: "No se envio el Google_Drive_Id" }),
-        { status: 401 }
-      );
-    }
-
-    const Google_Drive_Foto_ID_Serialize = Google_Drive_Foto_ID
-      ? serialize("Google_Drive_Foto_ID", Google_Drive_Foto_ID, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          path: "/",
-          sameSite: "lax",
-          maxAge: 60 * 60 * 5, // 5 Horas
-        })
-      : null;
+    const Google_Drive_Foto_ID_Serialize = serialize(
+      "Google_Drive_Foto_ID",
+      Google_Drive_Foto_ID ?? "",
+      {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        sameSite: "lax",
+        maxAge: Google_Drive_Foto_ID ? 60 * 60 * 5 : 0,
+      }
+    );
 
     return new Response(null, {
       status: 201,

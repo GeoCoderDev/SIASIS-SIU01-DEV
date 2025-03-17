@@ -1,13 +1,17 @@
 import React, { Dispatch, ReactElement, SetStateAction } from "react";
+import SiasisSelect from "../inputs/SiasisSelect";
+import SiasisInputText from "../inputs/SiasisInputText";
 
-interface DatoFomularioConEtiquetaProps<T, R> {
+interface DatoFomularioConEtiquetaProps<R> {
   etiqueta: string;
-  valor?: T;
+  valor?: string | number;
   nombreDato?: keyof R;
   modificable?: boolean;
   modoEdicion?: boolean;
   className?: string;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange?: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => void;
   fullWidth?: boolean;
   modificableConModal?: boolean;
   setModalVisibility?: Dispatch<SetStateAction<boolean>>;
@@ -15,9 +19,11 @@ interface DatoFomularioConEtiquetaProps<T, R> {
   IconTSX?: ReactElement;
   isSomethingLoading: boolean;
   valorOculto?: boolean;
+  inputType?: "text" | "select";
+  selectValues?: Record<string, string>;
 }
 
-const DatoFomularioConEtiqueta = <T, R>({
+const DatoFomularioConEtiqueta = <R,>({
   etiqueta,
   valor,
   modificable = false,
@@ -32,7 +38,9 @@ const DatoFomularioConEtiqueta = <T, R>({
   isSomethingLoading,
   setModalVisibility,
   valorOculto = false,
-}: DatoFomularioConEtiquetaProps<T, R>) => {
+  inputType = "text",
+  selectValues,
+}: DatoFomularioConEtiquetaProps<R>) => {
   return (
     <label
       className={`flex ${
@@ -69,19 +77,40 @@ const DatoFomularioConEtiqueta = <T, R>({
         {!isSomethingLoading && (
           <>
             {modificable && modoEdicion ? (
-              <input
-                className={` 
-                  w-full font-normal
-                  sxs-only:max-w-[7rem] xs-only:max-w-[8rem] sm-only:max-w-[9rem] md-only:max-w-[10rem] lg-only:max-w-[11rem] xl-only:max-w-[12rem]
-                  border-2 border-color-interfaz px-2 py-1 rounded-md 
-                  shadow-sm focus:ring-2 focus:ring-amarillo-ediciones focus:border-amarillo-ediciones
-                  bg-white/90 hover:bg-white transition-colors
-                  ${className ?? "sxs-only:text-[0.85rem] xs-only:text-[0.9rem] sm-only:text-[0.95rem] md-only:text-[1rem] lg-only:text-[1.05rem] xl-only:text-[1.1rem]"}`}
-                name={nombreDato as string}
-                value={valor as string}
-                onChange={onChange}
-                placeholder={`Ingrese ${etiqueta.toLowerCase()}`}
-              />
+              <>
+                {inputType === "text" && onChange && (
+                  <SiasisInputText
+                    value={valor || ""}
+                    name={nombreDato as string}
+                    onChange={onChange}
+                    className={
+                      className ??
+                      "sxs-only:text-[0.85rem] xs-only:text-[0.9rem] sm-only:text-[0.95rem] md-only:text-[1rem] lg-only:text-[1.05rem] xl-only:text-[1.1rem]"
+                    }
+                    placeholder={`Ingrese ${etiqueta.toLowerCase()}`}
+                  />
+                )}
+
+                {inputType === "select" && onChange && (
+                  <SiasisSelect
+                    value={valor || ""}
+                    name={nombreDato as string}
+                    onChange={onChange}
+                    className={
+                      className ??
+                      "sxs-only:text-[0.85rem] xs-only:text-[0.9rem] sm-only:text-[0.95rem] md-only:text-[1rem] lg-only:text-[1.05rem] xl-only:text-[1.1rem]"
+                    }
+                    placeholder={`Seleccione ${etiqueta.toLowerCase()}`}
+                  >
+                    {selectValues &&
+                      Object.entries(selectValues).map(([value, text]) => (
+                        <option key={value} value={value}>
+                          {text}
+                        </option>
+                      ))}
+                  </SiasisSelect>
+                )}
+              </>
             ) : (
               <span
                 className={` 
@@ -93,7 +122,7 @@ const DatoFomularioConEtiqueta = <T, R>({
                   "sxs-only:text-[0.85rem] xs-only:text-[0.9rem] sm-only:text-[0.95rem] md-only:text-[1rem] lg-only:text-[1.05rem] xl-only:text-[1.1rem]"
                 }`}
               >
-                {valor as string}
+                {selectValues ? selectValues[valor as string] : valor}
                 {!isSomethingLoading && modificableConModal && !valorOculto && (
                   <button
                     className="flex items-center justify-center bg-amarillo-ediciones rounded-[50%] aspect-square 

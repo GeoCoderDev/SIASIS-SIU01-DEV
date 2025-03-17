@@ -3,16 +3,18 @@ import userStorage from "../utils/local/db/models/UserStorage";
 
 export const logout = async (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  logoutType: LogoutTypes | any = LogoutTypes.DECISION_USUARIO
+  logoutType: LogoutTypes = LogoutTypes.DECISION_USUARIO
 ): Promise<void> => {
-  console.log(logoutType);
-
   // setTimeout(async () => {
     try {
-      await fetch("/api/auth/close", { method: "POST" });
+      await fetch("/api/auth/close", { method: "DELETE" });
       localStorage.clear();
       userStorage.clearUserData();
-      window.location.href = "/login";
+      window.location.href = `/login${
+        typeof logoutType === "string" &&
+        logoutType !== LogoutTypes.DECISION_USUARIO &&
+        "?LOGOUT_TYPE=" + logoutType
+      }`;
     } catch (error) {
       console.error("Error during logout:", error);
     }

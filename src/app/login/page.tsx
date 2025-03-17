@@ -4,7 +4,8 @@ import PersonalLimpiezaIcon from "@/components/icons/PersonalLimpiezaIcon";
 import ProfesorOTutorIcon from "@/components/icons/ProfesorOTutorIcon";
 import ProfesorPrimariaIcon from "@/components/icons/ProfesorPrimariaIcon";
 import ResponsableIcon from "@/components/icons/ResponsableIcon";
-import Link from "next/link";
+import { Link } from "next-view-transitions";
+
 
 export type RolForLoginSelection =
   | "Directivo"
