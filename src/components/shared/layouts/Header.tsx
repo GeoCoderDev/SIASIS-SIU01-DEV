@@ -183,7 +183,7 @@ const Header = ({
               </InterceptedLinkForDataThatCouldBeLost>
               <li
                 className="border-t border-gray-200 h-10 hover:font-bold cursor-pointer flex items-center justify-center px-3 w-[8rem]"
-                onClick={logout}
+                onClick={() => logout()}
               >
                 Cerrar Sesión
               </li>
