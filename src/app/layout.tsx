@@ -39,7 +39,7 @@ export default async function RootLayout({
     <ViewTransitions>
       <html lang="es">
         <body
-          className={`${roboto.variable} font-roboto antialiased min-h-[100dvh] landscape:min-h-screen`}
+          className={`${roboto.variable} font-roboto antialiased portrait:min-h-[100dvh] landscape:min-h-screen`}
         >
           <style>
             {`
