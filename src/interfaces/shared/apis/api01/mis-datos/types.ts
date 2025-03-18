@@ -9,12 +9,13 @@ import {
   T_Personal_Administrativo,
   T_Profesores_Primaria,
   T_Profesores_Secundaria,
+  // T_Responsables,
 } from "@prisma/client";
 import { ErrorResponseAPIBase, SuccessResponseAPIBase } from "../../types";
 import { Genero } from "../../../Genero";
 
 // -----------------------------------------
-// Tipos Base para Roles (sin contraseña)
+//                METODO GET
 // -----------------------------------------
 
 /**
@@ -69,15 +70,7 @@ export type MisDatosPersonalAdministrativo = Omit<
   "Contraseña"
 > & { Genero: Genero };
 
-// -----------------------------------------
-// Respuestas según endpoint
-// -----------------------------------------
-
-/**
- * Union de datos para personal escolar (API01)
- * Responde a: /api/mis-datos para roles de personal escolar
- */
-export type MisDatosSuccessAPI01Data =
+export type ObtenerMisDatosSuccessAPI01Data =
   | MisDatosDirectivo
   | MisDatosProfesorPrimaria
   | MisDatosAuxiliar
@@ -86,7 +79,55 @@ export type MisDatosSuccessAPI01Data =
   | MisDatosPersonalAdministrativo;
 
 export interface MisDatosSuccessResponseAPI01 extends SuccessResponseAPIBase {
-  data: MisDatosSuccessAPI01Data;
+  data: ObtenerMisDatosSuccessAPI01Data;
 }
 
 export type MisDatosErrorResponseAPI01 = ErrorResponseAPIBase;
+
+// -----------------------------------------
+//                METODO PUT
+// -----------------------------------------
+
+export type ActualizarMisDatosDirectivoBody = Partial<
+  Pick<T_Directivos, "DNI" | "Nombres" | "Apellidos" | "Genero" | "Celular">
+> & { Genero: Genero };
+
+export type ActualizarMisDatosProfesorPrimariaBody = Partial<
+  Pick<T_Profesores_Primaria, "Correo_Electronico" | "Celular">
+>;
+
+export type ActualizarMisDatosAuxiliarBody = Partial<
+  Pick<T_Auxiliares, "Correo_Electronico" | "Celular">
+>;
+
+export type ActualizarMisDatosProfesorSecundariaBody = Partial<
+  Pick<T_Profesores_Secundaria, "Correo_Electronico" | "Celular">
+>;
+
+export type ActualizarMisDatosTutorBody = Partial<
+  Pick<T_Profesores_Secundaria, "Celular">
+>;
+
+// export type ActualizarMisDatosResponsableBody = Partial<
+//   Pick<T_Responsables, "Celular">
+// >;
+
+export type ActualizarMisDatosPersonalAdministrativoBody = Partial<
+  Pick<T_Personal_Administrativo, "Celular">
+>;
+
+export type ActualizarMisDatoUsuarioBodyAPI01 =
+  | ActualizarMisDatosDirectivoBody
+  | ActualizarMisDatosProfesorPrimariaBody
+  | ActualizarMisDatosAuxiliarBody
+  | ActualizarMisDatosProfesorSecundariaBody
+  | ActualizarMisDatosTutorBody
+  | ActualizarMisDatosPersonalAdministrativoBody;
+
+// Interfaz para la respuesta exitosa
+export interface ActualizarUsuarioSuccessResponseAPI01
+  extends SuccessResponseAPIBase {
+  success: true;
+  message: string;
+  data: ActualizarMisDatoUsuarioBodyAPI01; // Los datos que se actualizaron
+}

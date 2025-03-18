@@ -1,4 +1,4 @@
-import React, { ReactNode } from "react";
+import React, { ReactNode, SelectHTMLAttributes } from "react";
 import DespliegueIcon from "../icons/DespliegueIcon";
 
 interface SiasisSelectProps {
@@ -8,6 +8,7 @@ interface SiasisSelectProps {
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   className?: string;
   placeholder?: string;
+  selectAttributes?: SelectHTMLAttributes<HTMLSelectElement>;
 }
 
 const SiasisSelect: React.FC<SiasisSelectProps> = ({
@@ -17,10 +18,12 @@ const SiasisSelect: React.FC<SiasisSelectProps> = ({
   onChange,
   className = "",
   placeholder = "Seleccione una opción",
+  selectAttributes,
 }) => {
   return (
     <div className="relative inline-block w-full">
       <select
+        {...selectAttributes}
         className={`appearance-none w-full font-normal
          px-2 py-1 rounded-md 
         shadow-sm focus:ring-2 focus:ring-negro

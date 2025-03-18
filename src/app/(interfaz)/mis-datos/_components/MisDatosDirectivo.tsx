@@ -8,6 +8,7 @@ import DatoFomularioConEtiqueta from "../../../../components/forms/DatoFomulario
 import useRequestAPIFeatures from "@/hooks/useRequestSiasisAPIFeatures";
 import { RolesSistema } from "@/interfaces/shared/RolesSistema";
 import type {
+  ActualizarMisDatosDirectivoBody,
   MisDatosDirectivo,
   MisDatosErrorResponseAPI01,
   MisDatosSuccessResponseAPI01,
@@ -45,13 +46,12 @@ const MisDatosDirectivo = ({
 
   const [misDatosDirectivoSaved, setMisDatosDirectivoSaved] = useState<
     Partial<MisDatosDirectivo>
-  >({});
-
-  const [misDatosDirectivo, setMisDatosDirectivo] = useState<
-    Partial<MisDatosDirectivo>
   >({
     Google_Drive_Foto_ID: googleDriveFotoIdCookieValue || undefined,
   });
+
+  const [misDatosDirectivoModificados, setMisDatosDirectivoModificados] =
+    useState<Partial<MisDatosDirectivo>>({});
 
   const {
     error,
@@ -89,7 +89,7 @@ const MisDatosDirectivo = ({
           responseJson as MisDatosSuccessResponseAPI01
         ).data as MisDatosDirectivo;
 
-        setMisDatosDirectivo(misDatosDirectivoData);
+        setMisDatosDirectivoModificados(misDatosDirectivoData);
 
         setMisDatosDirectivoSaved(misDatosDirectivoData);
 
@@ -108,7 +108,7 @@ const MisDatosDirectivo = ({
 
         await userStorage.saveUserData({
           Apellidos: misDatosDirectivoData.Apellidos,
-          Genero: misDatosDirectivo.Genero,
+          Genero: misDatosDirectivoData.Genero,
           Google_Drive_Foto_ID: misDatosDirectivoData.Google_Drive_Foto_ID,
           Nombres: misDatosDirectivoData.Nombres,
         });
@@ -129,17 +129,68 @@ const MisDatosDirectivo = ({
     fetchMisDatos();
   }, [fetchSiasisAPI, setError]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert("holi");
-    // Implementa la lógica de envío aquí
+
+    setIsSomethingLoading(true);
+
+    try {
+      const fetchCancelable = await fetchSiasisAPI({
+        endpoint: "/api/mis-datos",
+        method: "PUT",
+        body: JSON.stringify({
+          DNI: misDatosDirectivoModificados.DNI,
+          Nombres: misDatosDirectivoModificados.Nombres,
+          Apellidos: misDatosDirectivoModificados.Apellidos,
+          Genero: misDatosDirectivoModificados.Genero,
+          Celular: misDatosDirectivoModificados.Celular,
+        } as ActualizarMisDatosDirectivoBody),
+        queryParams: {
+          Rol: RolesSistema.Directivo,
+        },
+      });
+
+      if (!fetchCancelable) throw new Error();
+
+      const res = await fetchCancelable.fetch();
+
+      const responseJson = (await res.json()) as ApiResponseBase;
+
+      if (!responseJson.success) {
+        setIsSomethingLoading(false);
+        return setError(responseJson as MisDatosErrorResponseAPI01);
+      }
+
+      setMisDatosDirectivoSaved(misDatosDirectivoModificados);
+
+      //Actualizando Cache
+      await userStorage.saveUserData({
+        Apellidos: misDatosDirectivoModificados.Apellidos,
+        Genero: misDatosDirectivoModificados.Genero,
+        Google_Drive_Foto_ID: misDatosDirectivoModificados.Google_Drive_Foto_ID,
+        Nombres: misDatosDirectivoModificados.Nombres,
+      });
+
+      setIsSomethingLoading(false);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (e) {
+      if (error) {
+        setError({
+          message:
+            "Error al actualizar tus datos, vuelve a inténtalo más tarde",
+          success: false,
+        });
+      }
+      setIsSomethingLoading(false);
+    }
   };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
+    setError(null)
     const { name, value } = e.target;
-    setMisDatosDirectivo((prev) => ({
+    setMisDatosDirectivoModificados((prev) => ({
       ...prev,
       [name]: value,
     }));
@@ -178,7 +229,7 @@ const MisDatosDirectivo = ({
         <div className="flex col-span-full -border-2 flex-wrap py-2 justify-start items-center gap-x-6 gap-y-2">
           <h1
             className="font-medium 
-  sxs-only:text-[1.55rem] xs-only:text-[1.65rem] sm-only:text-[1.75rem] md-only:text-[1.9rem] lg-only:text-[2.1rem] xl-only:text-[2.4rem]"
+            sxs-only:text-[1.55rem] xs-only:text-[1.65rem] sm-only:text-[1.75rem] md-only:text-[1.9rem] lg-only:text-[2.1rem] xl-only:text-[2.4rem]"
           >
             MIS DATOS
           </h1>
@@ -192,13 +243,19 @@ const MisDatosDirectivo = ({
                   <EquisIcon className="text-blanco w-[0.85rem]" />
                 )
               }
-              onClick={() => setModoEdicion(!modoEdicion)}
+              onClick={() => {
+                //SI se esta cancelando el modo edicion entonces se volvera al
+                // estado en el que se encuentran los datos guardados en la base de datos
+                if (modoEdicion)
+                  setMisDatosDirectivoModificados(misDatosDirectivoSaved);
+                setModoEdicion(!modoEdicion);
+              }}
               className={`${
                 modoEdicion
                   ? "bg-rojo-oscuro text-blanco"
                   : "bg-amarillo-ediciones text-negro"
               }  gap-[0.5rem] content-center font-semibold px-[0.6rem] py-[0.35rem] rounded-[6px] 
-    sxs-only:text-[0.75rem] xs-only:text-[0.8rem] sm-only:text-[0.85rem] md-only:text-[0.9rem] lg-only:text-[0.95rem] xl-only:text-[1rem]`}
+              sxs-only:text-[0.75rem] xs-only:text-[0.8rem] sm-only:text-[0.85rem] md-only:text-[0.9rem] lg-only:text-[0.95rem] xl-only:text-[1rem]`}
             />
           )}
         </div>
@@ -209,33 +266,54 @@ const MisDatosDirectivo = ({
             <div className="flex flex-col gap-6 justify-center items-center">
               <FormSection titulo="Información Personal">
                 <DatoFomularioConEtiqueta<T_Directivos>
+                  inputAttributes={{
+                    minLength: 8,
+                    maxLength: 8,
+                    required: true,
+                    disabled: isSomethingLoading,
+                  }}
                   isSomethingLoading={isSomethingLoading}
                   modoEdicion={modoEdicion}
                   etiqueta="DNI"
                   nombreDato="DNI"
-                  valor={misDatosDirectivo.DNI}
                   modificable
+                  modificatedValue={misDatosDirectivoModificados.DNI}
+                  savedValue={misDatosDirectivoSaved.DNI}
                   onChange={handleChange}
                   className="sxs-only:text-[1.105rem] xs-only:text-[1.17rem] sm-only:text-[1.235rem] md-only:text-[1.3rem] lg-only:text-[1.365rem] xl-only:text-[1.43rem]"
                   fullWidth
                 />
                 <DatoFomularioConEtiqueta<T_Directivos>
+                  inputAttributes={{
+                    minLength: 2,
+                    maxLength: 60,
+                    required: true,
+                    disabled: isSomethingLoading,
+                  }}
                   isSomethingLoading={isSomethingLoading}
                   modoEdicion={modoEdicion}
                   etiqueta="Nombres"
                   nombreDato="Nombres"
                   modificable
+                  modificatedValue={misDatosDirectivoModificados.Nombres}
                   onChange={handleChange}
-                  valor={misDatosDirectivo.Nombres}
+                  savedValue={misDatosDirectivoSaved.Nombres}
                 />
                 <DatoFomularioConEtiqueta<T_Directivos>
+                  inputAttributes={{
+                    minLength: 2,
+                    maxLength: 60,
+                    required: true,
+                    disabled: isSomethingLoading,
+                  }}
                   isSomethingLoading={isSomethingLoading}
                   modoEdicion={modoEdicion}
                   etiqueta="Apellidos"
                   nombreDato="Apellidos"
                   modificable
+                  modificatedValue={misDatosDirectivoModificados.Apellidos}
                   onChange={handleChange}
-                  valor={misDatosDirectivo.Apellidos}
+                  savedValue={misDatosDirectivoSaved.Apellidos}
                 />
                 <DatoFomularioConEtiqueta<T_Directivos>
                   isSomethingLoading={isSomethingLoading}
@@ -243,33 +321,44 @@ const MisDatosDirectivo = ({
                   etiqueta="Género"
                   nombreDato="Genero"
                   modificable
+                  modificatedValue={misDatosDirectivoModificados.Genero}
                   onChange={handleChange}
                   inputType="select"
                   selectValues={{
                     [Genero.Masculino]: GenerosTextos.M,
                     [Genero.Femenino]: GenerosTextos.F,
                   }}
+                  selectAttributes={{ disabled: isSomethingLoading }}
                   skeletonClassName={{ className: "min-w-[1.1rem]" }}
-                  valor={misDatosDirectivo.Genero}
+                  savedValue={misDatosDirectivoSaved.Genero}
                 />
                 <DatoFomularioConEtiqueta<T_Directivos>
+                  inputAttributes={{
+                    minLength: 9,
+                    maxLength: 9,
+                    required: true,
+                    disabled: isSomethingLoading,
+                  }}
                   isSomethingLoading={isSomethingLoading}
                   modoEdicion={modoEdicion}
                   etiqueta="Celular"
                   nombreDato="Celular"
                   modificable
+                  modificatedValue={misDatosDirectivoModificados.Celular}
                   onChange={handleChange}
-                  valor={misDatosDirectivo.Celular}
+                  savedValue={misDatosDirectivoSaved.Celular}
                 />
               </FormSection>
 
               {modoEdicion && (
                 <BotonConIcono
-                  LoaderTSX={<Loader className="w-[1.4rem]" />}
+                  LoaderTSX={
+                    <Loader className="w-[1.3rem] p-[0.25rem] bg-negro" />
+                  }
                   isSomethingLoading={isSomethingLoading}
                   disabled={deepEqualsObjects(
-                    misDatosDirectivo,
-                    misDatosDirectivoSaved
+                    misDatosDirectivoSaved,
+                    misDatosDirectivoModificados
                   )}
                   typeButton="submit"
                   className="w-max content-center font-semibold p-3 py-2 rounded-[10px] bg-amarillo-ediciones gap-2 sxs-only:text-[0.75rem] xs-only:text-[0.8rem] sm-only:text-[0.85rem] md-only:text-[0.9rem] lg-only:text-[0.95rem] xl-only:text-[1rem]"
@@ -286,15 +375,17 @@ const MisDatosDirectivo = ({
                   modoEdicion={modoEdicion}
                   etiqueta="Nombre de Usuario"
                   nombreDato="Nombre_Usuario"
-                  valor={misDatosDirectivo.Nombre_Usuario}
+                  savedValue={misDatosDirectivoSaved.Nombre_Usuario}
                 />
                 <DatoFomularioConEtiqueta<T_Directivos>
                   isSomethingLoading={isSomethingLoading}
                   modoEdicion={modoEdicion}
                   etiqueta="Contraseña"
                   nombreDato="Contraseña"
-                  valorOculto
+                  savedValue={misDatosDirectivoSaved.Nombre_Usuario}
+                  savedValueOculto
                   onChange={handleChange}
+                  modificable
                   modificableConModal
                   IconTSX={<CandadoUpdate className="text-negro w-[1.3rem]" />}
                   setModalVisibility={setCambiarContraseñaModal}
@@ -304,9 +395,10 @@ const MisDatosDirectivo = ({
                   modoEdicion={modoEdicion}
                   etiqueta="Correo Electronico"
                   nombreDato="Correo_Electronico"
-                  valor={misDatosDirectivo.Correo_Electronico}
+                  savedValue={misDatosDirectivoSaved.Correo_Electronico}
                   IconTSX={<CorreoUpdate className="w-[1.3rem]" />}
                   onChange={handleChange}
+                  modificable
                   modificableConModal
                   setModalVisibility={setCambiarCorreoElectronicoModal}
                 />
@@ -320,11 +412,11 @@ const MisDatosDirectivo = ({
           <MyUserCard
             setCambiarFotoModal={setCambiarFotoModal}
             isSomethingLoading={isSomethingLoading}
-            Nombres={misDatosDirectivo.Nombres}
-            Apellidos={misDatosDirectivo.Apellidos}
-            Nombre_Usuario={misDatosDirectivo.Nombre_Usuario}
+            Nombres={misDatosDirectivoSaved.Nombres}
+            Apellidos={misDatosDirectivoSaved.Apellidos}
+            Nombre_Usuario={misDatosDirectivoSaved.Nombre_Usuario}
             Google_Drive_Foto_ID={
-              misDatosDirectivo.Google_Drive_Foto_ID || null
+              misDatosDirectivoSaved.Google_Drive_Foto_ID || null
             }
           />
         </div>

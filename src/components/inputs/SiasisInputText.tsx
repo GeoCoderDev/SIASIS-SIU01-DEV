@@ -1,4 +1,4 @@
-import React from "react";
+import React, {  InputHTMLAttributes } from "react";
 
 interface SiasisInputTextProps {
   value: string | number;
@@ -7,6 +7,7 @@ interface SiasisInputTextProps {
   className?: string;
   placeholder?: string;
   type?: "text" | "number" | "email" | "password" | "tel";
+  inputAttributes?: InputHTMLAttributes<HTMLInputElement>;
 }
 
 const SiasisInputText: React.FC<SiasisInputTextProps> = ({
@@ -16,9 +17,12 @@ const SiasisInputText: React.FC<SiasisInputTextProps> = ({
   className = "",
   placeholder = "",
   type = "text",
+  inputAttributes,
 }) => {
   return (
     <input
+
+      {...inputAttributes}
       className={`
         w-full font-normal
         sxs-only:max-w-[7rem] xs-only:max-w-[8rem] sm-only:max-w-[9rem] md-only:max-w-[10rem] lg-only:max-w-[11rem] xl-only:max-w-[12rem]

@@ -26,7 +26,7 @@ const MyUserCard = ({
       />
 
       <div className="flex flex-col gap-2 justify-center items-center">
-        {!isSomethingLoading && (
+        {Nombres && Apellidos && (
           <BotonConIcono
             onClick={() => {
               setCambiarFotoModal(true);
@@ -41,18 +41,23 @@ const MyUserCard = ({
 
         <div
           className={`w-full text-[1.2rem] text-center ${
-            isSomethingLoading || (!Nombres && !Apellidos) ? "skeleton h-[1.5rem] min-w-[min(10rem,70vw)]" : ""
+            isSomethingLoading && !Nombres && !Apellidos
+              ? "skeleton h-[1.5rem] min-w-[min(10rem,70vw)]"
+              : ""
           } sxs-only:text-[1rem] xs-only:text-[1.05rem] sm-only:text-[1.1rem] md-only:text-[1.15rem] lg-only:text-[1.2rem] xl-only:text-[1.25rem]`}
         >
-          {!(isSomethingLoading || (!Nombres && !Apellidos)) && `${Nombres} ${Apellidos}`}
+          {!(isSomethingLoading && !Nombres && !Apellidos) &&
+            `${Nombres} ${Apellidos}`}
         </div>
-        
+
         <div
           className={`font-semibold text-center w-full sxs-only:text-[0.85rem] xs-only:text-[0.9rem] sm-only:text-[0.95rem] md-only:text-[1rem] lg-only:text-[1.05rem] xl-only:text-[1.1rem] ${
-            isSomethingLoading || !Nombre_Usuario ? "skeleton h-[1.5rem] min-w-[min(10rem,70vw)]" : ""
+            isSomethingLoading && !Nombre_Usuario
+              ? "skeleton h-[1.5rem] min-w-[min(10rem,70vw)]"
+              : ""
           }`}
         >
-          {!(isSomethingLoading || !Nombre_Usuario) && Nombre_Usuario}
+          {!(isSomethingLoading && !Nombre_Usuario) && Nombre_Usuario}
         </div>
       </div>
     </div>

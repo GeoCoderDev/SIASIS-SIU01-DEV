@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import AllErrorTypes from "./errors";
 import { ErrorDetails } from "./errors/details";
 
@@ -24,4 +23,5 @@ export interface ErrorResponseAPIBase extends ApiResponseBase {
   success: false;
   details?: ErrorDetails;
   errorType?: AllErrorTypes;
+  conflictField?: string;
 }

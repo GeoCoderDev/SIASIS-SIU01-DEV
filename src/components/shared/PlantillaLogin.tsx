@@ -192,7 +192,7 @@ const PlantillaLogin = ({ rol, siasisAPI, endpoint }: PlantillaLoginProps) => {
               >
                 Ingresar
                 {isSomethingLoading && !error && !successMessage && (
-                  <Loader className="w-[1.5rem]" />
+                  <Loader className="w-[1.5rem] border-white p-[0.3rem]" />
                 )}
               </button>
             </form>
