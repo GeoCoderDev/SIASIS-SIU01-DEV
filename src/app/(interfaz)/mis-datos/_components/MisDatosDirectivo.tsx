@@ -8,7 +8,7 @@ import DatoFomularioConEtiqueta from "../../../../components/forms/DatoFomulario
 import useRequestAPIFeatures from "@/hooks/useRequestSiasisAPIFeatures";
 import { RolesSistema } from "@/interfaces/shared/RolesSistema";
 import type {
-  ActualizarMisDatosDirectivoBody,
+  ActualizarMisDatosDirectivoRequestBody,
   MisDatosDirectivo,
   MisDatosErrorResponseAPI01,
   MisDatosSuccessResponseAPI01,
@@ -144,7 +144,7 @@ const MisDatosDirectivo = ({
           Apellidos: misDatosDirectivoModificados.Apellidos,
           Genero: misDatosDirectivoModificados.Genero,
           Celular: misDatosDirectivoModificados.Celular,
-        } as ActualizarMisDatosDirectivoBody),
+        } as ActualizarMisDatosDirectivoRequestBody),
         queryParams: {
           Rol: RolesSistema.Directivo,
         },
@@ -172,6 +172,7 @@ const MisDatosDirectivo = ({
       });
 
       setIsSomethingLoading(false);
+      setModoEdicion(false);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       if (error) {
@@ -188,7 +189,7 @@ const MisDatosDirectivo = ({
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    setError(null)
+    setError(null);
     const { name, value } = e.target;
     setMisDatosDirectivoModificados((prev) => ({
       ...prev,

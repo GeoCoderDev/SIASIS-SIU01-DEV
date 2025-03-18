@@ -88,46 +88,44 @@ export type MisDatosErrorResponseAPI01 = ErrorResponseAPIBase;
 //                METODO PUT
 // -----------------------------------------
 
-export type ActualizarMisDatosDirectivoBody = Partial<
+export type ActualizarMisDatosDirectivoRequestBody = Partial<
   Pick<T_Directivos, "DNI" | "Nombres" | "Apellidos" | "Genero" | "Celular">
 > & { Genero: Genero };
 
-export type ActualizarMisDatosProfesorPrimariaBody = Partial<
+export type ActualizarMisDatosProfesorPrimariaRequestBody = Partial<
   Pick<T_Profesores_Primaria, "Correo_Electronico" | "Celular">
 >;
 
-export type ActualizarMisDatosAuxiliarBody = Partial<
+export type ActualizarMisDatosAuxiliarRequestBody = Partial<
   Pick<T_Auxiliares, "Correo_Electronico" | "Celular">
 >;
 
-export type ActualizarMisDatosProfesorSecundariaBody = Partial<
+export type ActualizarMisDatosProfesorSecundariaRequestBody = Partial<
   Pick<T_Profesores_Secundaria, "Correo_Electronico" | "Celular">
 >;
 
-export type ActualizarMisDatosTutorBody = Partial<
+export type ActualizarMisDatosTutorRequestBody = Partial<
   Pick<T_Profesores_Secundaria, "Celular">
 >;
 
-// export type ActualizarMisDatosResponsableBody = Partial<
-//   Pick<T_Responsables, "Celular">
-// >;
 
-export type ActualizarMisDatosPersonalAdministrativoBody = Partial<
+
+export type ActualizarMisDatosPersonalAdministrativoRequestBody = Partial<
   Pick<T_Personal_Administrativo, "Celular">
 >;
 
-export type ActualizarMisDatoUsuarioBodyAPI01 =
-  | ActualizarMisDatosDirectivoBody
-  | ActualizarMisDatosProfesorPrimariaBody
-  | ActualizarMisDatosAuxiliarBody
-  | ActualizarMisDatosProfesorSecundariaBody
-  | ActualizarMisDatosTutorBody
-  | ActualizarMisDatosPersonalAdministrativoBody;
+export type ActualizarMisDatoUsuarioRequestBodyAPI01 =
+  | ActualizarMisDatosDirectivoRequestBody
+  | ActualizarMisDatosProfesorPrimariaRequestBody
+  | ActualizarMisDatosAuxiliarRequestBody
+  | ActualizarMisDatosProfesorSecundariaRequestBody
+  | ActualizarMisDatosTutorRequestBody
+  | ActualizarMisDatosPersonalAdministrativoRequestBody;
 
 // Interfaz para la respuesta exitosa
 export interface ActualizarUsuarioSuccessResponseAPI01
   extends SuccessResponseAPIBase {
   success: true;
   message: string;
-  data: ActualizarMisDatoUsuarioBodyAPI01; // Los datos que se actualizaron
+  data: ActualizarMisDatoUsuarioRequestBodyAPI01; // Los datos que se actualizaron
 }
