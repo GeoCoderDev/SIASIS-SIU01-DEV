@@ -128,7 +128,7 @@ const PlantillaLogin = ({ rol, siasisAPI, endpoint }: PlantillaLoginProps) => {
   return (
     <>
       <main className="w-full h-full min-h-screen bg-gris-claro max-sm:bg-blanco flex items-center justify-center max-sm:p-0">
-        <div className="flex flex-row max-sm:flex-col bg-blanco shadow-[0px_0px_23.5px_5px_rgba(0,0,0,0.25)] max-sm:shadow-none max-sm:rounded-none max-sm:w-full max-sm:h-full p-8 max-sm:p-2 w-full max-w-2xl">
+        <div className="flex flex-row max-sm:flex-col bg-blanco rounded-[1rem] shadow-[0px_0px_23.5px_5px_rgba(0,0,0,0.25)] max-sm:shadow-none max-sm:rounded-none max-sm:w-full max-sm:h-full p-8 max-sm:p-2 w-full max-w-2xl">
           {/* Sección Izquierda: Formulario de Inicio de Sesión */}
           <div className="w-1/2 pr-4 max-sm:w-full max-sm:px-4 max-sm:py-2 max-sm:order-2">
             <Link href="/login">

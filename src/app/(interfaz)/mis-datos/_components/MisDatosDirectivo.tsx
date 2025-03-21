@@ -61,6 +61,24 @@ const MisDatosDirectivo = ({
     setIsSomethingLoading,
   } = useRequestAPIFeatures("API01", true);
 
+  const updateFoto = async (Google_Drive_Foto_ID: string | null) => {
+    setMisDatosDirectivoSaved((prev) => ({
+      ...prev,
+      Google_Drive_Foto_ID,
+    }));
+
+    fetch("/api/auth/update-cookie/photo", {
+      method: "PUT",
+      body: JSON.stringify({
+        Google_Drive_Foto_ID,
+      }),
+    });
+
+    await userStorage.saveUserData({
+      Google_Drive_Foto_ID,
+    });
+  };
+
   useEffect(() => {
     if (!fetchSiasisAPI) return;
 
@@ -98,12 +116,7 @@ const MisDatosDirectivo = ({
           googleDriveFotoIdCookieValue !==
           misDatosDirectivoData.Google_Drive_Foto_ID
         ) {
-          fetch("/api/auth/update-cookie/photo", {
-            method: "PUT",
-            body: JSON.stringify({
-              Google_Drive_Foto_ID: misDatosDirectivoData.Google_Drive_Foto_ID,
-            }),
-          });
+          updateFoto(misDatosDirectivoData.Google_Drive_Foto_ID);
         }
 
         await userStorage.saveUserData({
@@ -199,6 +212,22 @@ const MisDatosDirectivo = ({
 
   return (
     <>
+      {cambiarFotoModal && (
+        <CambiarFotoModal
+          siasisAPI="API01"
+          Rol={RolesSistema.Directivo}
+          updateFoto={(googleDriveFotoId: string) => {
+            updateFoto(googleDriveFotoId);
+          }}
+          initialSource={
+            misDatosDirectivoSaved.Google_Drive_Foto_ID &&
+            `https://drive.google.com/thumbnail?id=${misDatosDirectivoSaved.Google_Drive_Foto_ID}`
+          }
+          eliminateModal={() => {
+            setCambiarFotoModal(false);
+          }}
+        />
+      )}
       {cambiarContraseñaModal && (
         <CambiarMiContraseñaModal
           eliminateModal={() => {
@@ -206,7 +235,6 @@ const MisDatosDirectivo = ({
           }}
         />
       )}
-
       {cambiarCorreoElectronicoModal && (
         <CambiarCorreoElectronicoModal
           eliminateModal={() => {
@@ -214,15 +242,6 @@ const MisDatosDirectivo = ({
           }}
         />
       )}
-
-      {cambiarFotoModal && (
-        <CambiarFotoModal
-          eliminateModal={() => {
-            setCambiarFotoModal(false);
-          }}
-        />
-      )}
-
       <div className="@container -border-2 border-blue-500 w-full max-w-[75rem] h-full grid grid-cols-7 grid-rows-[min-content_1fr] gap-y-4 md:gap-0">
         {error && <ErrorMessage1 {...error} />}
 
@@ -361,6 +380,7 @@ const MisDatosDirectivo = ({
                     misDatosDirectivoSaved,
                     misDatosDirectivoModificados
                   )}
+                  titleDisabled="Aun no has modificado nada"
                   typeButton="submit"
                   className="w-max content-center font-semibold p-3 py-2 rounded-[10px] bg-amarillo-ediciones gap-2 sxs-only:text-[0.75rem] xs-only:text-[0.8rem] sm-only:text-[0.85rem] md-only:text-[0.9rem] lg-only:text-[0.95rem] xl-only:text-[1rem]"
                   texto="Guardar Cambios"

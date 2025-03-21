@@ -9,6 +9,7 @@ interface BotonConIconoProps {
   disabled?: boolean;
   LoaderTSX?: ReactElement;
   isSomethingLoading?: boolean;
+  titleDisabled?: string;
 }
 
 const BotonConIcono = ({
@@ -19,14 +20,19 @@ const BotonConIcono = ({
   onClick,
   typeButton = "button",
   LoaderTSX,
-  isSomethingLoading=false,
+  isSomethingLoading = false,
+  titleDisabled,
 }: BotonConIconoProps) => {
   return (
     <button
       disabled={disabled || isSomethingLoading}
       onClick={onClick}
       type={typeButton}
-      title={disabled ? "Aun no has modificado nada" : "Guarda tu cambios"}
+      title={
+        disabled
+          ? titleDisabled ?? "No puedes usar este boton ahora"
+          : "Guarda tu cambios"
+      }
       className={`flex flex-wrap items-center justify-center disabled:grayscale-[0.6] disabled:cursor-not-allowed ${className}`}
     >
       {texto} {isSomethingLoading ? LoaderTSX : IconTSX}

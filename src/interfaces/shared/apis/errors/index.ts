@@ -39,6 +39,7 @@ export enum PermissionErrorTypes {
  * Errores técnicos del sistema
  */
 export enum SystemErrorTypes {
+  EXTERNAL_SERVICE_ERROR = "EXTERNAL_SERVICE_ERROR",
   DATABASE_ERROR = "DATABASE_ERROR", // Error al conectar con la base de datos
   UNKNOWN_ERROR = "UNKNOWN_ERROR", // Error desconocido
 }
@@ -65,6 +66,15 @@ export enum DataConflictErrorTypes {
   DATABASE_CONSTRAINT = "CONFLICTO_RESTRICCIÓN_BASE_DATOS",
 }
 
+export enum FileErrorTypes {
+  FILE_MISSING = "FILE_MISSING",
+  INVALID_FILE_TYPE = "INVALID_FILE_TYPE",
+  FILE_TOO_LARGE = "FILE_TOO_LARGE",
+  FILE_UPLOAD_FAILED = "FILE_UPLOAD_FAILED",
+  FILE_DELETE_FAILED = "FILE_DELETE_FAILED",
+}
+
+
 type AllErrorTypes =
   | RequestErrorTypes
   | TokenErrorTypes
@@ -72,6 +82,7 @@ type AllErrorTypes =
   | PermissionErrorTypes
   | SystemErrorTypes
   | ValidationErrorTypes
-  | DataConflictErrorTypes;
+  | DataConflictErrorTypes
+  | FileErrorTypes;
 
 export default AllErrorTypes;
