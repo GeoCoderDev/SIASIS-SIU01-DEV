@@ -7,8 +7,8 @@ import { useState } from "react";
 import useRequestAPIFeatures from "@/hooks/useRequestSiasisAPIFeatures";
 
 import Loader from "./loaders/Loader";
-import ErrorMessage1 from "./errors/ErrorMessage1";
-import SuccessMessage1 from "./successes/SuccessMessage1";
+import ErrorMessage from "./errors/ErrorMessage";
+import SuccessMessage from "./successes/SuccessMessage";
 import userStorage from "@/lib/utils/local/db/models/UserStorage";
 import { SiasisAPIS } from "@/interfaces/shared/SiasisComponents";
 import {
@@ -113,7 +113,9 @@ const PlantillaLogin = ({ rol, siasisAPI, endpoint }: PlantillaLoginProps) => {
       await userStorage.saveUserData(data);
 
       setIsSomethingLoading(false);
-      window.location.href = "/";
+      // setTimeout(() => {
+        window.location.href = "/";
+      // }, 3000);
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
@@ -179,15 +181,22 @@ const PlantillaLogin = ({ rol, siasisAPI, endpoint }: PlantillaLoginProps) => {
                 <span className="font-bold">{intentosRestantes}</span>
               </p>
 
-              {error && <ErrorMessage1 {...error} />}
+              {error && <ErrorMessage className="my-3" error={error} />}
 
               {successMessage && (
-                <SuccessMessage1 message={successMessage.message} />
+                <SuccessMessage
+                  className="my-3"
+                  message={successMessage.message}
+                />
               )}
 
               <button
                 type="submit"
-                disabled={isSomethingLoading || Boolean(error)}
+                disabled={
+                  isSomethingLoading ||
+                  Boolean(error) ||
+                  Boolean(successMessage)
+                }
                 className="mt-3 w-full bg-color-interfaz text-blanco rounded-lg text-[1rem] flex gap-4 items-center justify-center py-3 disabled:grayscale-[0.75] pointer"
               >
                 Ingresar

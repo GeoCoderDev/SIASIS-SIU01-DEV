@@ -11,6 +11,12 @@ import {
   ErrorResponseAPIBase,
 } from "@/interfaces/shared/apis/types";
 import { CambiarFotoPerfilSuccessResponse } from "@/interfaces/shared/apis/shared/mis-datos/mi-foto-perfil/types";
+import {
+  ValidationErrorTypes,
+  FileErrorTypes,
+  RequestErrorTypes,
+} from "@/interfaces/shared/apis/errors";
+import ErrorMessage from "../shared/errors/ErrorMessage";
 
 interface CambiarFotoModalProps
   extends Pick<ModalContainerProps, "eliminateModal"> {
@@ -18,6 +24,7 @@ interface CambiarFotoModalProps
   updateFoto: (googleDriveFotoId: string) => void;
   Rol: RolesSistema;
   siasisAPI: SiasisAPIS;
+  onSuccess?: () => void;
 }
 
 const CambiarFotoModal = ({
@@ -25,6 +32,7 @@ const CambiarFotoModal = ({
   initialSource,
   updateFoto,
   Rol,
+  onSuccess,
   siasisAPI,
 }: CambiarFotoModalProps) => {
   // Estado para la vista previa de la imagen
@@ -34,12 +42,6 @@ const CambiarFotoModal = ({
 
   // Estado para el archivo seleccionado
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-
-  // Estado para mostrar mensaje de error
-  // const [error, setError] = useState<string | null>(null);
-
-  // Estado para indicar que se está procesando
-  // const [isUploading, setIsUploading] = useState(false);
 
   // Referencia para el input de archivo
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -61,7 +63,11 @@ const CambiarFotoModal = ({
 
       // Verificar tipo de archivo
       if (!file.type.includes("image/")) {
-        setError({ message: "El archivo debe ser una imagen", success: false });
+        setError({
+          message: "El archivo debe ser una imagen",
+          success: false,
+          errorType: FileErrorTypes.INVALID_FILE_TYPE,
+        });
         return;
       }
 
@@ -70,6 +76,7 @@ const CambiarFotoModal = ({
         setError({
           message: "La imagen no debe superar los 5MB",
           success: false,
+          errorType: FileErrorTypes.FILE_TOO_LARGE,
         });
         return;
       }
@@ -91,7 +98,11 @@ const CambiarFotoModal = ({
 
       // Verificar tipo de archivo
       if (!file.type.includes("image/")) {
-        setError({ message: "El archivo debe ser una imagen", success: false });
+        setError({
+          message: "El archivo debe ser una imagen",
+          success: false,
+          errorType: FileErrorTypes.INVALID_FILE_TYPE,
+        });
         return;
       }
 
@@ -100,6 +111,7 @@ const CambiarFotoModal = ({
         setError({
           message: "La imagen no debe superar los 5MB",
           success: false,
+          errorType: FileErrorTypes.FILE_TOO_LARGE,
         });
         return;
       }
@@ -126,6 +138,7 @@ const CambiarFotoModal = ({
       setError({
         message: "Debes seleccionar una imagen primero",
         success: false,
+        errorType: ValidationErrorTypes.REQUIRED_FIELDS,
       });
       return;
     }
@@ -138,7 +151,6 @@ const CambiarFotoModal = ({
       const formData = new FormData(e.currentTarget);
 
       // Asegurarse de que se incluye el archivo seleccionado
-      // (normalmente esto lo haría el navegador automáticamente, pero por si acaso)
       formData.set("foto", selectedFile);
 
       const fetchCancelable = await fetchSiasisAPI({
@@ -165,11 +177,17 @@ const CambiarFotoModal = ({
       } = responseJson as CambiarFotoPerfilSuccessResponse;
       updateFoto(fileId);
 
+      onSuccess?.();
+
       // Cerrar el modal
       eliminateModal();
     } catch (err) {
       console.error("Error al cambiar la foto de perfil:", err);
-      setError({ message: "", success: false });
+      setError({
+        message: "Error al procesar la solicitud",
+        success: false,
+        errorType: RequestErrorTypes.REQUEST_FAILED,
+      });
     } finally {
       setIsUploading(false);
     }
@@ -189,12 +207,12 @@ const CambiarFotoModal = ({
   }, [previewUrl, initialSource]);
 
   return (
-    <ModalContainer eliminateModal={eliminateModal}>
+    <ModalContainer
+      eliminateModal={() => {
+        if (!isUploading) eliminateModal();
+      }}
+    >
       <div className="flex flex-col items-center w-full max-w-md mx-auto">
-        {/* <h2 className="text-[1.25rem] font-semibold text-negro mb-8">
-          Cambiar Foto de Perfil
-        </h2> */}
-
         <form
           onSubmit={handleSubmit}
           className="w-full flex flex-col items-center"
@@ -236,19 +254,20 @@ const CambiarFotoModal = ({
 
           {/* Mensaje de error */}
           {error && (
-            <div className="text-red-500 text-sm mt-3 text-center w-full">
-              {error.message}
+            <div className="mt-4 w-full max-w-[20rem]">
+              <ErrorMessage error={error} closable={true} />
             </div>
           )}
 
           {/* Botón de envío del formulario */}
           <BotonConIcono
             IconTSX={<></>}
+            isSomethingLoading={isUploading}
             titleDisabled="La imagen se esta subiendo"
             LoaderTSX={<Loader className="w-[1.3rem] p-[0.25rem] bg-negro" />}
-            texto={isUploading ? "Subiendo..." : "Cambiar Foto"}
+            texto={isUploading ? "Subiendo" : "Cambiar Foto"}
             typeButton="submit"
-            className={`w-max py-2 px-4 rounded-lg text-negro font-medium mt-6 ${
+            className={`w-max gap-3 py-2 px-4 rounded-lg text-negro font-semibold mt-6 ${
               isUploading || !selectedFile
                 ? "bg-gris-intermedio cursor-not-allowed"
                 : "bg-amarillo-ediciones hover:grayscale-[0.2] transition-colors"

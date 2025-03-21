@@ -4,6 +4,7 @@
 export enum RequestErrorTypes {
   INVALID_PARAMETERS = "INVALID_PARAMETERS",
   MISSING_PARAMETERS = "MISSING_PARAMETERS",
+  REQUEST_FAILED = "REQUEST_FAILED",
 }
 
 /**
@@ -57,6 +58,7 @@ export enum ValidationErrorTypes {
   STRING_TOO_LONG = "STRING_TOO_LONG",
   FIELD_REQUIRED = "FIELD_REQUIRED",
   INVALID_FORMAT = "INVALID_FORMAT",
+  REQUIRED_FIELDS = "REQUIRED_FIELDS",
 }
 
 export enum DataConflictErrorTypes {
@@ -73,7 +75,6 @@ export enum FileErrorTypes {
   FILE_UPLOAD_FAILED = "FILE_UPLOAD_FAILED",
   FILE_DELETE_FAILED = "FILE_DELETE_FAILED",
 }
-
 
 type AllErrorTypes =
   | RequestErrorTypes

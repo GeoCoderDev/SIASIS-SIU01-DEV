@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import MyUserCard from "@/components/shared/cards/UserCard";
 
@@ -13,8 +12,11 @@ import type {
   MisDatosErrorResponseAPI01,
   MisDatosSuccessResponseAPI01,
 } from "@/interfaces/shared/apis/api01/mis-datos/types";
-import { ApiResponseBase } from "@/interfaces/shared/apis/types";
-import ErrorMessage1 from "@/components/shared/errors/ErrorMessage1";
+import {
+  ApiResponseBase,
+  SuccessResponseAPIBase,
+} from "@/interfaces/shared/apis/types";
+import ErrorMessage from "@/components/shared/errors/ErrorMessage";
 import BotonConIcono from "@/components/buttons/BotonConIcono";
 import LapizIcon from "@/components/icons/LapizIcon";
 import FormSection from "@/components/forms/FormSection";
@@ -31,6 +33,7 @@ import CambiarCorreoElectronicoModal from "@/components/modals/CambiarCorreoElec
 import CambiarFotoModal from "@/components/modals/CambiarFotoModal";
 import deepEqualsObjects from "@/lib/helpers/compares/deepEqualsObjects";
 import Loader from "@/components/shared/loaders/Loader";
+import SuccessMessage from "@/components/shared/successes/SuccessMessage";
 
 const MisDatosDirectivo = ({
   googleDriveFotoIdCookieValue,
@@ -59,6 +62,8 @@ const MisDatosDirectivo = ({
     fetchSiasisAPI,
     isSomethingLoading,
     setIsSomethingLoading,
+    setSuccessMessage,
+    successMessage,
   } = useRequestAPIFeatures("API01", true);
 
   const updateFoto = async (Google_Drive_Foto_ID: string | null) => {
@@ -142,11 +147,11 @@ const MisDatosDirectivo = ({
     fetchMisDatos();
   }, [fetchSiasisAPI, setError]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmitUpdateData = async (e: React.FormEvent) => {
     e.preventDefault();
 
     setIsSomethingLoading(true);
-
+    setError(null);
     try {
       const fetchCancelable = await fetchSiasisAPI({
         endpoint: "/api/mis-datos",
@@ -173,6 +178,10 @@ const MisDatosDirectivo = ({
         setIsSomethingLoading(false);
         return setError(responseJson as MisDatosErrorResponseAPI01);
       }
+
+      const { message } = responseJson as SuccessResponseAPIBase;
+
+      setSuccessMessage({ message });
 
       setMisDatosDirectivoSaved(misDatosDirectivoModificados);
 
@@ -219,6 +228,11 @@ const MisDatosDirectivo = ({
           updateFoto={(googleDriveFotoId: string) => {
             updateFoto(googleDriveFotoId);
           }}
+          onSuccess={() => {
+            setSuccessMessage({
+              message: "Se actualizo correctamente la Foto",
+            });
+          }}
           initialSource={
             misDatosDirectivoSaved.Google_Drive_Foto_ID &&
             `https://drive.google.com/thumbnail?id=${misDatosDirectivoSaved.Google_Drive_Foto_ID}`
@@ -243,8 +257,6 @@ const MisDatosDirectivo = ({
         />
       )}
       <div className="@container -border-2 border-blue-500 w-full max-w-[75rem] h-full grid grid-cols-7 grid-rows-[min-content_1fr] gap-y-4 md:gap-0">
-        {error && <ErrorMessage1 {...error} />}
-
         {/* SECCION DE BOTONES */}
         <div className="flex col-span-full -border-2 flex-wrap py-2 justify-start items-center gap-x-6 gap-y-2">
           <h1
@@ -282,8 +294,20 @@ const MisDatosDirectivo = ({
 
         {/* SECCION DEL FORMULARIO */}
         <div className="col-span-full @lg:col-span-4 -border-2 justify-center">
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmitUpdateData}>
             <div className="flex flex-col gap-6 justify-center items-center">
+              {error && (
+                <ErrorMessage error={error} closable duration={12000} />
+              )}
+
+              {successMessage && (
+                <SuccessMessage
+                  className="mb-[-1rem]"
+                  closable
+                  duration={7000}
+                  {...successMessage}
+                />
+              )}
               <FormSection titulo="Información Personal">
                 <DatoFomularioConEtiqueta<T_Directivos>
                   inputAttributes={{
