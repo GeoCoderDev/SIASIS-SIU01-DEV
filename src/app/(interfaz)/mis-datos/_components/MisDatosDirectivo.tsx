@@ -219,6 +219,12 @@ const MisDatosDirectivo = ({
     }));
   };
 
+  const updateEmail = (nuevoCorreo: string) => {
+    setMisDatosDirectivoSaved((prev) => {
+      return { ...prev, Correo_Electronico: nuevoCorreo };
+    });
+  };
+
   return (
     <>
       {cambiarFotoModal && (
@@ -244,6 +250,13 @@ const MisDatosDirectivo = ({
       )}
       {cambiarContraseñaModal && (
         <CambiarMiContraseñaModal
+          siasisAPI="API01"
+          onSuccess={() => {
+            setSuccessMessage({
+              message: "Se actualizo la contraseña correctamente",
+            });
+          }}
+          Rol={RolesSistema.Directivo}
           eliminateModal={() => {
             setCambiarContraseñaModal(false);
           }}
@@ -251,6 +264,13 @@ const MisDatosDirectivo = ({
       )}
       {cambiarCorreoElectronicoModal && (
         <CambiarCorreoElectronicoModal
+          siasisAPI="API01"
+          updateEmail={updateEmail}
+          onSuccess={() => {
+            setSuccessMessage({
+              message: "Se actualizo correctamente la contraseña",
+            });
+          }}
           eliminateModal={() => {
             setCambiarCorreoElectronicoModal(false);
           }}

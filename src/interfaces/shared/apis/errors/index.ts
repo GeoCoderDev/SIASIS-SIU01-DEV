@@ -76,6 +76,15 @@ export enum FileErrorTypes {
   FILE_DELETE_FAILED = "FILE_DELETE_FAILED",
 }
 
+export enum AuthenticationErrorTypes {
+  MAX_ATTEMPTS_EXCEEDED = "MAX_ATTEMPTS_EXCEEDED",
+  VERIFICATION_FAILED = "VERIFICATION_FAILED",
+  CHALLENGE_REQUIRED = "CHALLENGE_REQUIRED",
+  OTP_INVALID = "OTP_INVALID",
+  ACCOUNT_LOCKED = "ACCOUNT_LOCKED",
+  TEMPORARY_BLOCKED = "TEMPORARY_BLOCKED",
+}
+
 type AllErrorTypes =
   | RequestErrorTypes
   | TokenErrorTypes
@@ -84,6 +93,7 @@ type AllErrorTypes =
   | SystemErrorTypes
   | ValidationErrorTypes
   | DataConflictErrorTypes
-  | FileErrorTypes;
-
+  | FileErrorTypes
+  | AuthenticationErrorTypes;
+  
 export default AllErrorTypes;

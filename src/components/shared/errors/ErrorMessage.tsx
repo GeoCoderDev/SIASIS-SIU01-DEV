@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ErrorResponseAPIBase } from "@/interfaces/shared/apis/types";
-import React, { useEffect, useState } from "react";
+import React, { Dispatch, SetStateAction, useEffect, useState } from "react";
 import {
   DataConflictErrorTypes,
   FileErrorTypes,
@@ -10,6 +10,7 @@ import {
   TokenErrorTypes,
   UserErrorTypes,
   ValidationErrorTypes,
+  AuthenticationErrorTypes,
 } from "@/interfaces/shared/apis/errors";
 
 interface ErrorMessageProps {
@@ -17,6 +18,7 @@ interface ErrorMessageProps {
   className?: string;
   duration?: number; // en milisegundos
   closable?: boolean;
+  setError?: Dispatch<SetStateAction<ErrorResponseAPIBase | null>>;
 }
 
 const ErrorMessage = ({
@@ -24,6 +26,7 @@ const ErrorMessage = ({
   className = "",
   duration,
   closable = false,
+  setError,
 }: ErrorMessageProps) => {
   const [visible, setVisible] = useState(true);
   const { message, errorType } = error;
@@ -89,6 +92,16 @@ const ErrorMessage = ({
         iconBgClass: "bg-[#FF6B35] text-white",
         icon: TokenIcon,
         title: "Autenticación",
+      };
+    }
+
+    // Error de autenticación - Rojo intenso
+    if (Object.values(AuthenticationErrorTypes).includes(errorType as any)) {
+      return {
+        containerClass: "bg-[#FFE6E6] border-l-4 border-[#E53935]",
+        iconBgClass: "bg-[#E53935] text-white",
+        icon: AuthIcon,
+        title: "Verificación",
       };
     }
 
@@ -171,7 +184,7 @@ const ErrorMessage = ({
                 maxWidth: "100%",
                 wordBreak: "break-word",
                 display: "-webkit-box",
-                WebkitLineClamp: "2",
+                WebkitLineClamp: "4",
                 WebkitBoxOrient: "vertical",
               }}
               title={message} // Para mostrar el mensaje completo al hacer hover
@@ -186,7 +199,10 @@ const ErrorMessage = ({
           <button
             type="button"
             className="flex-shrink-0 ml-1 p-0.5 rounded-md text-gris-oscuro hover:bg-gris-claro hover:text-gris-oscuro transition-colors self-start"
-            onClick={() => setVisible(false)}
+            onClick={() => {
+              setVisible(false);
+              setError?.(null);
+            }}
             aria-label="Cerrar"
           >
             <CloseIcon className="w-3 h-3" />
@@ -296,6 +312,23 @@ const TokenIcon = ({ className = "" }: { className?: string }) => (
       strokeLinejoin="round"
       strokeWidth={2}
       d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+    />
+  </svg>
+);
+
+const AuthIcon = ({ className = "" }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"
     />
   </svg>
 );
