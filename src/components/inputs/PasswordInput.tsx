@@ -55,11 +55,12 @@ const PasswordInput: React.FC<PasswordInputProps> = ({
       </label>
       <div className="relative">
         <input
+          placeholder="Escribe Aqui"
           type={mostrarPassword ? "text" : "password"}
           id={id}
           value={value}
           onChange={onChange}
-          className={`w-full px-3 py-2 text-base border-2 border-red-500 rounded-[10px] focus:outline-none ${inputClassName}`}
+          className={`w-full px-3 py-2 placeholder:text-gris-oscuro text-base border-2 border-red-500 rounded-[10px] focus:outline-none ${inputClassName}`}
           required={required}
           minLength={minLength}
           maxLength={maxLength}

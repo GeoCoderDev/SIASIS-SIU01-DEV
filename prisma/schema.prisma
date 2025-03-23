@@ -118,6 +118,7 @@ model T_Aulas {
   profesor_primaria       T_Profesores_Primaria?   @relation(fields: [DNI_Profesor_Primaria], references: [DNI_Profesor_Primaria])
   profesor_secundaria     T_Profesores_Secundaria? @relation(fields: [DNI_Profesor_Secundaria], references: [DNI_Profesor_Secundaria])
   estudiantes             T_Estudiantes[]
+  cursos_horario          T_Cursos_Horario[] // Nueva línea: Relación inversa con cursos horario
 
   @@map("T_Aulas")
 }
@@ -129,7 +130,9 @@ model T_Cursos_Horario {
   Indice_Hora_Academica_Inicio Int                     @db.Integer
   Cant_Hora_Academicas         Int                     @db.Integer
   DNI_Profesor_Secundaria      String                  @db.VarChar(8)
+  Id_Aula_Secundaria           Int // Nueva línea: Clave foránea para la relación con Aula
   profesor_secundaria          T_Profesores_Secundaria @relation(fields: [DNI_Profesor_Secundaria], references: [DNI_Profesor_Secundaria])
+  aula                         T_Aulas                 @relation(fields: [Id_Aula_Secundaria], references: [Id_Aula]) // Nueva línea: Relación con Aula
 
   @@map("T_Cursos_Horario")
 }
@@ -303,14 +306,14 @@ model T_Registro_Fallos_Sistema {
 }
 
 model T_Codigos_OTP {
-  Id_Codigo_OTP     Int      @id @default(autoincrement())
-  Codigo            String   @db.VarChar(6)
-  Fecha_Creacion    DateTime @default(now()) @db.Date
-  Fecha_Expiracion  DateTime @db.Date
-  Correo_Destino    String   @db.VarChar(70)
-  Rol_Usuario       String   @db.VarChar(2)
-  Id_Usuario        String   @db.VarChar(20)
-  
+  Id_Codigo_OTP    Int    @id @default(autoincrement())
+  Codigo           String @db.VarChar(6)
+  Fecha_Creacion   BigInt // Timestamp Unix en milisegundos
+  Fecha_Expiracion BigInt // Timestamp Unix en milisegundos
+  Correo_Destino   String @db.VarChar(70)
+  Rol_Usuario      String @db.VarChar(2)
+  Id_Usuario       String @db.VarChar(20)
+
   @@map("T_Codigos_OTP")
 }
 
