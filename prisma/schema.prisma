@@ -231,6 +231,7 @@ model T_Personal_Administrativo {
   Google_Drive_Foto_ID        String?  @db.Text
   Horario_Laboral_Entrada     DateTime @db.Time
   Horario_Laboral_Salida      DateTime @db.Time
+  Cargo                       String   @db.VarChar(75)
 
   registros_entrada T_Control_Entrada_Mensual_Personal_Administrativo[]
   registros_salida  T_Control_Salida_Mensual_Personal_Administrativo[]

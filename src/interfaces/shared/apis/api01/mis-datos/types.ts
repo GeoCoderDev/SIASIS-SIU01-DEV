@@ -13,6 +13,13 @@ import {
 } from "@prisma/client";
 import { ErrorResponseAPIBase, SuccessResponseAPIBase } from "../../types";
 import { Genero } from "../../../Genero";
+import {
+  AuxiliarSinContraseña,
+  DirectivoSinContraseña,
+  PersonalAdministrativoSinContraseña,
+  ProfesorPrimariaSinContraseña,
+  ProfesorSecundariaSinContraseña,
+} from "../../shared/others/types";
 
 // -----------------------------------------
 //                METODO GET
@@ -21,17 +28,14 @@ import { Genero } from "../../../Genero";
 /**
  * Datos de Directivo
  */
-export type MisDatosDirectivo = Omit<T_Directivos, "Contraseña"> & {
+export type MisDatosDirectivo = DirectivoSinContraseña & {
   Genero: Genero;
 };
 
 /**
  * Datos de Profesor Primaria con aula opcional
  */
-export type MisDatosProfesorPrimaria = Omit<
-  T_Profesores_Primaria,
-  "Contraseña"
-> & {
+export type MisDatosProfesorPrimaria = ProfesorPrimariaSinContraseña & {
   Genero: Genero;
   Aula: Omit<
     T_Aulas,
@@ -42,22 +46,21 @@ export type MisDatosProfesorPrimaria = Omit<
 /**
  * Datos de Auxiliar
  */
-export type MisDatosAuxiliar = Omit<T_Auxiliares, "Contraseña"> & {
+export type MisDatosAuxiliar = AuxiliarSinContraseña & {
   Genero: Genero;
 };
 
 /**
  * Datos de Profesor Secundaria
  */
-export type MisDatosProfesorSecundaria = Omit<
-  T_Profesores_Secundaria,
-  "Contraseña"
-> & { Genero: Genero };
+export type MisDatosProfesorSecundaria = ProfesorSecundariaSinContraseña & {
+  Genero: Genero;
+};
 
 /**
  * Datos de Tutor (Profesor secundaria con aula)
  */
-export type MisDatosTutor = Omit<T_Profesores_Secundaria, "Contraseña"> & {
+export type MisDatosTutor = ProfesorSecundariaSinContraseña & {
   Genero: Genero;
   Aula: Omit<T_Aulas, "DNI_Profesor_Primaria" | "DNI_Profesor_Secundaria">;
 };
@@ -65,10 +68,8 @@ export type MisDatosTutor = Omit<T_Profesores_Secundaria, "Contraseña"> & {
 /**
  * Datos de Personal Administrativo
  */
-export type MisDatosPersonalAdministrativo = Omit<
-  T_Personal_Administrativo,
-  "Contraseña"
-> & { Genero: Genero };
+export type MisDatosPersonalAdministrativo =
+  PersonalAdministrativoSinContraseña & { Genero: Genero };
 
 export type ObtenerMisDatosSuccessAPI01Data =
   | MisDatosDirectivo
@@ -107,8 +108,6 @@ export type ActualizarMisDatosProfesorSecundariaRequestBody = Partial<
 export type ActualizarMisDatosTutorRequestBody = Partial<
   Pick<T_Profesores_Secundaria, "Celular">
 >;
-
-
 
 export type ActualizarMisDatosPersonalAdministrativoRequestBody = Partial<
   Pick<T_Personal_Administrativo, "Celular">

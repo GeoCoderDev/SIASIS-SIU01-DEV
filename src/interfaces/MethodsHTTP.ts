@@ -1,1 +1,1 @@
-export type MethodHTTP = 'GET' | 'POST' | 'PUT' | 'DELETE';
+export type MethodHTTP = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
