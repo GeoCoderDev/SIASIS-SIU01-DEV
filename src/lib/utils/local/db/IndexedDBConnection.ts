@@ -1,37 +1,20 @@
-
 export class IndexedDBConnection {
   private static instance: IndexedDBConnection;
   private db: IDBDatabase | null = null;
   private dbName: string = "AsistenciaSystem";
-  private version: number = 1;
+  // Usamos la variable de entorno para la versión
+  private dbVersionString: string =
+    process.env.NEXT_PUBLIC_CLN01_VERSION || "1.0.0";
+  private version: number;
   private isInitializing: boolean = false;
   private initPromise: Promise<IDBDatabase> | null = null;
 
   // Definición de las colecciones y sus configuraciones
   private stores = {
     user_data: {
-      keyPath: null,  // No usamos keyPath porque usamos keys explícitas ('current_user')
+      keyPath: null,
       autoIncrement: false,
-      indexes: [
-        // No necesitamos índices ya que solo almacenamos un registro con key fija
-      ]
-    },
-    directivos: {
-      keyPath: "Id_Directivo",
-      autoIncrement: true,
-      indexes: [
-        { name: "por_dni", keyPath: "DNI", options: { unique: true } },
-        {
-          name: "por_nombre_usuario",
-          keyPath: "Nombre_Usuario",
-          options: { unique: true },
-        },
-        {
-          name: "por_correo",
-          keyPath: "Correo_Electronico",
-          options: { unique: true },
-        },
-      ],
+      indexes: [],
     },
     estudiantes: {
       keyPath: "DNI_Estudiante",
@@ -45,6 +28,11 @@ export class IndexedDBConnection {
         },
         { name: "por_aula", keyPath: "Id_Aula", options: { unique: false } },
         { name: "por_estado", keyPath: "Estado", options: { unique: false } },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
       ],
     },
     responsables: {
@@ -60,6 +48,11 @@ export class IndexedDBConnection {
         {
           name: "por_apellidos",
           keyPath: "Apellidos",
+          options: { unique: false },
+        },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
           options: { unique: false },
         },
       ],
@@ -79,6 +72,11 @@ export class IndexedDBConnection {
           options: { unique: false },
         },
         { name: "por_tipo", keyPath: "Tipo", options: { unique: false } },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
       ],
     },
     profesores_primaria: {
@@ -90,7 +88,18 @@ export class IndexedDBConnection {
           keyPath: "Nombre_Usuario",
           options: { unique: true },
         },
+        { name: "por_nombres", keyPath: "Nombres", options: { unique: false } },
+        {
+          name: "por_apellidos",
+          keyPath: "Apellidos",
+          options: { unique: false },
+        },
         { name: "por_estado", keyPath: "Estado", options: { unique: false } },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
       ],
     },
     profesores_secundaria: {
@@ -102,7 +111,18 @@ export class IndexedDBConnection {
           keyPath: "Nombre_Usuario",
           options: { unique: true },
         },
+        { name: "por_nombres", keyPath: "Nombres", options: { unique: false } },
+        {
+          name: "por_apellidos",
+          keyPath: "Apellidos",
+          options: { unique: false },
+        },
         { name: "por_estado", keyPath: "Estado", options: { unique: false } },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
       ],
     },
     aulas: {
@@ -127,6 +147,11 @@ export class IndexedDBConnection {
           keyPath: "DNI_Profesor_Secundaria",
           options: { unique: false },
         },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
       ],
     },
     cursos_horario: {
@@ -139,10 +164,20 @@ export class IndexedDBConnection {
           keyPath: "DNI_Profesor_Secundaria",
           options: { unique: false },
         },
+        {
+          name: "por_aula",
+          keyPath: "Id_Aula_Secundaria",
+          options: { unique: false },
+        },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
       ],
     },
-    asistencias_estudiantes: {
-      keyPath: "Id_Asistencia",
+    asistencias_e_p_1: {
+      keyPath: "Id_Asistencia_Escolar_Mensual",
       autoIncrement: true,
       indexes: [
         {
@@ -150,10 +185,297 @@ export class IndexedDBConnection {
           keyPath: "DNI_Estudiante",
           options: { unique: false },
         },
-        { name: "por_fecha", keyPath: "Fecha", options: { unique: false } },
+        { name: "por_mes", keyPath: "Mes", options: { unique: false } },
         {
-          name: "por_estudiante_fecha",
-          keyPath: ["DNI_Estudiante", "Fecha"],
+          name: "por_estudiante_mes",
+          keyPath: ["DNI_Estudiante", "Mes"],
+          options: { unique: true },
+        },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
+      ],
+    },
+    asistencias_e_p_2: {
+      keyPath: "Id_Asistencia_Escolar_Mensual",
+      autoIncrement: true,
+      indexes: [
+        {
+          name: "por_estudiante",
+          keyPath: "DNI_Estudiante",
+          options: { unique: false },
+        },
+        { name: "por_mes", keyPath: "Mes", options: { unique: false } },
+        {
+          name: "por_estudiante_mes",
+          keyPath: ["DNI_Estudiante", "Mes"],
+          options: { unique: true },
+        },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
+      ],
+    },
+    asistencias_e_p_3: {
+      keyPath: "Id_Asistencia_Escolar_Mensual",
+      autoIncrement: true,
+      indexes: [
+        {
+          name: "por_estudiante",
+          keyPath: "DNI_Estudiante",
+          options: { unique: false },
+        },
+        { name: "por_mes", keyPath: "Mes", options: { unique: false } },
+        {
+          name: "por_estudiante_mes",
+          keyPath: ["DNI_Estudiante", "Mes"],
+          options: { unique: true },
+        },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
+      ],
+    },
+    asistencias_e_p_4: {
+      keyPath: "Id_Asistencia_Escolar_Mensual",
+      autoIncrement: true,
+      indexes: [
+        {
+          name: "por_estudiante",
+          keyPath: "DNI_Estudiante",
+          options: { unique: false },
+        },
+        { name: "por_mes", keyPath: "Mes", options: { unique: false } },
+        {
+          name: "por_estudiante_mes",
+          keyPath: ["DNI_Estudiante", "Mes"],
+          options: { unique: true },
+        },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
+      ],
+    },
+    asistencias_e_p_5: {
+      keyPath: "Id_Asistencia_Escolar_Mensual",
+      autoIncrement: true,
+      indexes: [
+        {
+          name: "por_estudiante",
+          keyPath: "DNI_Estudiante",
+          options: { unique: false },
+        },
+        { name: "por_mes", keyPath: "Mes", options: { unique: false } },
+        {
+          name: "por_estudiante_mes",
+          keyPath: ["DNI_Estudiante", "Mes"],
+          options: { unique: true },
+        },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
+      ],
+    },
+    asistencias_e_p_6: {
+      keyPath: "Id_Asistencia_Escolar_Mensual",
+      autoIncrement: true,
+      indexes: [
+        {
+          name: "por_estudiante",
+          keyPath: "DNI_Estudiante",
+          options: { unique: false },
+        },
+        { name: "por_mes", keyPath: "Mes", options: { unique: false } },
+        {
+          name: "por_estudiante_mes",
+          keyPath: ["DNI_Estudiante", "Mes"],
+          options: { unique: true },
+        },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
+      ],
+    },
+    asistencias_e_s_1: {
+      keyPath: "Id_Asistencia_Escolar_Mensual",
+      autoIncrement: true,
+      indexes: [
+        {
+          name: "por_estudiante",
+          keyPath: "DNI_Estudiante",
+          options: { unique: false },
+        },
+        { name: "por_mes", keyPath: "Mes", options: { unique: false } },
+        {
+          name: "por_estudiante_mes",
+          keyPath: ["DNI_Estudiante", "Mes"],
+          options: { unique: true },
+        },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
+      ],
+    },
+    asistencias_e_s_2: {
+      keyPath: "Id_Asistencia_Escolar_Mensual",
+      autoIncrement: true,
+      indexes: [
+        {
+          name: "por_estudiante",
+          keyPath: "DNI_Estudiante",
+          options: { unique: false },
+        },
+        { name: "por_mes", keyPath: "Mes", options: { unique: false } },
+        {
+          name: "por_estudiante_mes",
+          keyPath: ["DNI_Estudiante", "Mes"],
+          options: { unique: true },
+        },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
+      ],
+    },
+    asistencias_e_s_3: {
+      keyPath: "Id_Asistencia_Escolar_Mensual",
+      autoIncrement: true,
+      indexes: [
+        {
+          name: "por_estudiante",
+          keyPath: "DNI_Estudiante",
+          options: { unique: false },
+        },
+        { name: "por_mes", keyPath: "Mes", options: { unique: false } },
+        {
+          name: "por_estudiante_mes",
+          keyPath: ["DNI_Estudiante", "Mes"],
+          options: { unique: true },
+        },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
+      ],
+    },
+    asistencias_e_s_4: {
+      keyPath: "Id_Asistencia_Escolar_Mensual",
+      autoIncrement: true,
+      indexes: [
+        {
+          name: "por_estudiante",
+          keyPath: "DNI_Estudiante",
+          options: { unique: false },
+        },
+        { name: "por_mes", keyPath: "Mes", options: { unique: false } },
+        {
+          name: "por_estudiante_mes",
+          keyPath: ["DNI_Estudiante", "Mes"],
+          options: { unique: true },
+        },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
+      ],
+    },
+    asistencias_e_s_5: {
+      keyPath: "Id_Asistencia_Escolar_Mensual",
+      autoIncrement: true,
+      indexes: [
+        {
+          name: "por_estudiante",
+          keyPath: "DNI_Estudiante",
+          options: { unique: false },
+        },
+        { name: "por_mes", keyPath: "Mes", options: { unique: false } },
+        {
+          name: "por_estudiante_mes",
+          keyPath: ["DNI_Estudiante", "Mes"],
+          options: { unique: true },
+        },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
+      ],
+    },
+    auxiliares: {
+      keyPath: "DNI_Auxiliar",
+      autoIncrement: false,
+      indexes: [
+        {
+          name: "por_nombre_usuario",
+          keyPath: "Nombre_Usuario",
+          options: { unique: true },
+        },
+        { name: "por_nombres", keyPath: "Nombres", options: { unique: false } },
+        {
+          name: "por_apellidos",
+          keyPath: "Apellidos",
+          options: { unique: false },
+        },
+        { name: "por_estado", keyPath: "Estado", options: { unique: false } },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
+      ],
+    },
+    control_entrada_auxiliar: {
+      keyPath: "Id_C_E_M_P_Auxiliar",
+      autoIncrement: true,
+      indexes: [
+        {
+          name: "por_auxiliar",
+          keyPath: "DNI_Auxiliar",
+          options: { unique: false },
+        },
+        { name: "por_mes", keyPath: "Mes", options: { unique: false } },
+        {
+          name: "por_auxiliar_mes",
+          keyPath: ["DNI_Auxiliar", "Mes"],
+          options: { unique: true },
+        },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
+      ],
+    },
+    control_salida_auxiliar: {
+      keyPath: "Id_C_E_M_P_Auxiliar",
+      autoIncrement: true,
+      indexes: [
+        {
+          name: "por_auxiliar",
+          keyPath: "DNI_Auxiliar",
+          options: { unique: false },
+        },
+        { name: "por_mes", keyPath: "Mes", options: { unique: false } },
+        {
+          name: "por_auxiliar_mes",
+          keyPath: ["DNI_Auxiliar", "Mes"],
           options: { unique: true },
         },
         {
@@ -178,6 +500,11 @@ export class IndexedDBConnection {
           keyPath: ["DNI_Profesor_Primaria", "Mes"],
           options: { unique: true },
         },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
       ],
     },
     control_salida_profesores_primaria: {
@@ -194,6 +521,11 @@ export class IndexedDBConnection {
           name: "por_profesor_mes",
           keyPath: ["DNI_Profesor_Primaria", "Mes"],
           options: { unique: true },
+        },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
         },
       ],
     },
@@ -212,6 +544,11 @@ export class IndexedDBConnection {
           keyPath: ["DNI_Profesor_Secundaria", "Mes"],
           options: { unique: true },
         },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
       ],
     },
     control_salida_profesores_secundaria: {
@@ -229,51 +566,10 @@ export class IndexedDBConnection {
           keyPath: ["DNI_Profesor_Secundaria", "Mes"],
           options: { unique: true },
         },
-      ],
-    },
-    auxiliares: {
-      keyPath: "DNI_Auxiliar",
-      autoIncrement: false,
-      indexes: [
         {
-          name: "por_nombre_usuario",
-          keyPath: "Nombre_Usuario",
-          options: { unique: true },
-        },
-        { name: "por_estado", keyPath: "Estado", options: { unique: false } },
-      ],
-    },
-    control_entrada_auxiliar: {
-      keyPath: "Id_C_E_M_P_Auxiliar",
-      autoIncrement: true,
-      indexes: [
-        {
-          name: "por_auxiliar",
-          keyPath: "DNI_Auxiliar",
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
           options: { unique: false },
-        },
-        { name: "por_mes", keyPath: "Mes", options: { unique: false } },
-        {
-          name: "por_auxiliar_mes",
-          keyPath: ["DNI_Auxiliar", "Mes"],
-          options: { unique: true },
-        },
-      ],
-    },
-    control_salida_auxiliar: {
-      keyPath: "Id_C_E_M_P_Auxiliar",
-      autoIncrement: true,
-      indexes: [
-        {
-          name: "por_auxiliar",
-          keyPath: "DNI_Auxiliar",
-          options: { unique: false },
-        },
-        { name: "por_mes", keyPath: "Mes", options: { unique: false } },
-        {
-          name: "por_auxiliar_mes",
-          keyPath: ["DNI_Auxiliar", "Mes"],
-          options: { unique: true },
         },
       ],
     },
@@ -286,7 +582,19 @@ export class IndexedDBConnection {
           keyPath: "Nombre_Usuario",
           options: { unique: true },
         },
+        { name: "por_nombres", keyPath: "Nombres", options: { unique: false } },
+        {
+          name: "por_apellidos",
+          keyPath: "Apellidos",
+          options: { unique: false },
+        },
         { name: "por_estado", keyPath: "Estado", options: { unique: false } },
+        { name: "por_cargo", keyPath: "Cargo", options: { unique: false } },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
       ],
     },
     control_entrada_personal_administrativo: {
@@ -303,6 +611,11 @@ export class IndexedDBConnection {
           name: "por_administrativo_mes",
           keyPath: ["DNI_Personal_Administrativo", "Mes"],
           options: { unique: true },
+        },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
         },
       ],
     },
@@ -321,18 +634,35 @@ export class IndexedDBConnection {
           keyPath: ["DNI_Personal_Administrativo", "Mes"],
           options: { unique: true },
         },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
       ],
     },
     bloqueo_roles: {
       keyPath: "Id_Bloqueo_Rol",
       autoIncrement: true,
-      indexes: [{ name: "por_rol", keyPath: "Rol", options: { unique: true } }],
+      indexes: [
+        { name: "por_rol", keyPath: "Rol", options: { unique: true } },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
+      ],
     },
     ajustes_generales_sistema: {
       keyPath: "Id_Constante",
       autoIncrement: true,
       indexes: [
         { name: "por_nombre", keyPath: "Nombre", options: { unique: true } },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
       ],
     },
     horarios_asistencia: {
@@ -340,6 +670,11 @@ export class IndexedDBConnection {
       autoIncrement: true,
       indexes: [
         { name: "por_nombre", keyPath: "Nombre", options: { unique: true } },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
+          options: { unique: false },
+        },
       ],
     },
     eventos: {
@@ -357,8 +692,8 @@ export class IndexedDBConnection {
           options: { unique: false },
         },
         {
-          name: "por_rango_fecha",
-          keyPath: ["Fecha_Inicio", "Fecha_Conclusion"],
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
           options: { unique: false },
         },
       ],
@@ -371,6 +706,27 @@ export class IndexedDBConnection {
         {
           name: "por_componente",
           keyPath: "Componente",
+          options: { unique: false },
+        },
+      ],
+    },
+    comunicados: {
+      keyPath: "Id_Comunicado",
+      autoIncrement: true,
+      indexes: [
+        {
+          name: "por_fecha_inicio",
+          keyPath: "Fecha_Inicio",
+          options: { unique: false },
+        },
+        {
+          name: "por_fecha_conclusion",
+          keyPath: "Fecha_Conclusion",
+          options: { unique: false },
+        },
+        {
+          name: "por_sync_status",
+          keyPath: "Sync_Status",
           options: { unique: false },
         },
       ],
@@ -391,10 +747,16 @@ export class IndexedDBConnection {
         },
       ],
     },
+    system_meta: {
+      keyPath: "key",
+      autoIncrement: false,
+      indexes: [],
+    },
   };
 
   private constructor() {
     // Constructor privado para patrón Singleton
+    this.version = this.getVersionNumber(this.dbVersionString);
   }
 
   /**
@@ -416,16 +778,31 @@ export class IndexedDBConnection {
 
     this.isInitializing = true;
     this.initPromise = new Promise((resolve, reject) => {
+      // Al abrir con una versión superior, IndexedDB automáticamente
+      // dispara onupgradeneeded y gestiona la migración
       const request = indexedDB.open(this.dbName, this.version);
 
       request.onupgradeneeded = (event) => {
+        console.log(`Actualizando base de datos a versión ${this.version}`);
         const db = (event.target as IDBOpenDBRequest).result;
+
+        // Si hay stores existentes que ya no necesitamos, los eliminamos
+        for (let i = 0; i < db.objectStoreNames.length; i++) {
+          const storeName = db.objectStoreNames[i];
+          if (!Object.keys(this.stores).includes(storeName)) {
+            db.deleteObjectStore(storeName);
+          }
+        }
+
         this.configureDatabase(db);
       };
 
       request.onsuccess = (event) => {
         this.db = (event.target as IDBOpenDBRequest).result;
         this.isInitializing = false;
+        console.log(
+          `Base de datos inicializada correctamente con versión ${this.version}`
+        );
         resolve(this.db);
       };
 
@@ -461,6 +838,28 @@ export class IndexedDBConnection {
         }
       }
     }
+  }
+
+  /**
+   * Convierte la versión semántica a un número entero para IndexedDB
+   */
+  private getVersionNumber(versionString: string): number {
+    // Eliminar cualquier sufijo (como -alpha, -beta, etc.)
+    const cleanVersion = versionString.split("-")[0];
+
+    // Dividir por puntos y convertir a un número entero
+    // Por ejemplo: "1.2.3" -> 1 * 10000 + 2 * 100 + 3 = 10203
+    const parts = cleanVersion.split(".");
+    let versionNumber = 1; // Valor por defecto
+
+    if (parts.length >= 3) {
+      versionNumber =
+        parseInt(parts[0]) * 10000 +
+        parseInt(parts[1]) * 100 +
+        parseInt(parts[2]);
+    }
+
+    return versionNumber;
   }
 
   /**

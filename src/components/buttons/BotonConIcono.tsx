@@ -33,7 +33,7 @@ const BotonConIcono = ({
           ? titleDisabled ?? "No puedes usar este boton ahora"
           : "Guarda tu cambios"
       }
-      className={`flex flex-wrap items-center justify-center disabled:grayscale-[0.6] disabled:cursor-not-allowed ${className}`}
+      className={`rounded-[10px] flex flex-wrap items-center justify-center disabled:grayscale-[0.6] disabled:cursor-not-allowed ${className}`}
     >
       {texto} {isSomethingLoading ? LoaderTSX : IconTSX}
     </button>

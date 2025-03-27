@@ -70,7 +70,7 @@ const allSiasisModules: SiasisModule[] = [
   },
   {
     route: "/auxiliares",
-    text: "Auxilires",
+    text: "Auxiliares",
     IconTSX: (props: IconProps) => {
       return <AuxiliarIcon {...props} />;
     },
@@ -145,3 +145,6 @@ const allSiasisModules: SiasisModule[] = [
 ];
 
 export default allSiasisModules;
+
+
+

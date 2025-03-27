@@ -32,7 +32,7 @@ export interface IProfesorPrimariaFilter {
 //   } | null;
 // }
 
-export class ProfesorPrimaria {
+export class ProfesorPrimariaIDB {
   private storeName: string = "profesores_primaria";
 
   /**
@@ -774,5 +774,5 @@ export class ProfesorPrimaria {
 }
 
 // Singleton instance
-const profesorPrimariaLocal = new ProfesorPrimaria();
+const profesorPrimariaLocal = new ProfesorPrimariaIDB();
 export default profesorPrimariaLocal;
