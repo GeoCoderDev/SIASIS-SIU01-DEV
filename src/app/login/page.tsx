@@ -1,11 +1,10 @@
 import AuxiliarIcon from "@/components/icons/AuxiliarIcon";
 import DirectivoIcon from "@/components/icons/DirectivoIcon";
-import PersonalLimpiezaIcon from "@/components/icons/PersonalLimpiezaIcon";
+import PersonasGenericasIcon from "@/components/icons/PersonasGenericasIcon";
 import ProfesorOTutorIcon from "@/components/icons/ProfesorOTutorIcon";
 import ProfesorPrimariaIcon from "@/components/icons/ProfesorPrimariaIcon";
 import ResponsableIcon from "@/components/icons/ResponsableIcon";
 import { Link } from "next-view-transitions";
-
 
 export type RolForLoginSelection =
   | "Directivo"
@@ -13,7 +12,7 @@ export type RolForLoginSelection =
   | "Auxiliar"
   | "Profesor/Tutor (Secundaria)"
   | "Responsable (Padre/Apoderado)"
-  | "Personal Administrativo";
+  | "Otro";
 
 interface RolBotonProps {
   rol: RolForLoginSelection;
@@ -91,9 +90,9 @@ const SeleccionRoles = () => {
           <RolBoton
             href="/login/personal-administrativo"
             icon={
-              <PersonalLimpiezaIcon className="max-lg:short-height:h-[8vh] max-sm:w-[1.65rem] sm-only:w-[1.9rem] md-only:w-[2rem] lg-only:w-[2.5rem] xl-only:w-[3rem] text-negro" />
+              <PersonasGenericasIcon className="max-lg:short-height:h-[8vh] max-sm:w-[1.65rem] sm-only:w-[1.9rem] md-only:w-[2rem] lg-only:w-[2.5rem] xl-only:w-[3rem] text-negro" />
             }
-            rol="Personal Administrativo"
+            rol="Otro"
           />
         </div>
       </div>

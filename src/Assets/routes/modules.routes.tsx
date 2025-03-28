@@ -8,7 +8,6 @@ import ControlAsistenciaIcon from "@/components/icons/ControlAsistenciaIcon";
 import ProfesoresIcon from "@/components/icons/ProfesoresIcon";
 import ResponsableIcon from "@/components/icons/ResponsableIcon";
 import AuxiliarIcon from "@/components/icons/AuxiliarIcon";
-import PersonalAdministrativoIcon from "@/components/icons/PersonalLimpiezaIcon";
 import RegistrosIcon from "@/components/icons/RegistrosIcon";
 import ReportesIcon from "@/components/icons/ReportesIcon";
 import { RankingsIcon } from "@/components/icons/RankingsIcon";
@@ -16,6 +15,7 @@ import ProgramacionIcon from "@/components/icons/ProgramacionIcon";
 import EventosIcon from "@/components/icons/EventosIcon";
 import ComunicadosIcon from "@/components/icons/ComunicadosIcon";
 import ConfiguracionesIcon from "@/components/icons/ConfiguracionesIcon";
+import PersonasGenericasIcon from "@/components/icons/PersonasGenericasIcon";
 
 export interface SiasisModule {
   etiquetaSuperior?: string;
@@ -80,7 +80,7 @@ const allSiasisModules: SiasisModule[] = [
     route: "/personal-administrativo",
     text: "Personal Administrativo",
     IconTSX: (props: IconProps) => {
-      return <PersonalAdministrativoIcon {...props} />;
+      return <PersonasGenericasIcon {...props} />;
     },
     allowedRoles: [RolesSistema.Directivo],
   },
@@ -145,6 +145,3 @@ const allSiasisModules: SiasisModule[] = [
 ];
 
 export default allSiasisModules;
-
-
-
