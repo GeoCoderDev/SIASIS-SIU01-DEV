@@ -24,7 +24,7 @@ export class AuxiliarIDB {
    * @returns Lista de auxiliares
    */
   public async getAll(
-    includeInactive: boolean = false
+    includeInactive: boolean = true
   ): Promise<IAuxiliarLocal[]> {
     try {
       const store = await IndexedDBConnection.getStore(this.storeName);
@@ -130,55 +130,6 @@ export class AuxiliarIDB {
       });
     } catch (error) {
       console.error(`Error al obtener auxiliares con estado ${estado}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Busca auxiliares que coincidan con los criterios de filtro
-   * @param filter Criterios de filtro
-   * @returns Lista de auxiliares que coinciden con los criterios
-   */
-  public async searchByCriteria(
-    filter: IAuxiliarFilter
-  ): Promise<IAuxiliarLocal[]> {
-    try {
-      const allAuxiliares = await this.getAll(filter.Estado === false);
-
-      return allAuxiliares.filter((auxiliar) => {
-        let matches = true;
-
-        if (
-          filter.DNI_Auxiliar &&
-          !auxiliar.DNI_Auxiliar.includes(filter.DNI_Auxiliar)
-        ) {
-          matches = false;
-        }
-
-        if (
-          filter.Nombres &&
-          !auxiliar.Nombres.toLowerCase().includes(filter.Nombres.toLowerCase())
-        ) {
-          matches = false;
-        }
-
-        if (
-          filter.Apellidos &&
-          !auxiliar.Apellidos.toLowerCase().includes(
-            filter.Apellidos.toLowerCase()
-          )
-        ) {
-          matches = false;
-        }
-
-        if (filter.Estado !== undefined && auxiliar.Estado !== filter.Estado) {
-          matches = false;
-        }
-
-        return matches;
-      });
-    } catch (error) {
-      console.error("Error al buscar auxiliares:", error);
       throw error;
     }
   }

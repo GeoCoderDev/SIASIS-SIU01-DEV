@@ -80,8 +80,8 @@ const Auxiliares = () => {
   }, [fetchSiasisAPI, setError]);
 
   return (
-    <div className="w-full max-w-[80rem] h-full ">
-      <h1 className="text-[2.25rem] text-negro font-semibold">
+    <div className="w-full max-w-[80rem] h-full flex flex-col justify-between">
+      <h1 className="text-[2.25rem] text-negro font-semibold mt-2 -text-center -w-full">
         LISTA DE AUXILIARES
       </h1>
 
@@ -93,14 +93,14 @@ const Auxiliares = () => {
 
       {error && <ErrorMessage error={error} />}
 
-      {auxiliares && auxiliares.length === 0 && (
+      {!isSomethingLoading && auxiliares && auxiliares.length === 0 && (
         <span> No se encontraron Auxiliares Regitrados en el Sistema</span>
       )}
 
       {auxiliares && (
-        <div className="flex flex-wrap justify-evenly gap-y-8">
-          {auxiliares.map((auxiliar, index) => (
-            <AuxiliardCard key={index} Auxiliar={auxiliar} />
+        <div className="flex flex-wrap justify-evenly gap-y-8 w-full items-center -border-2 flex-1 pt-6 gap-x-[max(2.5rem,1vw)]">
+          {auxiliares.map((auxiliar) => (
+            <AuxiliardCard key={auxiliar.DNI_Auxiliar} Auxiliar={auxiliar} />
           ))}
         </div>
       )}

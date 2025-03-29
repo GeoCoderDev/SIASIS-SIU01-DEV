@@ -462,3 +462,23 @@ model T_Comunicados {
   Fecha_Conclusion       DateTime @db.Date
   Google_Drive_Imagen_ID String?  @db.Text
 }
+
+model T_Ultima_Modificacion_Tablas {
+  Nombre_Tabla         String   @id @db.VarChar(100)
+  Operacion            String   @db.VarChar(20) // INSERT, UPDATE, DELETE
+  Fecha_Modificacion   DateTime @default(now())
+  Usuario_Modificacion String?  @db.VarChar(100)
+  Cantidad_Filas       Int?     @db.Integer
+
+  @@map("T_Ultima_Modificacion_Tablas")
+}
+
+model T_Fechas_Importantes {
+  Id_Fecha_Importante Int      @id @default(autoincrement())
+  Nombre              String   @db.VarChar(100)
+  Valor               DateTime @db.Date
+  Descripcion         String?  @db.Text
+  Ultima_Modificacion DateTime @default(now())
+
+  @@map("T_Fechas_Importantes")
+}
