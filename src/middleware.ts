@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { serialize } from "cookie";
-import { isStaticAsset } from "./lib/helpers/isStaticAsset";
+import { isStaticAsset } from "./lib/helpers/validations/isStaticAsset";
 import { RolesSistema } from "./interfaces/shared/RolesSistema";
 
 export async function middleware(request: NextRequest) {

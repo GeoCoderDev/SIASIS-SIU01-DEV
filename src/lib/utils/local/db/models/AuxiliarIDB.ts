@@ -1,12 +1,27 @@
 import { AuxiliarSinContraseña } from "@/interfaces/shared/apis/shared/others/types";
 import IndexedDBConnection from "../IndexedDBConnection";
+import {
+  TablasSistema,
+  ITablaInfo,
+  TablasLocal,
+} from "../../../../../interfaces/shared/TablasSistema";
+import {
+  ErrorResponseAPIBase,
+  MessageProperty,
+} from "@/interfaces/shared/apis/types";
+import AllErrorTypes, {
+  DataConflictErrorTypes,
+  SystemErrorTypes,
+  UserErrorTypes,
+} from "../../../../../interfaces/shared/apis/errors";
+import { SiasisAPIS } from "@/interfaces/shared/SiasisComponents";
+import comprobarSincronizacionDeTabla from "@/lib/helpers/validations/comprobarSincronizacionDeTabla";
+import fetchSiasisApiGenerator from "@/lib/helpers/generators/fetchSiasisApisGenerator";
+import ultimaActualizacionTablasLocalesIDB from "./UltimaActualizacionTablasLocalesIDB";
+import { DatabaseModificationOperations } from "@/interfaces/shared/DatabaseModificatioOperations";
 
-// Tipo para la entidad local (sin contraseña)
-export interface IAuxiliarLocal extends AuxiliarSinContraseña {
-  Fecha_Registro?: number; // timestamp para seguimiento local
-  Ultima_Actualizacion?: number; // timestamp para seguimiento local
-  Sync_Status?: "pending" | "synced" | "error"; // Estado de sincronización
-}
+// Tipo para la entidad (sin atributos de fechas)
+export type IAuxiliarLocal = AuxiliarSinContraseña;
 
 export interface IAuxiliarFilter {
   DNI_Auxiliar?: string;
@@ -16,50 +31,259 @@ export interface IAuxiliarFilter {
 }
 
 export class AuxiliarIDB {
-  private storeName: string = "auxiliares";
+  private tablaInfo: ITablaInfo = TablasSistema.AUXILIARES;
+  private nombreTablaLocal: string = this.tablaInfo.nombreLocal || "auxiliares";
+
+  constructor(
+    private siasisAPI: SiasisAPIS,
+    private setIsSomethingLoading: (isLoading: boolean) => void,
+    private setError: (error: ErrorResponseAPIBase | null) => void,
+    private setSuccessMessage?: (message: MessageProperty | null) => void
+  ) {}
 
   /**
-   * Obtiene todos los auxiliares
-   * @param includeInactive Si es true, incluye auxiliares inactivos
-   * @returns Lista de auxiliares
+   * Método de sincronización que se ejecutará al inicio de cada operación
+   * Este método será implementado por ti después
    */
-  public async getAll(
-    includeInactive: boolean = true
-  ): Promise<IAuxiliarLocal[]> {
+  private async sync(): Promise<void> {
     try {
-      const store = await IndexedDBConnection.getStore(this.storeName);
-      return new Promise((resolve, reject) => {
-        const request = store.getAll();
+      const debeSincronizar = await comprobarSincronizacionDeTabla(
+        this.tablaInfo,
+        "API01"
+      );
 
-        request.onsuccess = () => {
-          let result = request.result as IAuxiliarLocal[];
-          if (!includeInactive) {
-            result = result.filter((auxiliar) => auxiliar.Estado === true);
-          }
-          resolve(result);
-        };
+      if (!debeSincronizar) {
+        // No es necesario sincronizar
+        return;
+      }
 
-        request.onerror = () => {
-          reject(request.error);
-        };
-      });
+      // Si llegamos aquí, debemos sincronizar
+      await this.fetchYActualizarAuxiliares();
     } catch (error) {
-      console.error("Error al obtener auxiliares:", error);
+      console.error("Error durante la sincronización de auxiliares:", error);
+      this.handleIndexedDBError(error, "sincronizar auxiliares");
+    }
+  }
+  /**
+   * Obtiene los auxiliares desde la API y los actualiza localmente
+   * @returns Promise que se resuelve cuando los auxiliares han sido actualizados
+   */
+  private async fetchYActualizarAuxiliares(): Promise<void> {
+    try {
+      // Usar el generador para API01 (o la que corresponda)
+      const { fetchSiasisAPI } = fetchSiasisApiGenerator(this.siasisAPI);
+
+      // Realizar la petición al endpoint
+      const fetchCancelable = await fetchSiasisAPI({
+        endpoint: "/api/auxiliares",
+        method: "GET",
+      });
+
+      if (!fetchCancelable) {
+        throw new Error("No se pudo crear la petición de auxiliares");
+      }
+
+      // Ejecutar la petición
+      const response = await fetchCancelable.fetch();
+
+      if (!response.ok) {
+        throw new Error(`Error al obtener auxiliares: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(`Error en respuesta de auxiliares: ${data.message}`);
+      }
+
+      // Extraer los auxiliares del cuerpo de la respuesta
+      const { auxiliares } = data.data;
+
+      // Actualizar auxiliares en la base de datos local
+      await this.upsertFromServer(auxiliares);
+
+      // Registrar la actualización en UltimaActualizacionTablasLocalesIDB
+      await ultimaActualizacionTablasLocalesIDB.registrarActualizacion(
+        this.tablaInfo.nombreLocal as TablasLocal,
+        DatabaseModificationOperations.UPDATE
+      );
+
+      console.log(`Actualizados ${auxiliares.length} auxiliares desde la API`);
+    } catch (error) {
+      console.error("Error al obtener y actualizar auxiliares:", error);
+
+      // Determinar el tipo de error
+      let errorType: AllErrorTypes = SystemErrorTypes.UNKNOWN_ERROR;
+      let message = "Error al sincronizar auxiliares";
+
+      if (error instanceof Error) {
+        // Si es un error de red o problemas de conexión
+        if (
+          error.message.includes("network") ||
+          error.message.includes("fetch")
+        ) {
+          errorType = SystemErrorTypes.EXTERNAL_SERVICE_ERROR;
+          message = "Error de red al sincronizar auxiliares";
+        }
+        // Si es un error relacionado con la respuesta del servidor
+        else if (error.message.includes("obtener auxiliares")) {
+          errorType = SystemErrorTypes.EXTERNAL_SERVICE_ERROR;
+          message = error.message;
+        }
+        // Si es un error de IndexedDB
+        else if (
+          error.name === "TransactionInactiveError" ||
+          error.name === "QuotaExceededError"
+        ) {
+          errorType = SystemErrorTypes.DATABASE_ERROR;
+          message = "Error de base de datos al sincronizar auxiliares";
+        } else {
+          message = error.message;
+        }
+      }
+
+      // Establecer el error en el estado global
+      this.setError({
+        success: false,
+        message: message,
+        errorType: errorType,
+        details: {
+          origen: "AuxiliarIDB.fetchYActualizarAuxiliares",
+          timestamp: Date.now(),
+        },
+      });
+
       throw error;
     }
   }
 
   /**
+   * Obtiene todos los auxiliares
+   * @param includeInactive Si es true, incluye auxiliares inactivos
+   * @returns Promesa con el array de auxiliares
+   */
+  public async getAll(
+    includeInactive: boolean = true
+  ): Promise<IAuxiliarLocal[]> {
+    this.setIsSomethingLoading(true);
+    this.setError(null); // Limpiar errores anteriores
+    this.setSuccessMessage?.(null); // Limpiar mensajes anteriores
+
+    try {
+      // Ejecutar sincronización antes de la operación
+      await this.sync();
+
+      // Obtener el store
+      const store = await IndexedDBConnection.getStore(this.nombreTablaLocal);
+
+      // Convertir la API de callbacks de IndexedDB a promesas
+      const result = await new Promise<IAuxiliarLocal[]>((resolve, reject) => {
+        const request = store.getAll();
+
+        request.onsuccess = () => resolve(request.result as IAuxiliarLocal[]);
+        request.onerror = () => reject(request.error);
+      });
+
+      // Filtrar inactivos si es necesario
+      const auxiliares = includeInactive
+        ? result
+        : result.filter((aux) => aux.Estado === true);
+
+      // Mostrar mensaje de éxito con información relevante
+      if (auxiliares.length > 0) {
+        this.handleSuccess(`Se encontraron ${auxiliares.length} auxiliares`);
+      } else {
+        this.handleSuccess("No se encontraron auxiliares");
+      }
+
+      this.setIsSomethingLoading(false);
+      return auxiliares;
+    } catch (error) {
+      this.handleIndexedDBError(error, "obtener lista de auxiliares");
+      this.setIsSomethingLoading(false);
+      return []; // Devolvemos array vacío en caso de error
+    }
+  }
+
+  /**
+   * Actualiza o crea auxiliares en lote desde el servidor
+   * @param auxiliaresServidor Auxiliares provenientes del servidor
+   * @returns Conteo de operaciones: creados, actualizados, errores
+   */
+  private async upsertFromServer(
+    auxiliaresServidor: AuxiliarSinContraseña[]
+  ): Promise<{ created: number; updated: number; errors: number }> {
+    const result = { created: 0, updated: 0, errors: 0 };
+
+    // Procesar en lotes para evitar transacciones demasiado largas
+    const BATCH_SIZE = 20;
+
+    for (let i = 0; i < auxiliaresServidor.length; i += BATCH_SIZE) {
+      const lote = auxiliaresServidor.slice(i, i + BATCH_SIZE);
+
+      // Para cada auxiliar en el lote
+      for (const auxiliarServidor of lote) {
+        try {
+          // Verificar si el auxiliar ya existe
+          const existeAuxiliar = await this.getByDNI(
+            auxiliarServidor.DNI_Auxiliar
+          );
+
+          // Obtener un store fresco para cada operación
+          const store = await IndexedDBConnection.getStore(
+            this.nombreTablaLocal,
+            "readwrite"
+          );
+
+          // Ejecutar la operación put
+          await new Promise<void>((resolve, reject) => {
+            const request = store.put(auxiliarServidor);
+
+            request.onsuccess = () => {
+              if (existeAuxiliar) {
+                result.updated++;
+              } else {
+                result.created++;
+              }
+              resolve();
+            };
+
+            request.onerror = () => {
+              result.errors++;
+              console.error(
+                `Error al guardar auxiliar ${auxiliarServidor.DNI_Auxiliar}:`,
+                request.error
+              );
+              reject(request.error);
+            };
+          });
+        } catch (error) {
+          result.errors++;
+          console.error(
+            `Error al procesar auxiliar ${auxiliarServidor.DNI_Auxiliar}:`,
+            error
+          );
+        }
+      }
+
+      // Dar un pequeño respiro al bucle de eventos entre lotes
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+
+    return result;
+  }
+
+  /**
    * Obtiene un auxiliar por su DNI
-   * @param dni DNI del auxiliar que funciona como ID principal
+   * @param dni DNI del auxiliar
    * @returns Auxiliar encontrado o null
    */
   public async getByDNI(dni: string): Promise<IAuxiliarLocal | null> {
     try {
-      const store = await IndexedDBConnection.getStore(this.storeName);
+      const store = await IndexedDBConnection.getStore(this.nombreTablaLocal);
 
-      return new Promise((resolve, reject) => {
-        const request = store.get(dni); // El DNI es la clave primaria
+      return new Promise<IAuxiliarLocal | null>((resolve, reject) => {
+        const request = store.get(dni);
 
         request.onsuccess = () => {
           resolve(request.result || null);
@@ -71,637 +295,60 @@ export class AuxiliarIDB {
       });
     } catch (error) {
       console.error(`Error al obtener auxiliar con DNI ${dni}:`, error);
-      throw error;
+      this.handleIndexedDBError(error, `obtener auxiliar con DNI ${dni}`);
+      return null;
     }
   }
 
   /**
-   * Encuentra un auxiliar por su nombre de usuario
-   * @param nombreUsuario Nombre de usuario del auxiliar
-   * @returns Auxiliar encontrado o null
+   * Establece un mensaje de éxito
+   * @param message Mensaje de éxito
+   * @param data Datos adicionales opcionales
    */
-  public async getByNombreUsuario(
-    nombreUsuario: string
-  ): Promise<IAuxiliarLocal | null> {
-    try {
-      const store = await IndexedDBConnection.getStore(this.storeName);
-      const index = store.index("por_nombre_usuario");
+  private handleSuccess(message: string): void {
+    const successResponse: MessageProperty = { message };
 
-      return new Promise((resolve, reject) => {
-        const request = index.get(nombreUsuario);
-
-        request.onsuccess = () => {
-          resolve(request.result || null);
-        };
-
-        request.onerror = () => {
-          reject(request.error);
-        };
-      });
-    } catch (error) {
-      console.error(
-        `Error al obtener auxiliar con nombre de usuario ${nombreUsuario}:`,
-        error
-      );
-      throw error;
-    }
+    this.setSuccessMessage?.(successResponse);
   }
 
   /**
-   * Obtiene auxiliares por estado (activo/inactivo)
-   * @param estado Estado de los auxiliares a buscar
-   * @returns Lista de auxiliares con el estado especificado
+   * Maneja los errores de operaciones con IndexedDB
+   * @param error El error capturado
+   * @param operacion Nombre de la operación que falló
    */
-  public async getByEstado(estado: boolean): Promise<IAuxiliarLocal[]> {
-    try {
-      const store = await IndexedDBConnection.getStore(this.storeName);
-      const index = store.index("por_estado");
+  private handleIndexedDBError(error: unknown, operacion: string): void {
+    console.error(`Error en operación IndexedDB (${operacion}):`, error);
 
-      return new Promise((resolve, reject) => {
-        const request = index.getAll(IDBKeyRange.only(estado));
+    let errorType: AllErrorTypes = SystemErrorTypes.UNKNOWN_ERROR;
+    let message = `Error al ${operacion}`;
 
-        request.onsuccess = () => {
-          resolve(request.result || []);
-        };
-
-        request.onerror = () => {
-          reject(request.error);
-        };
-      });
-    } catch (error) {
-      console.error(`Error al obtener auxiliares con estado ${estado}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Añade un nuevo auxiliar
-   * @param auxiliar Datos del auxiliar
-   * @returns DNI del auxiliar añadido
-   */
-  public async add(auxiliar: IAuxiliarLocal): Promise<string> {
-    try {
-      // Verificar que el DNI no exista ya
-      const existingByDNI = await this.getByDNI(auxiliar.DNI_Auxiliar);
-      if (existingByDNI) {
-        throw new Error(
-          `Ya existe un auxiliar con el DNI ${auxiliar.DNI_Auxiliar}`
-        );
-      }
-
-      // Verificar que el nombre de usuario no exista
-      const existingByUsername = await this.getByNombreUsuario(
-        auxiliar.Nombre_Usuario
-      );
-      if (existingByUsername) {
-        throw new Error(
-          `Ya existe un auxiliar con el nombre de usuario ${auxiliar.Nombre_Usuario}`
-        );
-      }
-
-      // Añadir metadatos
-      if (!auxiliar.Fecha_Registro) {
-        auxiliar.Fecha_Registro = Date.now();
-      }
-      auxiliar.Ultima_Actualizacion = Date.now();
-      auxiliar.Sync_Status = "pending";
-
-      const store = await IndexedDBConnection.getStore(
-        this.storeName,
-        "readwrite"
-      );
-
-      return new Promise((resolve, reject) => {
-        const request = store.add(auxiliar);
-
-        request.onsuccess = () => {
-          resolve(auxiliar.DNI_Auxiliar);
-        };
-
-        request.onerror = () => {
-          reject(request.error);
-        };
-      });
-    } catch (error) {
-      console.error("Error al añadir auxiliar:", error);
-      throw error;
-    }
-  }
-
-  /**
-   * Actualiza la información de un auxiliar existente
-   * @param auxiliar Datos actualizados del auxiliar (con DNI_Auxiliar)
-   */
-  public async update(auxiliar: IAuxiliarLocal): Promise<void> {
-    try {
-      // Verificar que el auxiliar exista
-      const existing = await this.getByDNI(auxiliar.DNI_Auxiliar);
-      if (!existing) {
-        throw new Error(
-          `No existe un auxiliar con el DNI ${auxiliar.DNI_Auxiliar}`
-        );
-      }
-
-      // Verificar nombre de usuario único si ha cambiado
-      if (auxiliar.Nombre_Usuario !== existing.Nombre_Usuario) {
-        const existingByUsername = await this.getByNombreUsuario(
-          auxiliar.Nombre_Usuario
-        );
-        if (
-          existingByUsername &&
-          existingByUsername.DNI_Auxiliar !== auxiliar.DNI_Auxiliar
-        ) {
-          throw new Error(
-            `Ya existe otro auxiliar con el nombre de usuario ${auxiliar.Nombre_Usuario}`
-          );
-        }
-      }
-
-      // Preservar metadatos internos
-      auxiliar.Fecha_Registro = existing.Fecha_Registro;
-      auxiliar.Ultima_Actualizacion = Date.now();
-      auxiliar.Sync_Status = "pending";
-
-      const store = await IndexedDBConnection.getStore(
-        this.storeName,
-        "readwrite"
-      );
-
-      return new Promise((resolve, reject) => {
-        const request = store.put(auxiliar);
-
-        request.onsuccess = () => {
-          resolve();
-        };
-
-        request.onerror = () => {
-          reject(request.error);
-        };
-      });
-    } catch (error) {
-      console.error(
-        `Error al actualizar auxiliar con DNI ${auxiliar.DNI_Auxiliar}:`,
-        error
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Actualiza parcialmente un auxiliar
-   * @param dni DNI del auxiliar
-   * @param partialData Datos parciales a actualizar
-   */
-  public async partialUpdate(
-    dni: string,
-    partialData: Partial<IAuxiliarLocal>
-  ): Promise<void> {
-    try {
-      const auxiliar = await this.getByDNI(dni);
-      if (!auxiliar) {
-        throw new Error(`No existe un auxiliar con el DNI ${dni}`);
-      }
-
-      // Si se intenta cambiar el nombre de usuario, verificar que sea único
-      if (
-        partialData.Nombre_Usuario &&
-        partialData.Nombre_Usuario !== auxiliar.Nombre_Usuario
-      ) {
-        const existingByUsername = await this.getByNombreUsuario(
-          partialData.Nombre_Usuario
-        );
-        if (existingByUsername && existingByUsername.DNI_Auxiliar !== dni) {
-          throw new Error(
-            `Ya existe otro auxiliar con el nombre de usuario ${partialData.Nombre_Usuario}`
-          );
-        }
-      }
-
-      // Actualizar campos
-      const updatedAuxiliar = { ...auxiliar, ...partialData };
-      updatedAuxiliar.Ultima_Actualizacion = Date.now();
-      updatedAuxiliar.Sync_Status = "pending";
-
-      await this.update(updatedAuxiliar);
-    } catch (error) {
-      console.error(
-        `Error al actualizar parcialmente el auxiliar ${dni}:`,
-        error
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Cambia el estado de un auxiliar a inactivo (false)
-   * @param dni DNI del auxiliar
-   */
-  public async deactivate(dni: string): Promise<void> {
-    try {
-      const auxiliar = await this.getByDNI(dni);
-      if (!auxiliar) {
-        throw new Error(`No existe un auxiliar con el DNI ${dni}`);
-      }
-
-      auxiliar.Estado = false;
-      auxiliar.Ultima_Actualizacion = Date.now();
-      auxiliar.Sync_Status = "pending";
-
-      await this.update(auxiliar);
-    } catch (error) {
-      console.error(`Error al desactivar auxiliar con DNI ${dni}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Cambia el estado de un auxiliar a activo (true)
-   * @param dni DNI del auxiliar
-   */
-  public async activate(dni: string): Promise<void> {
-    try {
-      const auxiliar = await this.getByDNI(dni);
-      if (!auxiliar) {
-        throw new Error(`No existe un auxiliar con el DNI ${dni}`);
-      }
-
-      auxiliar.Estado = true;
-      auxiliar.Ultima_Actualizacion = Date.now();
-      auxiliar.Sync_Status = "pending";
-
-      await this.update(auxiliar);
-    } catch (error) {
-      console.error(`Error al activar auxiliar con DNI ${dni}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Actualiza la foto de perfil del auxiliar
-   * @param dniAuxiliar DNI del auxiliar
-   * @param googleDriveFotoID ID de la foto en Google Drive
-   */
-  public async actualizarFoto(
-    dniAuxiliar: string,
-    googleDriveFotoID: string
-  ): Promise<void> {
-    try {
-      const auxiliar = await this.getByDNI(dniAuxiliar);
-      if (!auxiliar) {
-        throw new Error(`No existe un auxiliar con el DNI ${dniAuxiliar}`);
-      }
-
-      auxiliar.Google_Drive_Foto_ID = googleDriveFotoID;
-      auxiliar.Ultima_Actualizacion = Date.now();
-      auxiliar.Sync_Status = "pending";
-
-      await this.update(auxiliar);
-    } catch (error) {
-      console.error(
-        `Error al actualizar foto del auxiliar ${dniAuxiliar}:`,
-        error
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Elimina un auxiliar (físicamente de la base de datos)
-   * @param dni DNI del auxiliar
-   */
-  public async delete(dni: string): Promise<void> {
-    try {
-      // Verificar que el auxiliar exista
-      const auxiliar = await this.getByDNI(dni);
-      if (!auxiliar) {
-        throw new Error(`No existe un auxiliar con el DNI ${dni}`);
-      }
-
-      const store = await IndexedDBConnection.getStore(
-        this.storeName,
-        "readwrite"
-      );
-
-      return new Promise((resolve, reject) => {
-        const deleteRequest = store.delete(dni);
-
-        deleteRequest.onsuccess = () => {
-          resolve();
-        };
-
-        deleteRequest.onerror = () => {
-          reject(deleteRequest.error);
-        };
-      });
-    } catch (error) {
-      console.error(`Error al eliminar auxiliar con DNI ${dni}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Marca un auxiliar como sincronizado
-   * @param dni DNI del auxiliar
-   */
-  public async markAsSynced(dni: string): Promise<void> {
-    try {
-      const auxiliar = await this.getByDNI(dni);
-      if (!auxiliar) {
-        throw new Error(`No existe un auxiliar con el DNI ${dni}`);
-      }
-
-      auxiliar.Sync_Status = "synced";
-
-      const store = await IndexedDBConnection.getStore(
-        this.storeName,
-        "readwrite"
-      );
-
-      return new Promise((resolve, reject) => {
-        const request = store.put(auxiliar);
-
-        request.onsuccess = () => {
-          resolve();
-        };
-
-        request.onerror = () => {
-          reject(request.error);
-        };
-      });
-    } catch (error) {
-      console.error(
-        `Error al marcar auxiliar como sincronizado: ${dni}`,
-        error
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Marca un auxiliar con error de sincronización
-   * @param dni DNI del auxiliar
-   */
-  public async markSyncError(dni: string): Promise<void> {
-    try {
-      const auxiliar = await this.getByDNI(dni);
-      if (!auxiliar) {
-        throw new Error(`No existe un auxiliar con el DNI ${dni}`);
-      }
-
-      auxiliar.Sync_Status = "error";
-
-      const store = await IndexedDBConnection.getStore(
-        this.storeName,
-        "readwrite"
-      );
-
-      return new Promise((resolve, reject) => {
-        const request = store.put(auxiliar);
-
-        request.onsuccess = () => {
-          resolve();
-        };
-
-        request.onerror = () => {
-          reject(request.error);
-        };
-      });
-    } catch (error) {
-      console.error(
-        `Error al marcar error de sincronización en auxiliar: ${dni}`,
-        error
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Obtiene auxiliares pendientes de sincronizar
-   * @returns Lista de auxiliares pendientes de sincronizar
-   */
-  public async getPendingSync(): Promise<IAuxiliarLocal[]> {
-    try {
-      const store = await IndexedDBConnection.getStore(this.storeName);
-
-      return new Promise((resolve, reject) => {
-        const index = store.index("por_sync_status");
-        const request = index.getAll(IDBKeyRange.only("pending"));
-
-        request.onsuccess = () => {
-          resolve(request.result || []);
-        };
-
-        request.onerror = () => {
-          reject(request.error);
-        };
-      });
-    } catch (error) {
-      console.error(
-        "Error al obtener auxiliares pendientes de sincronizar:",
-        error
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Importa múltiples auxiliares desde un array (útil para CSV)
-   * @param auxiliares Array de auxiliares a importar
-   * @returns Número de auxiliares importados con éxito
-   */
-  public async importBulk(auxiliares: IAuxiliarLocal[]): Promise<number> {
-    let importados = 0;
-    const errores: { auxiliar: IAuxiliarLocal; error: string }[] = [];
-
-    for (const auxiliar of auxiliares) {
-      try {
-        // Añadir metadatos
-        auxiliar.Fecha_Registro = Date.now();
-        auxiliar.Ultima_Actualizacion = Date.now();
-        auxiliar.Sync_Status = "synced"; // Asumimos que los datos importados ya están sincronizados
-
-        await this.add(auxiliar);
-        importados++;
-      } catch (error) {
-        let mensaje = "Error desconocido";
-        if (error instanceof Error) {
-          mensaje = error.message;
-        }
-        errores.push({ auxiliar, error: mensaje });
+    if (error instanceof Error) {
+      // Intentar categorizar el error según su mensaje o nombre
+      if (error.name === "ConstraintError") {
+        errorType = DataConflictErrorTypes.VALUE_ALREADY_IN_USE;
+        message = `Error de restricción al ${operacion}: valor duplicado`;
+      } else if (error.name === "NotFoundError") {
+        errorType = UserErrorTypes.USER_NOT_FOUND;
+        message = `No se encontró el recurso al ${operacion}`;
+      } else if (error.name === "QuotaExceededError") {
+        errorType = SystemErrorTypes.DATABASE_ERROR;
+        message = `Almacenamiento excedido al ${operacion}`;
+      } else if (error.name === "TransactionInactiveError") {
+        errorType = SystemErrorTypes.DATABASE_ERROR;
+        message = `Transacción inactiva al ${operacion}`;
+      } else {
+        // Si no podemos categorizar específicamente, usamos el mensaje del error
+        message = error.message || message;
       }
     }
 
-    if (errores.length > 0) {
-      console.warn("Algunos auxiliares no pudieron ser importados:", errores);
-    }
-
-    return importados;
-  }
-
-  /**
-   * Obtiene el total de auxiliares activos
-   * @returns Número total de auxiliares activos
-   */
-  public async getTotalActivos(): Promise<number> {
-    try {
-      const activos = await this.getByEstado(true);
-      return activos.length;
-    } catch (error) {
-      console.error("Error al obtener total de auxiliares activos:", error);
-      throw error;
-    }
-  }
-
-  /**
-   * Obtiene el total de auxiliares inactivos
-   * @returns Número total de auxiliares inactivos
-   */
-  public async getTotalInactivos(): Promise<number> {
-    try {
-      const inactivos = await this.getByEstado(false);
-      return inactivos.length;
-    } catch (error) {
-      console.error("Error al obtener total de auxiliares inactivos:", error);
-      throw error;
-    }
-  }
-
-  /**
-   * Actualiza o crea auxiliares en lote desde el servidor
-   * @param auxiliaresServidor Auxiliares provenientes del servidor
-   * @returns Conteo de operaciones: creados, actualizados, errores
-   */
-  public async upsertFromServer(
-    auxiliaresServidor: AuxiliarSinContraseña[]
-  ): Promise<{ created: number; updated: number; errors: number }> {
-    const result = { created: 0, updated: 0, errors: 0 };
-
-    for (const auxiliarServidor of auxiliaresServidor) {
-      try {
-        const localAuxiliar = await this.getByDNI(
-          auxiliarServidor.DNI_Auxiliar
-        );
-
-        if (localAuxiliar) {
-          // Actualizar auxiliar existente, preservando metadatos locales
-          const updatedAuxiliar: IAuxiliarLocal = {
-            ...auxiliarServidor,
-            Fecha_Registro: localAuxiliar.Fecha_Registro,
-            Ultima_Actualizacion: Date.now(),
-            Sync_Status: "synced",
-          };
-
-          await this.update(updatedAuxiliar);
-          result.updated++;
-        } else {
-          // Crear nuevo auxiliar
-          const newAuxiliar: IAuxiliarLocal = {
-            ...auxiliarServidor,
-            Fecha_Registro: Date.now(),
-            Ultima_Actualizacion: Date.now(),
-            Sync_Status: "synced",
-          };
-
-          await this.add(newAuxiliar);
-          result.created++;
-        }
-      } catch (error) {
-        console.error(
-          `Error al procesar auxiliar ${auxiliarServidor.DNI_Auxiliar}:`,
-          error
-        );
-        result.errors++;
-      }
-    }
-
-    return result;
-  }
-
-  /**
-   * Obtiene los auxiliares modificados localmente para sincronizar
-   * @returns Lista de auxiliares que deben sincronizarse con el servidor
-   */
-  public async getChangesToSync(): Promise<IAuxiliarLocal[]> {
-    try {
-      return await this.getPendingSync();
-    } catch (error) {
-      console.error("Error al obtener cambios para sincronizar:", error);
-      throw error;
-    }
-  }
-
-  /**
-   * Sincroniza los datos locales con el servidor
-   * Este método es un ejemplo de cómo podría implementarse
-   * @param onProgress Callback para reportar progreso
-   */
-  public async sincronizarConServidor(
-    onProgress?: (mensaje: string, progreso: number) => void
-  ): Promise<{ enviados: number; recibidos: number; errores: number }> {
-    try {
-      const resultado = { enviados: 0, recibidos: 0, errores: 0 };
-
-      // 1. Obtener cambios locales pendientes
-      const cambiosPendientes = await this.getChangesToSync();
-      let contador = 0;
-
-      // 2. Enviar cambios al servidor
-      for (const auxiliar of cambiosPendientes) {
-        try {
-          if (onProgress) {
-            contador++;
-            onProgress(
-              `Enviando auxiliar ${auxiliar.Nombres} ${auxiliar.Apellidos}...`,
-              (contador / (cambiosPendientes.length * 2)) * 100
-            );
-          }
-
-          // Aquí iría la lógica real de envío al servidor
-          // Por ejemplo: await api.actualizarAuxiliar(auxiliar)
-
-          // Simular éxito
-          await this.markAsSynced(auxiliar.DNI_Auxiliar);
-          resultado.enviados++;
-        } catch (error) {
-          console.error(
-            `Error al sincronizar auxiliar ${auxiliar.DNI_Auxiliar}:`,
-            error
-          );
-          await this.markSyncError(auxiliar.DNI_Auxiliar);
-          resultado.errores++;
-        }
-      }
-
-      // 3. Obtener datos actualizados del servidor
-      if (onProgress) {
-        onProgress("Obteniendo datos del servidor...", 50);
-      }
-
-      // Aquí iría la lógica real de obtención de datos del servidor
-      // Por ejemplo: const datosServidor = await api.obtenerAuxiliares()
-
-      // Simular datos del servidor
-      const datosServidor: AuxiliarSinContraseña[] = [];
-
-      // 4. Actualizar datos locales con datos del servidor
-      if (datosServidor.length > 0) {
-        const resultadoUpsert = await this.upsertFromServer(datosServidor);
-        resultado.recibidos = resultadoUpsert.created + resultadoUpsert.updated;
-        resultado.errores += resultadoUpsert.errors;
-      }
-
-      if (onProgress) {
-        onProgress("Sincronización completada", 100);
-      }
-
-      return resultado;
-    } catch (error) {
-      console.error("Error durante la sincronización:", error);
-      throw error;
-    }
+    this.setError({
+      success: false,
+      message: message,
+      errorType: errorType,
+    });
   }
 }
 
-// Singleton instance
-const auxiliarLocal = new AuxiliarIDB();
-export default auxiliarLocal;
+// Exportamos la clase para ser instanciada
+export default AuxiliarIDB;

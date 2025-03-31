@@ -1,59 +1,113 @@
 import { SuccessLoginData } from "@/interfaces/shared/apis/shared/login/types";
 import dbConnection from "../IndexedDBConnection";
+import { logout } from "@/lib/helpers/logout";
+import { LogoutTypes, ErrorDetailsForLogout } from "@/interfaces/LogoutTypes";
 
-// El tipo UserData puede tener cualquier propiedad adicional
-export type UserData = SuccessLoginData & Record<string, string | null>;
+// Extendemos SuccessLoginData con la nueva propiedad
+export interface UserData extends SuccessLoginData {
+  ultimaSincronizacionTablas?: number; // Nueva propiedad añadida
+}
 
 class UserStorage {
   private storeName: string = "user_data";
 
-/**
- * Guarda los datos del usuario en IndexedDB, actualizando solo las propiedades proporcionadas
- * @param userData Datos parciales del usuario a guardar
- * @returns Promise que se resuelve cuando los datos se han guardado
- */
-public async saveUserData(
-  userData: Partial<SuccessLoginData>
-): Promise<void> {
-  try {
-    // Asegurarnos de que la conexión está inicializada
-    await dbConnection.init();
+  /**
+   * Maneja los errores según su tipo y realiza logout si es necesario
+   * @param error Error capturado
+   * @param operacion Descripción de la operación que falló
+   * @param detalles Detalles adicionales del error
+   */
+  private handleError(
+    error: unknown,
+    operacion: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    detalles?: Record<string, any>
+  ): void {
+    console.error(`Error en UserStorage (${operacion}):`, error);
 
-    // Primero, obtenemos los datos actuales (si existen)
-    const currentUserData = await this.getUserData();
-
-    // Obtener el almacén de datos
-    const store = await dbConnection.getStore(this.storeName, "readwrite");
-
-    // Combinamos los datos actuales con los nuevos datos
-    // Si currentUserData es null, usamos un objeto vacío
-    const dataToSave = {
-      ...(currentUserData || {}),
-      ...userData, // Solo se sobrescriben las propiedades incluidas en userData
-      last_updated: Date.now(),
+    // Crear objeto con detalles del error
+    const errorDetails: ErrorDetailsForLogout = {
+      origen: `UserStorage.${operacion}`,
+      mensaje: error instanceof Error ? error.message : String(error),
+      timestamp: Date.now(),
+      contexto: JSON.stringify(detalles || {}),
+      siasisComponent: "CLN01",
     };
 
-    // Usamos un ID fijo 'current_user' para siempre actualizar los mismos datos
-    return new Promise((resolve, reject) => {
-      const request = store.put(dataToSave, "current_user");
+    // Determinar el tipo de error
+    let logoutType: LogoutTypes;
 
-      request.onsuccess = () => {
-        resolve();
-      };
+    if (error instanceof Error) {
+      if (error.name === "QuotaExceededError") {
+        logoutType = LogoutTypes.ERROR_BASE_DATOS;
+      } else if (error.name === "AbortError") {
+        logoutType = LogoutTypes.ERROR_BASE_DATOS;
+      } else if (error.message.includes("No hay datos de usuario")) {
+        logoutType = LogoutTypes.SESION_EXPIRADA;
+      } else if (error.message.includes("token")) {
+        logoutType = LogoutTypes.SESION_EXPIRADA;
+      } else {
+        logoutType = LogoutTypes.ERROR_SISTEMA;
+      }
+    } else {
+      logoutType = LogoutTypes.ERROR_SISTEMA;
+    }
 
-      request.onerror = (event) => {
-        reject(
-          `Error al guardar datos de usuario: ${
-            (event.target as IDBRequest).error
-          }`
-        );
-      };
-    });
-  } catch (error) {
-    console.error("Error al guardar datos de usuario:", error);
-    throw error;
+    // Cerrar sesión con los detalles del error
+    logout(logoutType, errorDetails);
   }
-}
+
+  /**
+   * Guarda los datos del usuario en IndexedDB, actualizando solo las propiedades proporcionadas
+   * @param userData Datos parciales del usuario a guardar
+   * @returns Promise que se resuelve cuando los datos se han guardado
+   */
+  public async saveUserData(userData: Partial<UserData>): Promise<void> {
+    try {
+      // Asegurarnos de que la conexión está inicializada
+      await dbConnection.init();
+
+      // Primero, obtenemos los datos actuales (si existen)
+      const currentUserData = await this.getUserData();
+
+      // Obtener el almacén de datos
+      const store = await dbConnection.getStore(this.storeName, "readwrite");
+
+      // Combinamos los datos actuales con los nuevos datos
+      // Si currentUserData es null, usamos un objeto vacío
+      const dataToSave = {
+        ...(currentUserData || {}),
+        ...userData, // Solo se sobrescriben las propiedades incluidas en userData
+        last_updated: Date.now(),
+      };
+
+      // Usamos un ID fijo 'current_user' para siempre actualizar los mismos datos
+      return new Promise((resolve, reject) => {
+        const request = store.put(dataToSave, "current_user");
+
+        request.onsuccess = () => {
+          resolve();
+        };
+
+        request.onerror = (event) => {
+          reject(
+            new Error(
+              `Error al guardar datos de usuario: ${
+                (event.target as IDBRequest).error
+              }`
+            )
+          );
+        };
+      });
+    } catch (error) {
+      this.handleError(error, "saveUserData", {
+        datosSolicitados: Object.keys(userData),
+        timeStamp: Date.now(),
+      });
+      throw error;
+    }
+  }
+
   /**
    * Obtiene los datos del usuario almacenados
    * @returns Promise que se resuelve con los datos del usuario o null si no hay datos
@@ -75,14 +129,16 @@ public async saveUserData(
 
         request.onerror = (event) => {
           reject(
-            `Error al obtener datos de usuario: ${
-              (event.target as IDBRequest).error
-            }`
+            new Error(
+              `Error al obtener datos de usuario: ${
+                (event.target as IDBRequest).error
+              }`
+            )
           );
         };
       });
     } catch (error) {
-      console.error("Error al obtener datos de usuario:", error);
+      this.handleError(error, "getUserData");
       throw error;
     }
   }
@@ -106,7 +162,9 @@ public async saveUserData(
         token,
       });
     } catch (error) {
-      console.error("Error al actualizar token de autenticación:", error);
+      this.handleError(error, "updateAuthToken", {
+        tokenLength: token?.length || 0,
+      });
       throw error;
     }
   }
@@ -120,7 +178,40 @@ public async saveUserData(
       const userData = await this.getUserData();
       return userData?.token || null;
     } catch (error) {
-      console.error("Error al obtener token de autenticación:", error);
+      this.handleError(error, "getAuthToken");
+      throw error;
+    }
+  }
+
+  /**
+   * Guarda la última marca de tiempo de sincronización de las tablas
+   * @param timestamp Marca de tiempo de la sincronización
+   * @returns Promise que se resuelve cuando se ha guardado la marca de tiempo
+   */
+  public async guardarUltimaSincronizacion(timestamp: number): Promise<void> {
+    try {
+      const userData = await this.getUserData();
+
+      await this.saveUserData({
+        ...(userData || {}),
+        ultimaSincronizacionTablas: timestamp,
+      });
+    } catch (error) {
+      this.handleError(error, "guardarUltimaSincronizacion", { timestamp });
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene la última marca de tiempo de sincronización de las tablas
+   * @returns Promise que se resuelve con la marca de tiempo o null si no hay marca de tiempo
+   */
+  public async obtenerUltimaSincronizacion(): Promise<number | null> {
+    try {
+      const userData = await this.getUserData();
+      return userData?.ultimaSincronizacionTablas || null;
+    } catch (error) {
+      this.handleError(error, "obtenerUltimaSincronizacion");
       throw error;
     }
   }
@@ -146,13 +237,17 @@ public async saveUserData(
 
         request.onerror = (event) => {
           reject(
-            `Error al eliminar datos de usuario: ${
-              (event.target as IDBRequest).error
-            }`
+            new Error(
+              `Error al eliminar datos de usuario: ${
+                (event.target as IDBRequest).error
+              }`
+            )
           );
         };
       });
     } catch (error) {
+      // Para este método en particular, no hacemos logout ya que probablemente
+      // ya se está en proceso de cerrar sesión
       console.error("Error al eliminar datos de usuario:", error);
       throw error;
     }

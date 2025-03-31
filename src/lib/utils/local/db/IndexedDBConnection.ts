@@ -504,9 +504,7 @@ export class IndexedDBConnection {
     bloqueo_roles: {
       keyPath: "Id_Bloqueo_Rol",
       autoIncrement: true,
-      indexes: [
-        { name: "por_rol", keyPath: "Rol", options: { unique: true } },
-      ],
+      indexes: [{ name: "por_rol", keyPath: "Rol", options: { unique: true } }],
     },
     ajustes_generales_sistema: {
       keyPath: "Id_Constante",
@@ -617,6 +615,22 @@ export class IndexedDBConnection {
         {
           name: "por_ultima_modificacion",
           keyPath: "Ultima_Modificacion",
+          options: { unique: false },
+        },
+      ],
+    },
+    ultima_actualizacion_tablas_locales: {
+      keyPath: "Nombre_Tabla",
+      autoIncrement: false,
+      indexes: [
+        {
+          name: "por_operacion",
+          keyPath: "Operacion",
+          options: { unique: false },
+        },
+        {
+          name: "por_fecha",
+          keyPath: "Fecha_Actualizacion",
           options: { unique: false },
         },
       ],

@@ -1,3 +1,4 @@
+"use client";
 import AuxiliarIcon from "@/components/icons/AuxiliarIcon";
 import DirectivoIcon from "@/components/icons/DirectivoIcon";
 import PersonasGenericasIcon from "@/components/icons/PersonasGenericasIcon";
@@ -5,6 +6,9 @@ import ProfesorOTutorIcon from "@/components/icons/ProfesorOTutorIcon";
 import ProfesorPrimariaIcon from "@/components/icons/ProfesorPrimariaIcon";
 import ResponsableIcon from "@/components/icons/ResponsableIcon";
 import { Link } from "next-view-transitions";
+import { useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { ErrorDetailsForLogout } from "@/interfaces/LogoutTypes";
 
 export type RolForLoginSelection =
   | "Directivo"
@@ -36,6 +40,44 @@ const RolBoton = ({ href, icon, rol }: RolBotonProps) => {
 };
 
 const SeleccionRoles = () => {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    // Obtener los parámetros de la URL
+    const logoutType = searchParams.get("LOGOUT_TYPE");
+    const errorDetailsParam = searchParams.get("ERROR_DETAILS");
+
+    // Si hay un tipo de logout, procesarlo
+    if (logoutType) {
+      console.log("Tipo de logout:", logoutType);
+
+      // Si hay detalles del error, decodificarlos y mostrarlos
+      if (errorDetailsParam) {
+        try {
+          const errorDetails = JSON.parse(
+            decodeURIComponent(errorDetailsParam)
+          ) as ErrorDetailsForLogout;
+          console.log("Detalles del error:", errorDetails);
+
+          // Loguear información detallada para debug
+          console.log(`
+            Error en: ${errorDetails.origen || "Desconocido"}
+            Mensaje: ${errorDetails.mensaje || "No disponible"}
+            Código: ${errorDetails.codigo || "N/A"}
+            Timestamp: ${new Date(
+              errorDetails.timestamp || Date.now()
+            ).toLocaleString()}
+            Contexto: ${errorDetails.contexto || "No disponible"}
+          `);
+
+          // TODO: Aquí se podría implementar la lógica para enviar estos datos a la BD
+        } catch (error) {
+          console.error("Error al decodificar los detalles del error:", error);
+        }
+      }
+    }
+  }, [searchParams]);
+
   return (
     <main className="w-[100vw] h-[100dvh] flex flex-col items-center justify-center max-lg:short-height:p-4 max-sm:p-6 max-lg:short-height:gap-y-[1.3vh] max-sm:gap-y-[3vh]">
       <div className=" flex flex-col items-center justify-center shadow-[0px_0px_20px_8px_rgba(0,0,0,0.25)] max-lg:short-height:contents  max-sm:contents sm-only:max-w-[77vw] md-only:max-w-[60vw] lg-only:max-w-[53vw]  xl-only:max-w-[40vw] lg-only:max-h-[85vh] xl-only:max-h-[85vh] py-[2rem] sm-only:px-[2rem] md-only:px-[2rem] lg-only:px-[2rem] xl-only:px-[3rem]  sm-only:gap-y-[0.9rem] md-only:gap-y-[1rem] lg-only:gap-y-[1rem] xl-only:gap-y-[1rem] rounded-[1.5rem]">
