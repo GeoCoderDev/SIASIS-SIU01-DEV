@@ -8,7 +8,7 @@ import ErrorMessage from "@/components/shared/errors/ErrorMessage";
 import { ErrorResponseAPIBase } from "@/interfaces/shared/apis/types";
 
 import Loader from "@/components/shared/loaders/Loader";
-import AuxiliarIDB from "@/lib/utils/local/db/models/AuxiliarIDB";
+import AuxiliaresIDB from "@/lib/utils/local/db/models/AuxiliaresIDB";
 
 const Auxiliares = () => {
   const [auxiliares, setAuxiliares] = useState<AuxiliarSinContraseña[]>();
@@ -18,7 +18,7 @@ const Auxiliares = () => {
 
   useEffect(() => {
     const getAuxiliares = async () => {
-      const auxiliares = await new AuxiliarIDB(
+      const auxiliares = await new AuxiliaresIDB(
         "API01",
         setIsSomethingLoading,
         setError

@@ -1,7 +1,6 @@
 import IndexedDBConnection from "../IndexedDBConnection";
 import TablasSistema, {
   TablasLocal,
-  TablasRemoto,
   ITablaInfo,
 } from "../../../../../interfaces/shared/TablasSistema";
 import { DatabaseModificationOperations } from "../../../../../interfaces/shared/DatabaseModificatioOperations";
@@ -27,7 +26,7 @@ export class UltimaActualizacionTablasLocalesIDB {
    * @returns Promise que se resuelve cuando se ha guardado el registro
    */
   public async registrarActualizacion(
-    nombreTabla: TablasLocal | TablasRemoto,
+    nombreTabla: TablasLocal,
     operacion: DatabaseModificationOperations
   ): Promise<void> {
     try {

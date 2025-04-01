@@ -6,6 +6,7 @@ import {
   TablasLocal,
 } from "../../../../../interfaces/shared/TablasSistema";
 import {
+  ApiResponseBase,
   ErrorResponseAPIBase,
   MessageProperty,
 } from "@/interfaces/shared/apis/types";
@@ -19,6 +20,7 @@ import comprobarSincronizacionDeTabla from "@/lib/helpers/validations/comprobarS
 import fetchSiasisApiGenerator from "@/lib/helpers/generators/fetchSiasisApisGenerator";
 import ultimaActualizacionTablasLocalesIDB from "./UltimaActualizacionTablasLocalesIDB";
 import { DatabaseModificationOperations } from "@/interfaces/shared/DatabaseModificatioOperations";
+import { GetAuxiliaresSuccessResponse } from "@/interfaces/shared/apis/api01/auxiliares/types";
 
 // Tipo para la entidad (sin atributos de fechas)
 export type IAuxiliarLocal = AuxiliarSinContraseña;
@@ -30,7 +32,7 @@ export interface IAuxiliarFilter {
   Estado?: boolean;
 }
 
-export class AuxiliarIDB {
+export class AuxiliaresIDB {
   private tablaInfo: ITablaInfo = TablasSistema.AUXILIARES;
   private nombreTablaLocal: string = this.tablaInfo.nombreLocal || "auxiliares";
 
@@ -90,14 +92,17 @@ export class AuxiliarIDB {
         throw new Error(`Error al obtener auxiliares: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const objectResponse = (await response.json()) as ApiResponseBase;
 
-      if (!data.success) {
-        throw new Error(`Error en respuesta de auxiliares: ${data.message}`);
+      if (!objectResponse.success) {
+        throw new Error(
+          `Error en respuesta de auxiliares: ${objectResponse.message}`
+        );
       }
 
       // Extraer los auxiliares del cuerpo de la respuesta
-      const { auxiliares } = data.data;
+      const { data: auxiliares } =
+        objectResponse as GetAuxiliaresSuccessResponse;
 
       // Actualizar auxiliares en la base de datos local
       await this.upsertFromServer(auxiliares);
@@ -351,4 +356,4 @@ export class AuxiliarIDB {
 }
 
 // Exportamos la clase para ser instanciada
-export default AuxiliarIDB;
+export default AuxiliaresIDB;

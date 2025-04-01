@@ -11,7 +11,7 @@ export interface GetPersonalAdministrativoSuccessResponse
   data: PersonalAdministrativoSinContraseña[];
 }
 
-export interface GetPersonalAdministrativoDetalleSuccessResponse
+export interface GetPersonalAdministrativoUnicoSuccessResponse
   extends SuccessResponseAPIBase {
   data: PersonalAdministrativoSinContraseña;
 }

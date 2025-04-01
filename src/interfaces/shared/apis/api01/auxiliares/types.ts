@@ -8,9 +8,7 @@ export type AuxiliarDataNecesariaParaCambioEstado = Pick<
 
 // Interfaces para los endpoints
 export interface GetAuxiliaresSuccessResponse extends SuccessResponseAPIBase {
-  data: {
-    auxiliares: AuxiliarSinContraseña[];
-  };
+  data: AuxiliarSinContraseña[];
 }
 
 export interface GetAuxiliarSuccessResponse extends SuccessResponseAPIBase {
@@ -27,15 +25,13 @@ export interface UpdateAuxiliarRequestBody {
 
 export interface UpdateAuxiliarSuccessResponse extends SuccessResponseAPIBase {
   data: {
-    auxiliar: {
-      DNI_Auxiliar: string;
-      Nombres: string;
-      Apellidos: string;
-      Genero: string;
-      Estado: boolean;
-      Celular: string;
-      Correo_Electronico: string | null;
-    };
+    DNI_Auxiliar: string;
+    Nombres: string;
+    Apellidos: string;
+    Genero: string;
+    Estado: boolean;
+    Celular: string;
+    Correo_Electronico: string | null;
   };
 }
 
