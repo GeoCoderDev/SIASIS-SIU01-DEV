@@ -1,189 +1,189 @@
-import { ObjetoConStringYNumber } from "@/interfaces/CustomObjects";
-import { MethodHTTP } from "@/interfaces/MethodsHTTP";
-import { useCallback, useEffect, useState } from "react";
-import useAPI from "./useAPI";
-import { ErrorAPI } from "@/interfaces/API";
+// import { ObjetoConStringYNumber } from "@/interfaces/CustomObjects";
+// import { MethodHTTP } from "@/interfaces/MethodsHTTP";
+// import { useCallback, useEffect, useState } from "react";
+// import useAPI from "./useAPI";
+// import { ErrorAPI } from "@/interfaces/API";
 
-const waitTimeRedirectionMS = 2300;
+// const waitTimeRedirectionMS = 2300;
 
-/**
- * Las referencias deben ir en el mismo
- * orden de los parametros de consulta
- * @param endpoint
- * @param limit
- * @param startFrom
- * @param queryParams
- * @param searchParamsRef
- * @param method
- * @param body
- * @returns
- */
-const useBatchAPI = <T>(
-  endpoint: string,
-  limit: number,
-  startFrom: number = 0,
-  queryParams: ObjetoConStringYNumber | null = null,
-  searchParamsRef: React.MutableRefObject<
-    HTMLInputElement | HTMLSelectElement | undefined
-  >[],
-  method: MethodHTTP = "GET",
-  body: string | null = null,
-  keyResults?: keyof T,
-  otherData?: (keyof T)[]
-) => {
-  const { fetchAPI, fetchCancelables } = useAPI();
-  const [results, setResults] = useState<Array<T>>([]);
-  const [start, setStart] = useState(startFrom);
-  const [count, setCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [allResultsGetted, setAllResultsGetted] = useState(false);
-  const [shouldFetch, setShouldFetch] = useState(true);
-  const [error, setError] = useState<ErrorAPI | null>(null);
-  const [otherProperties, setOtherProperties] = useState<any>({});
+// /**
+//  * Las referencias deben ir en el mismo
+//  * orden de los parametros de consulta
+//  * @param endpoint
+//  * @param limit
+//  * @param startFrom
+//  * @param queryParams
+//  * @param searchParamsRef
+//  * @param method
+//  * @param body
+//  * @returns
+//  */
+// const useBatchAPI = <T>(
+//   endpoint: string,
+//   limit: number,
+//   startFrom: number = 0,
+//   queryParams: ObjetoConStringYNumber | null = null,
+//   searchParamsRef: React.MutableRefObject<
+//     HTMLInputElement | HTMLSelectElement | undefined
+//   >[],
+//   method: MethodHTTP = "GET",
+//   body: string | null = null,
+//   keyResults?: keyof T,
+//   otherData?: (keyof T)[]
+// ) => {
+//   const { fetchAPI, fetchCancelables } = useAPI();
+//   const [results, setResults] = useState<Array<T>>([]);
+//   const [start, setStart] = useState(startFrom);
+//   const [count, setCount] = useState(0);
+//   const [isLoading, setIsLoading] = useState(true);
+//   const [allResultsGetted, setAllResultsGetted] = useState(false);
+//   const [shouldFetch, setShouldFetch] = useState(true);
+//   const [error, setError] = useState<ErrorAPI | null>(null);
+//   const [otherProperties, setOtherProperties] = useState<any>({});
 
-  //Definicion de la funcion fetchNextResults
-  const fetchNextResults = useCallback(async () => {
+//   //Definicion de la funcion fetchNextResults
+//   const fetchNextResults = useCallback(async () => {
 
-    if (!shouldFetch) return;
+//     if (!shouldFetch) return;
 
-    if ((fetchAPI === undefined || start >= count) && count !== 0) return;
+//     if ((fetchAPI === undefined || start >= count) && count !== 0) return;
 
-    try {
-      const fetchCancelable = fetchAPI(
-        endpoint,
-        method,
-        { ...queryParams, startFrom: start, limit },
-        body
-      );
+//     try {
+//       const fetchCancelable = fetchAPI(
+//         endpoint,
+//         method,
+//         { ...queryParams, startFrom: start, limit },
+//         body
+//       );
 
-      if (fetchCancelable === undefined) return;
+//       if (fetchCancelable === undefined) return;
 
-      setIsLoading(true);
+//       setIsLoading(true);
 
-      while (fetchCancelables.length > 0) {
-        const oldFetch = fetchCancelables.shift();
-        oldFetch?.cancel();
-      }
+//       while (fetchCancelables.length > 0) {
+//         const oldFetch = fetchCancelables.shift();
+//         oldFetch?.cancel();
+//       }
 
-      const res = await fetchCancelable.fetch();
+//       const res = await fetchCancelable.fetch();
 
-      let equalsQueryParams = true;
-      let indice = -1;
+//       let equalsQueryParams = true;
+//       let indice = -1;
 
-      for (const [key, value] of Object.entries(fetchCancelable.queryParams)) {
-        indice++;
-        if (searchParamsRef?.[indice]?.current === undefined) continue;
-        if (searchParamsRef[indice].current?.value !== value) {
-          // console.log("%cdiferente", "font-size: 2rem");
-          equalsQueryParams = false;
-          break;
-        }
-      }
+//       for (const [key, value] of Object.entries(fetchCancelable.queryParams)) {
+//         indice++;
+//         if (searchParamsRef?.[indice]?.current === undefined) continue;
+//         if (searchParamsRef[indice].current?.value !== value) {
+//           // console.log("%cdiferente", "font-size: 2rem");
+//           equalsQueryParams = false;
+//           break;
+//         }
+//       }
 
-      if (!equalsQueryParams) return;
+//       if (!equalsQueryParams) return;
 
-      const respObj:
-        | {
-            results: Array<T>;
-            count?: number;
-            message?: string;
-          }
-        | any = await res.json();
+//       const respObj:
+//         | {
+//             results: Array<T>;
+//             count?: number;
+//             message?: string;
+//           }
+//         | any = await res.json();
 
-      if (otherData) {
-        setOtherProperties(() => {
-          let props: any = {};
+//       if (otherData) {
+//         setOtherProperties(() => {
+//           let props: any = {};
 
-          for (const [key, value] of Object.entries(respObj as Object)) {
-            if (otherData.includes(key as keyof T)) {
-              props[key] = value;
-            }
-          }
-          return props;
-        });
-      }
+//           for (const [key, value] of Object.entries(respObj as Object)) {
+//             if (otherData.includes(key as keyof T)) {
+//               props[key] = value;
+//             }
+//           }
+//           return props;
+//         });
+//       }
 
-      const { results: nextResults, count: countResults, message } = respObj;
+//       const { results: nextResults, count: countResults, message } = respObj;
 
-      if (res.status === 401) {
-        setError(() => ({
-          message: message ?? "Tu sesion ha expirado o no estas autorizado",
-        }));
-        setTimeout(() => {
-          window.location.href = "/";
-        }, waitTimeRedirectionMS);
-        return setIsLoading(false);
-      }
+//       if (res.status === 401) {
+//         setError(() => ({
+//           message: message ?? "Tu sesion ha expirado o no estas autorizado",
+//         }));
+//         setTimeout(() => {
+//           window.location.href = "/";
+//         }, waitTimeRedirectionMS);
+//         return setIsLoading(false);
+//       }
 
-      if (countResults !== undefined) setCount(() => countResults);
+//       if (countResults !== undefined) setCount(() => countResults);
 
-      const resultsDef = keyResults
-        ? respObj[keyResults] ?? nextResults
-        : nextResults;
+//       const resultsDef = keyResults
+//         ? respObj[keyResults] ?? nextResults
+//         : nextResults;
 
-      if (!resultsDef) {
-        setResults(() => []);
-      } else {
-        if (start === 0) {
-          setResults(() => resultsDef);
-        } else {
-          setResults(
-            (prevResults) => [...prevResults, ...resultsDef] as Array<T>
-          );
-        }
-      }
+//       if (!resultsDef) {
+//         setResults(() => []);
+//       } else {
+//         if (start === 0) {
+//           setResults(() => resultsDef);
+//         } else {
+//           setResults(
+//             (prevResults) => [...prevResults, ...resultsDef] as Array<T>
+//           );
+//         }
+//       }
 
-      setStart((prev) => prev + limit);
-      setAllResultsGetted(start + limit >= (countResults ?? count));
-      setIsLoading(false);
-    } catch (error: any) {
-      const pattern = /signal is aborted without reason/;
-      if (error.stack && pattern.test(error.stack)) return;
-      setError(() => ({ message: "La red es inestable" }));
-      setIsLoading(false);
-    }
-  }, [
-    fetchAPI,
-    body,
-    endpoint,
-    start,
-    limit,
-    method,
-    queryParams,
-    count,
-    shouldFetch,
-  ]);
+//       setStart((prev) => prev + limit);
+//       setAllResultsGetted(start + limit >= (countResults ?? count));
+//       setIsLoading(false);
+//     } catch (error: any) {
+//       const pattern = /signal is aborted without reason/;
+//       if (error.stack && pattern.test(error.stack)) return;
+//       setError(() => ({ message: "La red es inestable" }));
+//       setIsLoading(false);
+//     }
+//   }, [
+//     fetchAPI,
+//     body,
+//     endpoint,
+//     start,
+//     limit,
+//     method,
+//     queryParams,
+//     count,
+//     shouldFetch,
+//   ]);
 
-  useEffect(() => {
-    setStart(() => startFrom);
-  }, [endpoint, limit, startFrom, queryParams, method, body]);
+//   useEffect(() => {
+//     setStart(() => startFrom);
+//   }, [endpoint, limit, startFrom, queryParams, method, body]);
 
-  // Reset the state when the query params change
-  useEffect(() => {
-    if (start >= count && count !== 0) return setAllResultsGetted(true);
-    if (start !== startFrom) return;
-    setIsLoading(true);
-    setAllResultsGetted(false);
-    setError(null);
-    setResults([]);
-    setStart(() => startFrom);
-    fetchNextResults();
-  }, [fetchNextResults, startFrom, start, queryParams]);
+//   // Reset the state when the query params change
+//   useEffect(() => {
+//     if (start >= count && count !== 0) return setAllResultsGetted(true);
+//     if (start !== startFrom) return;
+//     setIsLoading(true);
+//     setAllResultsGetted(false);
+//     setError(null);
+//     setResults([]);
+//     setStart(() => startFrom);
+//     fetchNextResults();
+//   }, [fetchNextResults, startFrom, start, queryParams]);
 
-  useEffect(() => {
-    setShouldFetch(false);
-    setTimeout(() => setShouldFetch(true), 1000);
-  }, [queryParams]);
+//   useEffect(() => {
+//     setShouldFetch(false);
+//     setTimeout(() => setShouldFetch(true), 1000);
+//   }, [queryParams]);
 
-  return {
-    fetchNextResults,
-    results,
-    isLoading,
-    allResultsGetted,
-    error,
-    setResults,
-    otherProperties,
-  };
-};
+//   return {
+//     fetchNextResults,
+//     results,
+//     isLoading,
+//     allResultsGetted,
+//     error,
+//     setResults,
+//     otherProperties,
+//   };
+// };
 
-export default useBatchAPI;
+// export default useBatchAPI;
