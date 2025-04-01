@@ -355,5 +355,3 @@ export class AuxiliaresIDB {
   }
 }
 
-// Exportamos la clase para ser instanciada
-export default AuxiliaresIDB;

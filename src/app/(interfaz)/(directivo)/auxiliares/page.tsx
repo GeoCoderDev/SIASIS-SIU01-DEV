@@ -8,7 +8,7 @@ import ErrorMessage from "@/components/shared/errors/ErrorMessage";
 import { ErrorResponseAPIBase } from "@/interfaces/shared/apis/types";
 
 import Loader from "@/components/shared/loaders/Loader";
-import AuxiliaresIDB from "@/lib/utils/local/db/models/AuxiliaresIDB";
+import { AuxiliaresIDB } from "@/lib/utils/local/db/models/AuxiliaresIDB";
 
 const Auxiliares = () => {
   const [auxiliares, setAuxiliares] = useState<AuxiliarSinContraseña[]>();

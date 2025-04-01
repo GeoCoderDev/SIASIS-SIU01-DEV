@@ -2,10 +2,11 @@
 import { PersonalAdministrativoSinContraseña } from "@/interfaces/shared/apis/shared/others/types";
 import { ErrorResponseAPIBase } from "@/interfaces/shared/apis/types";
 import React, { useEffect, useState } from "react";
-import PersonalAdministrativoIDB from "../../../../lib/utils/local/db/models/PersonalAdministrativoIDB";
+
 import ErrorMessage from "@/components/shared/errors/ErrorMessage";
 import Loader from "@/components/shared/loaders/Loader";
 import PersonalAdministrativoCard from "./_components/PersonalAdministrativoCard";
+import { PersonalAdministrativoIDB } from "@/lib/utils/local/db/models/PersonalAdministrativoIDB";
 
 const PersonalAdministrativo = () => {
   const [personalAdministrivo, setPersonalAdministrivo] =

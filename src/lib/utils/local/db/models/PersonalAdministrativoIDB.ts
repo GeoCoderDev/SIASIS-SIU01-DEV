@@ -426,5 +426,4 @@ export class PersonalAdministrativoIDB {
   }
 }
 
-// Exportamos la clase para ser instanciada
-export default PersonalAdministrativoIDB;
+
