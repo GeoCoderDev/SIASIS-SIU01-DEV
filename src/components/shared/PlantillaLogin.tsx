@@ -20,6 +20,7 @@ import { MisDatosErrorResponseAPI01 } from "@/interfaces/shared/apis/api01/mis-d
 import { Link } from "next-view-transitions";
 import UltimaModificacionTablasIDB from "@/lib/utils/local/db/models/UltimaModificacionTablasIDB";
 
+
 export type RolForLogin =
   | "DIRECTIVO"
   | "PROFESOR DE PRIMARIA"
