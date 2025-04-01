@@ -1,7 +1,8 @@
 import ultimaActualizacionTablasLocalesIDB from "@/lib/utils/local/db/models/UltimaActualizacionTablasLocalesIDB";
-import UltimaModificacionTablasIDB from "@/lib/utils/local/db/models/UltimaModificacionTablasLocalesIDB";
+
 import { ITablaInfo } from "@/interfaces/shared/TablasSistema";
 import { SiasisAPIS } from "@/interfaces/shared/SiasisComponents";
+import UltimaModificacionTablasIDB from "../../utils/local/db/models/UltimaModificacionTablasIDB";
 
 /**
  * Comprueba si la fecha de actualización local es mayor que la fecha de modificación remota
