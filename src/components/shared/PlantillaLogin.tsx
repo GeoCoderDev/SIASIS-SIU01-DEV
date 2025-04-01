@@ -18,7 +18,7 @@ import {
 import { ResponseSuccessLogin } from "@/interfaces/shared/apis/shared/login/types";
 import { MisDatosErrorResponseAPI01 } from "@/interfaces/shared/apis/api01/mis-datos/types";
 import { Link } from "next-view-transitions";
-import UltimaModificacionTablasIDB from "@/lib/utils/local/db/models/UltimaModificacionTablasLocalesIDB";
+import UltimaModificacionTablasIDB from "@/lib/utils/local/db/models/UltimaModificacionTablasIDB";
 
 export type RolForLogin =
   | "DIRECTIVO"
