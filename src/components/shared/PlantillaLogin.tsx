@@ -18,7 +18,7 @@ import {
 import { ResponseSuccessLogin } from "@/interfaces/shared/apis/shared/login/types";
 import { MisDatosErrorResponseAPI01 } from "@/interfaces/shared/apis/api01/mis-datos/types";
 import { Link } from "next-view-transitions";
-import UltimaModificacionTablasIDB from "@/lib/utils/local/db/models/UltimaModificacionTablasIDB";
+import CUltimaModificacionTablasIDB from "@/lib/utils/local/db/models/UltimaModificacionTablasIDB";
 
 
 export type RolForLogin =
@@ -120,7 +120,7 @@ const PlantillaLogin = ({ rol, siasisAPI, endpoint }: PlantillaLoginProps) => {
       });
 
       //Sincronizando las modificaciones de tablas
-      await new UltimaModificacionTablasIDB(siasisAPI).sync(true);
+      await new CUltimaModificacionTablasIDB(siasisAPI).sync(true);
       
       setIsSomethingLoading(false);
 
