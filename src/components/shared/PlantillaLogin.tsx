@@ -18,8 +18,7 @@ import {
 import { ResponseSuccessLogin } from "@/interfaces/shared/apis/shared/login/types";
 import { MisDatosErrorResponseAPI01 } from "@/interfaces/shared/apis/api01/mis-datos/types";
 import { Link } from "next-view-transitions";
-import CUltimaModificacionTablasIDB from "@/lib/utils/local/db/models/UltimaModificacionTablasIDB";
-
+import UltimaModificacionTablasIDB from "@/lib/utils/local/db/models/UltimaModificacionTablasLocalesIDB";
 
 export type RolForLogin =
   | "DIRECTIVO"
@@ -111,8 +110,6 @@ const PlantillaLogin = ({ rol, siasisAPI, endpoint }: PlantillaLoginProps) => {
         throw new Error(message);
       }
 
-
-      
       //Guadando data en IndexedDB
       await userStorage.saveUserData({
         ...data,
@@ -120,8 +117,8 @@ const PlantillaLogin = ({ rol, siasisAPI, endpoint }: PlantillaLoginProps) => {
       });
 
       //Sincronizando las modificaciones de tablas
-      await new CUltimaModificacionTablasIDB(siasisAPI).sync(true);
-      
+      await new UltimaModificacionTablasIDB(siasisAPI).sync(true);
+
       setIsSomethingLoading(false);
 
       // setTimeout(() => {

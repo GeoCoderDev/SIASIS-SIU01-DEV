@@ -1,5 +1,5 @@
 import ultimaActualizacionTablasLocalesIDB from "@/lib/utils/local/db/models/UltimaActualizacionTablasLocalesIDB";
-import { UltimaModificacionTablasIDB } from "@/lib/utils/local/db/models/UltimaModificacionTablasIDB";
+import UltimaModificacionTablasIDB from "@/lib/utils/local/db/models/UltimaModificacionTablasLocalesIDB";
 import { ITablaInfo } from "@/interfaces/shared/TablasSistema";
 import { SiasisAPIS } from "@/interfaces/shared/SiasisComponents";
 
