@@ -1,4 +1,5 @@
 "use client";
+import "dotenv/config";
 import React, { useEffect, useState } from "react";
 import io, { Socket } from "socket.io-client";
 
@@ -14,15 +15,15 @@ const TomarAsistenciaSecundaria = () => {
     //   username: "profesor1",
     //   role: "profesor-primaria"
     // };
-    
 
     // O puedes usar un token codificado manualmente para pruebas
-    const fakeToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEyMyIsInVzZXJuYW1lIjoicHJvZmVzb3IxIiwicm9sZSI6InByb2Zlc29yLXByaW1hcmlhIiwiaWF0IjoxNzA5NzUwNDAwLCJleHAiOjE3MDk3NTQwMDB9.tu-firma-aqui";
+    const fakeToken =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEyMyIsInVzZXJuYW1lIjoicHJvZmVzb3IxIiwicm9sZSI6InByb2Zlc29yLXByaW1hcmlhIiwiaWF0IjoxNzA5NzUwNDAwLCJleHAiOjE3MDk3NTQwMDB9.tu-firma-aqui";
 
     // Inicializar la conexión al montar el componente
-    const socketInstance = io("http://localhost:5000", {
+    const socketInstance = io(process.env.NEXT_PUBLIC_SS01_URL_BASE!, {
       auth: {
-        token: fakeToken
+        token: fakeToken,
       },
     });
 
@@ -30,9 +31,9 @@ const TomarAsistenciaSecundaria = () => {
     socketInstance.on("connect", () => {
       console.log("Conectado al servidor de sockets");
     });
-    
+
     // Manejar errores de conexión
-    socketInstance.on("connect_error", (error:Error) => {
+    socketInstance.on("connect_error", (error: Error) => {
       console.error("Error de conexión:", error.message);
     });
 
@@ -46,7 +47,6 @@ const TomarAsistenciaSecundaria = () => {
       }
     };
   }, []); // Ejecutar solo al montar/desmontar
-
 
   // Función para registrar asistencia
   const registrarAsistencia = (estudianteId: string, estado: string) => {
