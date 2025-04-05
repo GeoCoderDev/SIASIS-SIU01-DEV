@@ -9,6 +9,7 @@ import { Link } from "next-view-transitions";
 import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { ErrorDetailsForLogout } from "@/interfaces/LogoutTypes";
+import getRandomSIU01IntanceURL from '../../lib/helpers/functions/getRandomSIU01IntanceURL';
 
 export type RolForLoginSelection =
   | "Directivo"
@@ -21,13 +22,13 @@ export type RolForLoginSelection =
 interface RolBotonProps {
   rol: RolForLoginSelection;
   icon: React.ReactNode;
-  href: string;
+  path: string;
 }
 
-const RolBoton = ({ href, icon, rol }: RolBotonProps) => {
+const RolBoton = ({ path, icon, rol }: RolBotonProps) => {
   return (
     <Link
-      href={href}
+      href={getRandomSIU01IntanceURL() + path}
       className="border-[3px] border-color-interfaz flex flex-col items-center justify-center max-lg:short-height:w-[8.75rem] max-sm:w-[8.5rem] sm-only:w-[9.3rem] md-only:w-[9.75rem] lg-only:w-[9.75rem] xl-only:w-[11rem] max-lg:short-height:h-[5rem] max-sm:h-[6rem] sm-only:h-[6.5rem] md-only:h-[6.5rem] lg-only:h-[6.75rem] xl-only:h-[7.5rem] rounded-[0.75rem] max-lg:short-height:gap-1 gap-2"
     >
       {icon}
@@ -95,42 +96,42 @@ const SeleccionRoles = () => {
 
         <div className="flex flex-row items-center justify-center max-w-full flex-wrap max-lg:short-height:gap-x-[3vw] max-sm:gap-x-[6vw] sm-only:gap-x-[min(2vw,2rem)] md-only:gap-x-[3rem] lg-only:gap-x-[3rem] xl-only:gap-x-[4rem] max-lg:short-height:gap-y-[3vh] max-sm:gap-y-[1rem] sm-only:gap-y-[1rem] md-only:gap-y-[1.3rem] lg-only:gap-y-[1.3rem] xl-only:gap-y-[2rem] md-only:mt-2 lg-only:mt-2 xl-only:mt-4">
           <RolBoton
-            href="/login/directivo"
+            path="/login/directivo"
             icon={
               <DirectivoIcon className="max-lg:short-height:h-[7.5vh] max-sm:w-[1.7rem] sm-only:w-[1.85rem] md-only:w-[2rem] lg-only:w-[2.6rem] xl-only:w-[3.4rem] text-negro" />
             }
             rol="Directivo"
           />
           <RolBoton
-            href="/login/profesor-primaria"
+            path="/login/profesor-primaria"
             icon={
               <ProfesorPrimariaIcon className="max-lg:short-height:h-[7.5vh] max-sm:w-[1.65rem] sm-only:w-[2.1rem] md-only:w-[2rem] lg-only:w-[2.4rem] xl-only:w-[3rem] text-negro" />
             }
             rol="Profesor (Primaria)"
           />
           <RolBoton
-            href="/login/auxiliar"
+            path="/login/auxiliar"
             icon={
               <AuxiliarIcon className="max-lg:short-height:h-[7.75vh] max-sm:w-[1.55rem] sm-only:w-[1.7rem] md-only:w-[1.75rem] lg-only:w-[2rem] xl-only:w-[2.5rem] text-negro" />
             }
             rol="Auxiliar"
           />
           <RolBoton
-            href="/login/profesor-tutor-secundaria"
+            path="/login/profesor-tutor-secundaria"
             icon={
               <ProfesorOTutorIcon className="max-lg:short-height:h-[7vh] max-sm:w-[1.5rem] sm-only:w-[1.7rem] md-only:w-[2rem] lg-only:w-[2rem] xl-only:w-[2.5rem] text-negro" />
             }
             rol="Profesor/Tutor (Secundaria)"
           />
           <RolBoton
-            href="/login/responsable"
+            path="/login/responsable"
             icon={
               <ResponsableIcon className="max-lg:short-height:h-[8vh] max-sm:w-[1.5rem] sm-only:w-[1.7rem] md-only:w-[1.7rem] lg-only:w-[1.9rem] xl-only:w-[2.3rem] text-negro" />
             }
             rol="Responsable (Padre/Apoderado)"
           />
           <RolBoton
-            href="/login/personal-administrativo"
+            path="/login/personal-administrativo"
             icon={
               <PersonasGenericasIcon className="max-lg:short-height:h-[8vh] max-sm:w-[1.65rem] sm-only:w-[1.9rem] md-only:w-[2rem] lg-only:w-[2.5rem] xl-only:w-[3rem] text-negro" />
             }
