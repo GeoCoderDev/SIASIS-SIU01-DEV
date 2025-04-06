@@ -13,6 +13,10 @@ import comprobarSincronizacion from "@/lib/helpers/validations/comprobarSincroni
 import fetchSiasisApiGenerator from "@/lib/helpers/generators/fetchSiasisApisGenerator";
 import { SiasisAPIS } from "@/interfaces/shared/SiasisComponents";
 import userStorage from "./UserStorage";
+import {
+  MAX_CACHE_LIFETIME_SECONDS,
+  MIN_CACHE_LIFETIME_SECONDS,
+} from "@/constants/CACHE_LIFETIME";
 
 class UltimaModificacionTablasIDB {
   // Información completa de la tabla que incluye nombre local, remoto, descripción, etc.
@@ -30,8 +34,8 @@ class UltimaModificacionTablasIDB {
     try {
       // Utilizamos la función comprobarSincronizacion para determinar si debemos sincronizar
       const debeSincronizar = await comprobarSincronizacion(
-        180,
-        360,
+        MIN_CACHE_LIFETIME_SECONDS,
+        MAX_CACHE_LIFETIME_SECONDS,
         forzarSincronizacion
       );
 

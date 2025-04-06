@@ -184,6 +184,34 @@ class UserStorage {
   }
 
   /**
+   * Obtiene el rol del usuario almacenado
+   * @returns Promise que se resuelve con el rol del usuario o null si no hay datos
+   */
+  public async getRol(): Promise<string | null> {
+    try {
+      const userData = await this.getUserData();
+      return userData?.Rol || null;
+    } catch (error) {
+      this.handleError(error, "getRol");
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene el género del usuario almacenado
+   * @returns Promise que se resuelve con el género del usuario o null si no hay datos
+   */
+  public async getGenero(): Promise<string | null> {
+    try {
+      const userData = await this.getUserData();
+      return userData?.Genero || null;
+    } catch (error) {
+      this.handleError(error, "getGenero");
+      throw error;
+    }
+  }
+
+  /**
    * Guarda la última marca de tiempo de sincronización de las tablas
    * @param timestamp Marca de tiempo de la sincronización
    * @returns Promise que se resuelve cuando se ha guardado la marca de tiempo

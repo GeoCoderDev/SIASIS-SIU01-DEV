@@ -105,7 +105,7 @@ export class AuxiliaresIDB {
         objectResponse as GetAuxiliaresSuccessResponse;
 
       // Actualizar auxiliares en la base de datos local
-      await this.upsertFromServer(auxiliares);
+      const result = await this.upsertFromServer(auxiliares);
 
       // Registrar la actualización en UltimaActualizacionTablasLocalesIDB
       await ultimaActualizacionTablasLocalesIDB.registrarActualizacion(
@@ -113,7 +113,7 @@ export class AuxiliaresIDB {
         DatabaseModificationOperations.UPDATE
       );
 
-      console.log(`Actualizados ${auxiliares.length} auxiliares desde la API`);
+      console.log(`Sincronización de auxiliares completada: ${auxiliares.length} auxiliares procesados (${result.created} creados, ${result.updated} actualizados, ${result.deleted} eliminados, ${result.errors} errores)`);
     } catch (error) {
       console.error("Error al obtener y actualizar auxiliares:", error);
 
@@ -211,71 +211,161 @@ export class AuxiliaresIDB {
   }
 
   /**
+   * Obtiene todos los DNIs de auxiliares almacenados localmente
+   * @returns Promise con array de DNIs
+   */
+  private async getAllDNIs(): Promise<string[]> {
+    try {
+      const store = await IndexedDBConnection.getStore(this.nombreTablaLocal);
+      
+      return new Promise<string[]>((resolve, reject) => {
+        const dnis: string[] = [];
+        const request = store.openCursor();
+        
+        request.onsuccess = (event) => {
+          const cursor = (event.target as IDBRequest).result as IDBCursorWithValue;
+          if (cursor) {
+            // Añadir el DNI del auxiliar actual
+            dnis.push(cursor.value.DNI_Auxiliar);
+            cursor.continue();
+          } else {
+            // No hay más registros, resolvemos con el array de DNIs
+            resolve(dnis);
+          }
+        };
+        
+        request.onerror = () => {
+          reject(request.error);
+        };
+      });
+    } catch (error) {
+      console.error("Error al obtener todos los DNIs de auxiliares:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Elimina un auxiliar por su DNI
+   * @param dni DNI del auxiliar a eliminar
+   * @returns Promise<void>
+   */
+  private async deleteByDNI(dni: string): Promise<void> {
+    try {
+      const store = await IndexedDBConnection.getStore(
+        this.nombreTablaLocal,
+        "readwrite"
+      );
+      
+      return new Promise<void>((resolve, reject) => {
+        const request = store.delete(dni);
+        
+        request.onsuccess = () => {
+          resolve();
+        };
+        
+        request.onerror = () => {
+          reject(request.error);
+        };
+      });
+    } catch (error) {
+      console.error(`Error al eliminar auxiliar con DNI ${dni}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Actualiza o crea auxiliares en lote desde el servidor
+   * También elimina registros que ya no existen en el servidor
    * @param auxiliaresServidor Auxiliares provenientes del servidor
-   * @returns Conteo de operaciones: creados, actualizados, errores
+   * @returns Conteo de operaciones: creados, actualizados, eliminados, errores
    */
   private async upsertFromServer(
     auxiliaresServidor: AuxiliarSinContraseña[]
-  ): Promise<{ created: number; updated: number; errors: number }> {
-    const result = { created: 0, updated: 0, errors: 0 };
+  ): Promise<{ created: number; updated: number; deleted: number; errors: number }> {
+    const result = { created: 0, updated: 0, deleted: 0, errors: 0 };
 
-    // Procesar en lotes para evitar transacciones demasiado largas
-    const BATCH_SIZE = 20;
-
-    for (let i = 0; i < auxiliaresServidor.length; i += BATCH_SIZE) {
-      const lote = auxiliaresServidor.slice(i, i + BATCH_SIZE);
-
-      // Para cada auxiliar en el lote
-      for (const auxiliarServidor of lote) {
+    try {
+      // 1. Obtener los DNIs actuales en caché
+      const dnisLocales = await this.getAllDNIs();
+      
+      // 2. Crear conjunto de DNIs del servidor para búsqueda rápida
+      const dnisServidor = new Set(auxiliaresServidor.map(aux => aux.DNI_Auxiliar));
+      
+      // 3. Identificar DNIs que ya no existen en el servidor
+      const dnisAEliminar = dnisLocales.filter(dni => !dnisServidor.has(dni));
+      
+      // 4. Eliminar registros que ya no existen en el servidor
+      for (const dni of dnisAEliminar) {
         try {
-          // Verificar si el auxiliar ya existe
-          const existeAuxiliar = await this.getByDNI(
-            auxiliarServidor.DNI_Auxiliar
-          );
-
-          // Obtener un store fresco para cada operación
-          const store = await IndexedDBConnection.getStore(
-            this.nombreTablaLocal,
-            "readwrite"
-          );
-
-          // Ejecutar la operación put
-          await new Promise<void>((resolve, reject) => {
-            const request = store.put(auxiliarServidor);
-
-            request.onsuccess = () => {
-              if (existeAuxiliar) {
-                result.updated++;
-              } else {
-                result.created++;
-              }
-              resolve();
-            };
-
-            request.onerror = () => {
-              result.errors++;
-              console.error(
-                `Error al guardar auxiliar ${auxiliarServidor.DNI_Auxiliar}:`,
-                request.error
-              );
-              reject(request.error);
-            };
-          });
+          await this.deleteByDNI(dni);
+          result.deleted++;
         } catch (error) {
+          console.error(`Error al eliminar auxiliar ${dni}:`, error);
           result.errors++;
-          console.error(
-            `Error al procesar auxiliar ${auxiliarServidor.DNI_Auxiliar}:`,
-            error
-          );
         }
       }
+      
+      // 5. Procesar en lotes para evitar transacciones demasiado largas
+      const BATCH_SIZE = 20;
 
-      // Dar un pequeño respiro al bucle de eventos entre lotes
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      for (let i = 0; i < auxiliaresServidor.length; i += BATCH_SIZE) {
+        const lote = auxiliaresServidor.slice(i, i + BATCH_SIZE);
+
+        // Para cada auxiliar en el lote
+        for (const auxiliarServidor of lote) {
+          try {
+            // Verificar si el auxiliar ya existe
+            const existeAuxiliar = await this.getByDNI(
+              auxiliarServidor.DNI_Auxiliar
+            );
+
+            // Obtener un store fresco para cada operación
+            const store = await IndexedDBConnection.getStore(
+              this.nombreTablaLocal,
+              "readwrite"
+            );
+
+            // Ejecutar la operación put
+            await new Promise<void>((resolve, reject) => {
+              const request = store.put(auxiliarServidor);
+
+              request.onsuccess = () => {
+                if (existeAuxiliar) {
+                  result.updated++;
+                } else {
+                  result.created++;
+                }
+                resolve();
+              };
+
+              request.onerror = () => {
+                result.errors++;
+                console.error(
+                  `Error al guardar auxiliar ${auxiliarServidor.DNI_Auxiliar}:`,
+                  request.error
+                );
+                reject(request.error);
+              };
+            });
+          } catch (error) {
+            result.errors++;
+            console.error(
+              `Error al procesar auxiliar ${auxiliarServidor.DNI_Auxiliar}:`,
+              error
+            );
+          }
+        }
+
+        // Dar un pequeño respiro al bucle de eventos entre lotes
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Error en la operación upsertFromServer:", error);
+      result.errors++;
+      return result;
     }
-
-    return result;
   }
 
   /**
@@ -354,4 +444,3 @@ export class AuxiliaresIDB {
     });
   }
 }
-

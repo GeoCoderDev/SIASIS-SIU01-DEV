@@ -113,7 +113,7 @@ export class PersonalAdministrativoIDB {
       const { data: personalAdministrativo } = objectResponse as GetPersonalAdministrativoSuccessResponse;
 
       // Actualizar personal administrativo en la base de datos local
-      await this.upsertFromServer(personalAdministrativo);
+      const result = await this.upsertFromServer(personalAdministrativo);
 
       // Registrar la actualización en UltimaActualizacionTablasLocalesIDB
       await ultimaActualizacionTablasLocalesIDB.registrarActualizacion(
@@ -122,7 +122,7 @@ export class PersonalAdministrativoIDB {
       );
 
       console.log(
-        `Actualizados ${personalAdministrativo.length} miembros del personal administrativo desde la API`
+        `Sincronización de personal administrativo completada: ${personalAdministrativo.length} miembros procesados (${result.created} creados, ${result.updated} actualizados, ${result.deleted} eliminados, ${result.errors} errores)`
       );
     } catch (error) {
       console.error(
@@ -234,75 +234,169 @@ export class PersonalAdministrativoIDB {
   }
 
   /**
+   * Obtiene todos los DNIs del personal administrativo almacenados localmente
+   * @returns Promise con array de DNIs
+   */
+  private async getAllDNIs(): Promise<string[]> {
+    try {
+      const store = await IndexedDBConnection.getStore(this.nombreTablaLocal);
+      
+      return new Promise<string[]>((resolve, reject) => {
+        const dnis: string[] = [];
+        const request = store.openCursor();
+        
+        request.onsuccess = (event) => {
+          const cursor = (event.target as IDBRequest).result as IDBCursorWithValue;
+          if (cursor) {
+            // Añadir el DNI del personal administrativo actual
+            dnis.push(cursor.value.DNI_Personal_Administrativo);
+            cursor.continue();
+          } else {
+            // No hay más registros, resolvemos con el array de DNIs
+            resolve(dnis);
+          }
+        };
+        
+        request.onerror = () => {
+          reject(request.error);
+        };
+      });
+    } catch (error) {
+      console.error("Error al obtener todos los DNIs del personal administrativo:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Elimina un miembro del personal administrativo por su DNI
+   * @param dni DNI del personal administrativo a eliminar
+   * @returns Promise<void>
+   */
+  private async deleteByDNI(dni: string): Promise<void> {
+    try {
+      const store = await IndexedDBConnection.getStore(
+        this.nombreTablaLocal,
+        "readwrite"
+      );
+      
+      return new Promise<void>((resolve, reject) => {
+        const request = store.delete(dni);
+        
+        request.onsuccess = () => {
+          resolve();
+        };
+        
+        request.onerror = () => {
+          reject(request.error);
+        };
+      });
+    } catch (error) {
+      console.error(`Error al eliminar personal administrativo con DNI ${dni}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Actualiza o crea personal administrativo en lote desde el servidor
+   * También elimina registros que ya no existen en el servidor
    * @param personalAdministrativoServidor Personal administrativo proveniente del servidor
-   * @returns Conteo de operaciones: creados, actualizados, errores
+   * @returns Conteo de operaciones: creados, actualizados, eliminados, errores
    */
   private async upsertFromServer(
     personalAdministrativoServidor: PersonalAdministrativoSinContraseña[]
-  ): Promise<{ created: number; updated: number; errors: number }> {
-    const result = { created: 0, updated: 0, errors: 0 };
+  ): Promise<{ created: number; updated: number; deleted: number; errors: number }> {
+    const result = { created: 0, updated: 0, deleted: 0, errors: 0 };
 
-    // Procesar en lotes para evitar transacciones demasiado largas
-    const BATCH_SIZE = 20;
-
-    for (
-      let i = 0;
-      i < personalAdministrativoServidor.length;
-      i += BATCH_SIZE
-    ) {
-      const lote = personalAdministrativoServidor.slice(i, i + BATCH_SIZE);
-
-      // Para cada miembro del personal administrativo en el lote
-      for (const personalServidor of lote) {
+    try {
+      // 1. Obtener los DNIs actuales en caché
+      const dnisLocales = await this.getAllDNIs();
+      
+      // 2. Crear conjunto de DNIs del servidor para búsqueda rápida
+      const dnisServidor = new Set(
+        personalAdministrativoServidor.map(
+          (personal) => personal.DNI_Personal_Administrativo
+        )
+      );
+      
+      // 3. Identificar DNIs que ya no existen en el servidor
+      const dnisAEliminar = dnisLocales.filter(dni => !dnisServidor.has(dni));
+      
+      // 4. Eliminar registros que ya no existen en el servidor
+      for (const dni of dnisAEliminar) {
         try {
-          // Verificar si ya existe el personal administrativo
-          const existePersonal = await this.getByDNI(
-            personalServidor.DNI_Personal_Administrativo
-          );
-
-          // Obtener un store fresco para cada operación
-          const store = await IndexedDBConnection.getStore(
-            this.nombreTablaLocal,
-            "readwrite"
-          );
-
-          // Ejecutar la operación put
-          await new Promise<void>((resolve, reject) => {
-            const request = store.put(personalServidor);
-
-            request.onsuccess = () => {
-              if (existePersonal) {
-                result.updated++;
-              } else {
-                result.created++;
-              }
-              resolve();
-            };
-
-            request.onerror = () => {
-              result.errors++;
-              console.error(
-                `Error al guardar personal administrativo ${personalServidor.DNI_Personal_Administrativo}:`,
-                request.error
-              );
-              reject(request.error);
-            };
-          });
+          await this.deleteByDNI(dni);
+          result.deleted++;
         } catch (error) {
+          console.error(`Error al eliminar personal administrativo ${dni}:`, error);
           result.errors++;
-          console.error(
-            `Error al procesar personal administrativo ${personalServidor.DNI_Personal_Administrativo}:`,
-            error
-          );
         }
       }
+      
+      // 5. Procesar en lotes para evitar transacciones demasiado largas
+      const BATCH_SIZE = 20;
 
-      // Dar un pequeño respiro al bucle de eventos entre lotes
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      for (
+        let i = 0;
+        i < personalAdministrativoServidor.length;
+        i += BATCH_SIZE
+      ) {
+        const lote = personalAdministrativoServidor.slice(i, i + BATCH_SIZE);
+
+        // Para cada miembro del personal administrativo en el lote
+        for (const personalServidor of lote) {
+          try {
+            // Verificar si ya existe el personal administrativo
+            const existePersonal = await this.getByDNI(
+              personalServidor.DNI_Personal_Administrativo
+            );
+
+            // Obtener un store fresco para cada operación
+            const store = await IndexedDBConnection.getStore(
+              this.nombreTablaLocal,
+              "readwrite"
+            );
+
+            // Ejecutar la operación put
+            await new Promise<void>((resolve, reject) => {
+              const request = store.put(personalServidor);
+
+              request.onsuccess = () => {
+                if (existePersonal) {
+                  result.updated++;
+                } else {
+                  result.created++;
+                }
+                resolve();
+              };
+
+              request.onerror = () => {
+                result.errors++;
+                console.error(
+                  `Error al guardar personal administrativo ${personalServidor.DNI_Personal_Administrativo}:`,
+                  request.error
+                );
+                reject(request.error);
+              };
+            });
+          } catch (error) {
+            result.errors++;
+            console.error(
+              `Error al procesar personal administrativo ${personalServidor.DNI_Personal_Administrativo}:`,
+              error
+            );
+          }
+        }
+
+        // Dar un pequeño respiro al bucle de eventos entre lotes
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Error en la operación upsertFromServer:", error);
+      result.errors++;
+      return result;
     }
-
-    return result;
   }
 
   /**
@@ -425,5 +519,3 @@ export class PersonalAdministrativoIDB {
     });
   }
 }
-
-

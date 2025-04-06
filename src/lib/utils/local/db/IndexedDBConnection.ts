@@ -16,6 +16,11 @@ export class IndexedDBConnection {
       autoIncrement: false,
       indexes: [],
     },
+    datos_asistencia_hoy: {
+      keyPath: null,
+      autoIncrement: false,
+      indexes: [],
+    },
     estudiantes: {
       keyPath: "DNI_Estudiante",
       autoIncrement: false,

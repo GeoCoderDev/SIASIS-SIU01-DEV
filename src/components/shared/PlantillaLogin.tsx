@@ -119,11 +119,11 @@ const PlantillaLogin = ({ rol, siasisAPI, endpoint }: PlantillaLoginProps) => {
       //Sincronizando las modificaciones de tablas
       await new UltimaModificacionTablasIDB(siasisAPI).sync(true);
 
-      setIsSomethingLoading(false);
-
+      
       // setTimeout(() => {
-      window.location.href = "/";
-      // }, 10000);
+        window.location.href = "/";
+        // }, 10000);
+        setIsSomethingLoading(false);
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
@@ -208,7 +208,7 @@ const PlantillaLogin = ({ rol, siasisAPI, endpoint }: PlantillaLoginProps) => {
                 className="mt-3 w-full bg-color-interfaz text-blanco rounded-lg text-[1rem] flex gap-4 items-center justify-center py-3 disabled:grayscale-[0.75] pointer"
               >
                 Ingresar
-                {isSomethingLoading && !error && !successMessage && (
+                {isSomethingLoading && !error && (
                   <Loader className="w-[1.5rem] bg-white p-[0.3rem]" />
                 )}
               </button>
