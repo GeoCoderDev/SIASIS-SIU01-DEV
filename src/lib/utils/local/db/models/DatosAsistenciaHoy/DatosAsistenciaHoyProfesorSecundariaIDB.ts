@@ -1,18 +1,18 @@
 import { DatosBaseAsistenciaHoyIDB } from "./DatosBaseAsistenciaHoyIDB";
 import {
   HorarioTomaAsistencia,
-  ProfesorSecundariaAsistenciaResponse,
+  ProfesorTutorSecundariaAsistenciaResponse,
 } from "../../../../../../interfaces/shared/Asistencia/DatosAsistenciaHoyIE20935";
 import { RolesSistema } from "../../../../../../interfaces/shared/RolesSistema";
 
-class DatosAsistenciaHoyProfesorSecundariaIDB extends DatosBaseAsistenciaHoyIDB<ProfesorSecundariaAsistenciaResponse> {
+class DatosAsistenciaHoyProfesorSecundariaIDB extends DatosBaseAsistenciaHoyIDB<ProfesorTutorSecundariaAsistenciaResponse> {
   protected rolPrincipal: RolesSistema = RolesSistema.ProfesorSecundaria;
 
   /**
    * Obtiene el horario específico del profesor
    */
   public async obtenerHorarioProfesor(): Promise<
-    ProfesorSecundariaAsistenciaResponse["HorarioProfesor"] | null
+    ProfesorTutorSecundariaAsistenciaResponse["HorarioProfesor"] | null
   > {
     try {
       const datos = await this.obtenerDatos();
