@@ -24,6 +24,7 @@ import { RolesTextos } from "@/Assets/RolesTextos";
 import InterceptedLinkForDataThatCouldBeLost from "../InterceptedLinkForDataThatCouldBeLost";
 import { Genero } from "@/interfaces/shared/Genero";
 import FotoPerfilSideServer from "../../utils/photos/FotoPerfilClientSide";
+import { obtenerAsistenciaStoragePorRol } from "@/lib/utils/local/db/models/DatosAsistenciaHoy";
 
 const Header = ({
   Nombres,
@@ -56,6 +57,16 @@ const Header = ({
   };
 
   const { delegarEvento } = useDelegacionEventos();
+
+  // OBTENER DATOS DE ASISTENCIA DE MANERA FORZADA
+  useEffect(() => {
+    const obtenerDatosAsistenciaHoy = async () => {
+      const datosAsistenciaHoy = obtenerAsistenciaStoragePorRol(Rol);
+      await datosAsistenciaHoy.obtenerDatos(true);
+    };
+
+    obtenerDatosAsistenciaHoy();
+  }, []);
 
   useEffect(() => {
     // if (!UserSessionData) return;
