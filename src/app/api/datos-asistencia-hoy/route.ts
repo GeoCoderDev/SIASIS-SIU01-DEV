@@ -167,8 +167,8 @@ function filtrarDatosSegunRol(
     DiaEvento: datos.DiaEvento,
     FechaUTC: datos.FechaUTC,
     FechaLocalPeru: datos.FechaLocalPeru,
-    DentroAñoEscolar: datos.DentroAñoEscolar,
-    FueraVacionesMedioAño: datos.FueraVacionesMedioAño,
+    FueraAñoEscolar: datos.FueraAñoEscolar,
+    DentroVacionesMedioAño: datos.DentroVacionesMedioAño,
     ComunicadosParaMostrarHoy: datos.ComunicadosParaMostrarHoy,
   };
 
