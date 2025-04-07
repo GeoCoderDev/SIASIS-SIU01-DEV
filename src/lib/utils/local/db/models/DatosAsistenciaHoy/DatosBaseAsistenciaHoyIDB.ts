@@ -1,7 +1,10 @@
 import { RolesSistema } from "@/interfaces/shared/RolesSistema";
 import { logout } from "@/lib/helpers/logout";
 import { LogoutTypes, ErrorDetailsForLogout } from "@/interfaces/LogoutTypes";
-import { BaseAsistenciaResponse } from "@/interfaces/shared/Asistencia/DatosAsistenciaHoyIE20935";
+import {
+  BaseAsistenciaResponse,
+  RangoFechas,
+} from "@/interfaces/shared/Asistencia/DatosAsistenciaHoyIE20935";
 import IndexedDBConnection from "../../IndexedDBConnection";
 
 // Interfaz para el objeto guardado en IndexedDB
@@ -339,14 +342,74 @@ export abstract class DatosBaseAsistenciaHoyIDB<
   }
 
   /**
-   * Verifica si estamos dentro del año escolar
+   * Verifica si estamos dentro del año escolar y devuelve información del rango si estamos fuera
    */
-  public async estaDentroAñoEscolar(): Promise<boolean> {
+  public async estaDentroAñoEscolar(): Promise<boolean | RangoFechas> {
     try {
       const datos = await this.obtenerDatos();
-      return datos?.DentroAñoEscolar || false;
+
+      // Si no hay datos, retornamos false
+      if (!datos) return false;
+
+      // Si FueraAñoEscolar es false, significa que estamos DENTRO del año escolar
+      if (datos.FueraAñoEscolar === false) {
+        return true;
+      }
+
+      // Si FueraAñoEscolar contiene un objeto RangoFechas, significa que estamos FUERA
+      // y devolvemos el rango para proporcionar información adicional
+      return datos.FueraAñoEscolar;
     } catch (error) {
       this.handleError(error, "estaDentroAñoEscolar");
+      return false;
+    }
+  }
+
+  /**
+   * Verifica si estamos en período de vacaciones de medio año
+   * Retorna false si no estamos en vacaciones, o un objeto RangoFechas si estamos en vacaciones
+   */
+  public async estaEnVacacionesMedioAño(): Promise<false | RangoFechas> {
+    try {
+      const datos = await this.obtenerDatos();
+
+      // Si no hay datos o DentroVacionesMedioAño es false, no estamos en vacaciones
+      if (!datos || datos.DentroVacionesMedioAño === false) {
+        return false;
+      }
+
+      // Si hay un objeto RangoFechas, estamos en vacaciones y devolvemos el rango
+      return datos.DentroVacionesMedioAño;
+    } catch (error) {
+      this.handleError(error, "estaEnVacacionesMedioAño");
+      return false;
+    }
+  }
+
+  /**
+   * Versión simplificada que solo devuelve un booleano indicando si estamos dentro del año escolar
+   */
+  public async estaEnPeriodoLectivo(): Promise<boolean> {
+    try {
+      const resultado = await this.estaDentroAñoEscolar();
+      // Si el resultado es un objeto (RangoFechas), significa que estamos fuera del año escolar
+      return resultado === true;
+    } catch (error) {
+      this.handleError(error, "estaEnPeriodoLectivo");
+      return false;
+    }
+  }
+
+  /**
+   * Versión simplificada que solo devuelve un booleano indicando si estamos en vacaciones
+   */
+  public async estaEnPeriodoVacaciones(): Promise<boolean> {
+    try {
+      const resultado = await this.estaEnVacacionesMedioAño();
+      // Si el resultado es un objeto (RangoFechas), significa que estamos en vacaciones
+      return resultado !== false;
+    } catch (error) {
+      this.handleError(error, "estaEnPeriodoVacaciones");
       return false;
     }
   }
