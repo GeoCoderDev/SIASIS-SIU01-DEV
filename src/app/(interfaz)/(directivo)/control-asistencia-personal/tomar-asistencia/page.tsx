@@ -84,7 +84,7 @@ const TomarAsistenciaPersonal = () => {
         </>
       ) : (
         <div>
-          <Loader className="w-[1.5rem] bg-white p-[0.3rem]" />
+          <Loader className="w-[1.5rem] bg-black p-[0.3rem]" />
         </div>
       )}
     </div>
