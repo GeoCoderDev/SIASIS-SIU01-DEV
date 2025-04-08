@@ -32,7 +32,7 @@ const PersonalAdministrativo = () => {
   return (
     <div className="w-full max-w-[80rem] h-full flex flex-col justify-between">
       <h1 className="text-[2.25rem] text-negro font-semibold mt-2 -text-center -w-full">
-        LISTA DE AUXILIARES
+        LISTA DE P. ADMINISTRATIVO
       </h1>
 
       {error && <ErrorMessage error={error} />}
