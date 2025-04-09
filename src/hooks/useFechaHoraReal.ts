@@ -1,3 +1,4 @@
+import { ZONA_HORARIA_LOCAL } from "@/constants/ZONA_HORARIA_LOCAL";
 import { fetchFechaHoraActual, setTimezone, updateFechaHoraActual } from "@/global/state/others/fechaHoraActualReal";
 import { AppDispatch, RootState } from "@/global/store";
 import { useEffect, useRef } from "react";
@@ -14,12 +15,13 @@ export const useFechaHoraReal = ({
   syncInterval = 5 * 60 * 1000, // 5 minutos
   updateInterval = 1000, // 1 segundo
   autoSync = true,
-  timezone = "America/Lima",
+  timezone = ZONA_HORARIA_LOCAL,
 }: UseFechaHoraRealOptions = {}) => {
   const dispatch = useDispatch<AppDispatch>();
   const fechaHoraState = useSelector(
     (state: RootState) => state.others.fechaHoraActualReal
   );
+  
   const syncIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const updateIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -79,11 +81,17 @@ export const useFechaHoraReal = ({
     };
   }, [updateInterval]);
 
-  // Exponemos solo las funciones de sincronización y cambio de zona horaria
+  // Exponemos solo las funciones básicas
   return {
     sincronizarConServidor,
     cambiarZonaHoraria,
     error: fechaHoraState.error,
+    
+    // Datos del estado actual
+    fechaHora: fechaHoraState.fechaHora,
+    formateada: fechaHoraState.formateada,
+    utilidades: fechaHoraState.utilidades,
+    inicializado: fechaHoraState.inicializado
   };
 };
 

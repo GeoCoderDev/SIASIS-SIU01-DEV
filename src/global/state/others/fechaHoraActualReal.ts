@@ -3,15 +3,25 @@ import { ReduxPayload } from "../ReducersPayload";
 import getRandomAPI03IntanceURL from "@/lib/helpers/functions/getRandomAPI03InstanceURL";
 import { ZONA_HORARIA_LOCAL } from "@/constants/ZONA_HORARIA_LOCAL";
 
+// Constante para el offset de tiempo (para pruebas)
+// Modificar estos valores para cambiar el offset aplicado a la hora del servidor
+export const TIME_OFFSET = {
+  days: 0,
+  hours: 0,
+  minutes: 0,
+  seconds: 0,
+  enabled: true, // Habilitar/deshabilitar el offset
+};
+
 // Interfaces para datos de tiempo formateados y utilidades
-interface FormatosHora {
+export interface FormatosHora {
   fechaCompleta: string;
   fechaCorta: string;
   horaCompleta: string;
   horaSinSegundos: string;
 }
 
-interface UtilidadesTiempo {
+export interface UtilidadesTiempo {
   hora: number;
   minutos: number;
   segundos: number;
@@ -30,7 +40,7 @@ export interface TiempoRestante {
 }
 
 // Interfaz para la fecha y hora actual con datos formateados
-interface FechaHoraActualRealState {
+export interface FechaHoraActualRealState {
   fechaHora: string | null;
   timezone: string;
   lastSync: number;
@@ -65,10 +75,21 @@ export const fetchFechaHoraActual = createAsyncThunk(
 
       const data = await response.json();
 
+      // Crear una fecha usando el timestamp ya ajustado a la zona horaria
+      const fechaLocal = new Date(data.serverTime);
+
+      // Aplicamos el offset si está habilitado
+      if (TIME_OFFSET.enabled) {
+        fechaLocal.setDate(fechaLocal.getDate() + TIME_OFFSET.days);
+        fechaLocal.setHours(fechaLocal.getHours() + TIME_OFFSET.hours);
+        fechaLocal.setMinutes(fechaLocal.getMinutes() + TIME_OFFSET.minutes);
+        fechaLocal.setSeconds(fechaLocal.getSeconds() + TIME_OFFSET.seconds);
+      }
+
       return {
-        fechaHora: data.serverTime,
+        fechaHora: fechaLocal.toISOString(),
         timezone: data.timezone,
-        lastSync: Date.now(), // Usamos Date.now() solo para marcar cuando ocurrió la sincronización
+        lastSync: Date.now(),
       };
     } catch (error) {
       return rejectWithValue(
@@ -77,53 +98,6 @@ export const fetchFechaHoraActual = createAsyncThunk(
     }
   }
 );
-
-// Función auxiliar para calcular tiempo restante
-// const calcularTiempoRestante = (
-//   fechaActual: Date,
-//   fechaObjetivoPeruana: Date
-// ): TiempoRestante => {
-//   // Calcular diferencia en milisegundos
-//   const diffMs = fechaObjetivoPeruana.getTime() - fechaActual.getTime();
-
-//   // Si la fecha ya pasó
-//   if (diffMs <= 0) {
-//     return {
-//       total: 0,
-//       dias: 0,
-//       horas: 0,
-//       minutos: 0,
-//       segundos: 0,
-//       yaVencido: true,
-//       formateado: "Fecha vencida",
-//     };
-//   }
-
-//   // Convertir a unidades de tiempo
-//   const segundos = Math.floor((diffMs / 1000) % 60);
-//   const minutos = Math.floor((diffMs / (1000 * 60)) % 60);
-//   const horas = Math.floor((diffMs / (1000 * 60 * 60)) % 24);
-//   const dias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-//   // Formato legible
-//   let formateado = "";
-//   if (dias > 0) formateado += `${dias} día${dias > 1 ? "s" : ""} `;
-//   if (horas > 0 || dias > 0)
-//     formateado += `${horas} hora${horas > 1 ? "s" : ""} `;
-//   if (minutos > 0 || horas > 0 || dias > 0)
-//     formateado += `${minutos} minuto${minutos > 1 ? "s" : ""} `;
-//   formateado += `${segundos} segundo${segundos > 1 ? "s" : ""}`;
-
-//   return {
-//     total: diffMs,
-//     dias,
-//     horas,
-//     minutos,
-//     segundos,
-//     yaVencido: false,
-//     formateado,
-//   };
-// };
 
 // Función auxiliar para actualizar formatos y utilidades
 const actualizarFormatosYUtilidades = (state: FechaHoraActualRealState) => {
@@ -135,23 +109,23 @@ const actualizarFormatosYUtilidades = (state: FechaHoraActualRealState) => {
 
   const fechaHoraDate = new Date(state.fechaHora);
 
-  // Actualizar formatos
+  // No aplicamos transformaciones de zona horaria aquí, ya que la fecha
+  // ya viene ajustada desde la API
+
+  // Actualizar formatos sin especificar timeZone para evitar doble ajuste
   state.formateada = {
     fechaCompleta: new Intl.DateTimeFormat("es-PE", {
-      timeZone: state.timezone,
       dateStyle: "full",
       timeStyle: "long",
     }).format(fechaHoraDate),
 
     fechaCorta: new Intl.DateTimeFormat("es-PE", {
-      timeZone: state.timezone,
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
     }).format(fechaHoraDate),
 
     horaCompleta: new Intl.DateTimeFormat("es-PE", {
-      timeZone: state.timezone,
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
@@ -159,14 +133,13 @@ const actualizarFormatosYUtilidades = (state: FechaHoraActualRealState) => {
     }).format(fechaHoraDate),
 
     horaSinSegundos: new Intl.DateTimeFormat("es-PE", {
-      timeZone: state.timezone,
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
     }).format(fechaHoraDate),
   };
 
-  // Actualizar utilidades
+  // Actualizar utilidades directamente de la fecha sin ajustes
   const hora = fechaHoraDate.getHours();
   const dia = fechaHoraDate.getDay();
 
@@ -195,12 +168,15 @@ const fechaHoraActualRealSlice = createSlice({
     },
     updateFechaHoraActual: (state) => {
       if (state.fechaHora) {
-        // Parseamos la fecha del servidor
+        // Parseamos la fecha actual
         const fechaActual = new Date(state.fechaHora);
-        // Añadimos un segundo
+
+        // Añadimos un segundo para que el tiempo avance
         fechaActual.setSeconds(fechaActual.getSeconds() + 1);
-        // Actualizamos el estado
+
+        // Actualizamos el estado con la nueva fecha
         state.fechaHora = fechaActual.toISOString();
+
         // Actualizamos formatos y utilidades
         actualizarFormatosYUtilidades(state);
       }
@@ -221,6 +197,7 @@ const fechaHoraActualRealSlice = createSlice({
         state.timezone = action.payload.timezone;
         state.lastSync = action.payload.lastSync;
         state.error = null;
+
         // Actualizamos formatos y utilidades
         actualizarFormatosYUtilidades(state);
       })
@@ -230,45 +207,15 @@ const fechaHoraActualRealSlice = createSlice({
   },
 });
 
-// Función selectora para obtener tiempo restante hasta una fecha objetivo en hora local peruana
+// Función selectora para obtener tiempo restante hasta una fecha objetivo
 export const tiempoRestanteHasta = (
   state: { fechaHoraActualReal: FechaHoraActualRealState },
   fechaObjetivoPeruana: string | Date
 ): TiempoRestante | null => {
   if (!state.fechaHoraActualReal.fechaHora) return null;
 
-  const timezone = "America/Lima"; // Zona horaria peruana
-
-  // Convertir la fecha actual del servidor a la hora local peruana
-  const fechaActualUTC = new Date(state.fechaHoraActualReal.fechaHora);
-
-  // Obtener la fecha actual en hora local peruana usando la información del formatter
-  const fechaActualPeruanaStr = new Intl.DateTimeFormat("es-PE", {
-    timeZone: timezone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  }).format(fechaActualUTC);
-
-  // Parsear la fecha local peruana a un objeto Date
-  // Formato esperado: "dd/mm/yyyy, hh:mm:ss"
-  const [datePart, timePart] = fechaActualPeruanaStr.split(", ");
-  const [day, month, year] = datePart.split("/").map(Number);
-  const [hours, minutes, seconds] = timePart.split(":").map(Number);
-
-  // Crear una fecha en hora local
-  const fechaActualPeruana = new Date(
-    year,
-    month - 1,
-    day,
-    hours,
-    minutes,
-    seconds
-  );
+  // Usamos directamente la fecha actual sin transformaciones adicionales de zona horaria
+  const fechaActual = new Date(state.fechaHoraActualReal.fechaHora);
 
   // Convertir la fecha objetivo a un objeto Date
   const fechaObjetivoObj =
@@ -277,7 +224,7 @@ export const tiempoRestanteHasta = (
       : fechaObjetivoPeruana;
 
   // Calcular diferencia en milisegundos
-  const diffMs = fechaObjetivoObj.getTime() - fechaActualPeruana.getTime();
+  const diffMs = fechaObjetivoObj.getTime() - fechaActual.getTime();
 
   // Si la fecha ya pasó
   if (diffMs <= 0) {
@@ -320,4 +267,5 @@ export const tiempoRestanteHasta = (
 
 export const { setFechaHoraActualReal, updateFechaHoraActual, setTimezone } =
   fechaHoraActualRealSlice.actions;
+
 export default fechaHoraActualRealSlice.reducer;

@@ -6,6 +6,7 @@ import {
   ProfesorTutorSecundariaParaTomaDeAsistencia,
   RangoFechas,
 } from "@/interfaces/shared/Asistencia/DatosAsistenciaHoyIE20935";
+import { alterarUTCaZonaPeruana } from "@/lib/helpers/alteradores/alterarUTCaZonaPeruana";
 import { T_Comunicados, T_Eventos } from "@prisma/client";
 
 /**
@@ -51,7 +52,7 @@ export class HandlerDirectivoAsistenciaResponse {
    * @returns Fecha UTC
    */
   public getFechaUTC(): Date {
-    return new Date(this.data.FechaUTC);
+    return new Date(alterarUTCaZonaPeruana(String(this.data.FechaUTC)));
   }
 
   /**
@@ -59,7 +60,7 @@ export class HandlerDirectivoAsistenciaResponse {
    * @returns Fecha local Perú
    */
   public getFechaLocalPeru(): Date {
-    return new Date(this.data.FechaLocalPeru);
+    return new Date(alterarUTCaZonaPeruana(String(this.data.FechaLocalPeru)));
   }
 
   /**

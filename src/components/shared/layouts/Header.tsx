@@ -59,7 +59,7 @@ const Header = ({
     (state: RootState) => state.flags.sidebarIsOpen
   );
   const { delegarEvento } = useDelegacionEventos();
-  const { sincronizarConServidor } = useFechaHoraReal({
+  const { sincronizarConServidor, formateada } = useFechaHoraReal({
     timezone: ZONA_HORARIA_LOCAL,
   });
 
@@ -90,7 +90,7 @@ const Header = ({
   // Efecto para manejar dimensiones y eventos del header
   useEffect(() => {
     if (!delegarEvento) return;
-    
+
     // Observer para actualizar la altura del header en el store
     const resizeObserverHeader = new ResizeObserver((entries) => {
       entries.forEach((entry) => {
@@ -181,7 +181,7 @@ const Header = ({
       {/* Logo de la cabecera */}
       <LogoCabecera />
 
-      <div className="flex-1"></div>
+      <div className="flex-1">{formateada?.horaCompleta}</div>
 
       {/* Información del usuario y menú */}
       <div className="justify-self-end flex items-center justify-center gap-4">
