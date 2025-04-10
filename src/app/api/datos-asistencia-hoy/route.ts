@@ -74,6 +74,12 @@ export async function GET(req: NextRequest) {
           .THIS_INSTANCE_VERCEL_BLOB_BASE_URL!}/${NOMBRE_ARCHIVO_CON_DATOS_ASISTENCIA_DIARIOS}`
       );
 
+      //Se procede a buscar el respaldo de datos de asistencia de hoy de Google Drive
+            
+      // const response = await fetch(
+      //   "https://drive.google.com/uc?export=download&id=11PncPCPnndt15GbWwSuxHzgESRpmYFlk"
+      // );
+
       if (!response.ok) {
         throw new Error(
           `Error en la respuesta del servidor: ${response.status} ${response.statusText}`
