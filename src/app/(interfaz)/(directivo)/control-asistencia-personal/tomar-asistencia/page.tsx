@@ -20,22 +20,35 @@ const TomarAsistenciaPersonal = () => {
   const [datosAsistenciaHoyDirectivo, setDatosAsistenciaHoyDirectivo] =
     useState<null | HandlerDirectivoAsistenciaResponse>();
 
+  const [sincronizando, setSincronizando] = useState(false);
+  const [inicioRegistro, setInicioRegistro] = useState(false);
+
   const fetchDataAsistence = async () => {
-    //Quitamos los posibles datos de asistencia anterior
+    // Marcamos que estamos sincronizando
+    setSincronizando(true);
+
+    // Quitamos los posibles datos de asistencia anterior
     setDatosAsistenciaHoyDirectivo(null);
 
     // Solicitamos los nuevos datos
-    const datosAsistenciaHoyDirectivoIDB = obtenerAsistenciaStoragePorRol(
-      RolesSistema.Directivo
-    ) as DatosAsistenciaHoyDirectivoIDB;
+    try {
+      const datosAsistenciaHoyDirectivoIDB = obtenerAsistenciaStoragePorRol(
+        RolesSistema.Directivo
+      ) as DatosAsistenciaHoyDirectivoIDB;
 
-    const data = await datosAsistenciaHoyDirectivoIDB.obtenerDatos();
+      const data = await datosAsistenciaHoyDirectivoIDB.obtenerDatos();
 
-    if (data) {
-      const handlerDirectivoAsistenciaResponse =
-        new HandlerDirectivoAsistenciaResponse(data);
+      if (data) {
+        const handlerDirectivoAsistenciaResponse =
+          new HandlerDirectivoAsistenciaResponse(data);
 
-      setDatosAsistenciaHoyDirectivo(handlerDirectivoAsistenciaResponse);
+        setDatosAsistenciaHoyDirectivo(handlerDirectivoAsistenciaResponse);
+      }
+    } catch (error) {
+      console.error("Error al obtener datos de asistencia:", error);
+    } finally {
+      // Completamos la sincronización
+      setSincronizando(false);
     }
   };
 
@@ -44,23 +57,31 @@ const TomarAsistenciaPersonal = () => {
     Number(fechaHoraActual.utilidades?.hora) >=
     HORA_ACTUALIZACION_DATOS_ASISTENCIA_DIARIOS;
 
+  // Carga inicial al montar el componente
   useEffect(() => {
     fetchDataAsistence();
   }, []);
 
-  // Obtener datos de asistencia al cargar el componente
+  // Efecto para verificar si necesitamos actualizar los datos cuando cambia el día
   useEffect(() => {
-    if (!datosAsistenciaHoyDirectivo) return;
+    if (!datosAsistenciaHoyDirectivo || !fechaHoraActual.utilidades) return;
 
-    if (
-      haySincronizacionDatos &&
-      fechaHoraActual.utilidades?.diaMes !==
-        new Date(datosAsistenciaHoyDirectivo.getFechaLocalPeru()).getDate()
-    ) {
-      console.log("Se procede a hacer fetch!!");
+    // Verificamos si los datos son de un día anterior y ya pasó la hora de sincronización
+    const fechaDatosAsistencia = new Date(
+      datosAsistenciaHoyDirectivo.getFechaLocalPeru()
+    );
+    const diaDatosAsistencia = fechaDatosAsistencia.getDate();
+    const diaActual = fechaHoraActual.utilidades.diaMes;
+
+    if (haySincronizacionDatos && diaDatosAsistencia !== diaActual) {
+      console.log("Detectado cambio de día, actualizando datos...");
       fetchDataAsistence();
     }
-  }, [haySincronizacionDatos, datosAsistenciaHoyDirectivo]);
+  }, [
+    haySincronizacionDatos,
+    datosAsistenciaHoyDirectivo,
+    fechaHoraActual.utilidades,
+  ]);
 
   // Procesamos las fechas y horas solo si tenemos los datos disponibles
   const fechaHoraInicioAsistencia = datosAsistenciaHoyDirectivo
@@ -130,19 +151,53 @@ const TomarAsistenciaPersonal = () => {
       "Diciembre",
     ];
 
-    return `${diasSemana[fecha.getDay()]} ${fecha.getDate()}/${
+    return `${diasSemana[fecha.getDay()]} ${fecha.getDate()} de ${
       meses[fecha.getMonth()]
-    }/${fecha.getFullYear()}`;
+    } de ${fecha.getFullYear()}`;
+  };
+
+  // Función para iniciar el registro de asistencia
+  const iniciarRegistroAsistencia = () => {
+    console.log("Iniciando proceso de registro de asistencia");
+    setInicioRegistro(true);
+    // Aquí iría la lógica de redirección o apertura del módulo de registro
   };
 
   // Determinar el estado actual del sistema de asistencia
   const determinarEstadoSistema = () => {
+    // Si estamos en proceso de registro, permanecemos en ese estado
+    if (inicioRegistro) {
+      return {
+        estado: "en_proceso",
+        mensaje: "Registro en proceso",
+        descripcion: "El registro de asistencia está siendo procesado.",
+        tiempoRestante: null,
+        botonActivo: false,
+        colorEstado: "bg-green-100",
+        mostrarContadorPersonal: true,
+        etiquetaPersonal: "Personal pendiente",
+        iconoPersonal: "reloj",
+      };
+    }
+
+    // Si estamos sincronizando
+    if (sincronizando) {
+      return {
+        estado: "sincronizando",
+        mensaje: "Sincronizando sistema...",
+        tiempoRestante: null,
+        botonActivo: false,
+        colorEstado: "bg-blue-100",
+        mostrarContadorPersonal: false,
+      };
+    }
+
     // Si no tenemos datos aún
     if (
       !datosAsistenciaHoyDirectivo ||
       !tiempoRestanteParaInicioAsistencia ||
       !tiempoRestanteParaCierreAsistencia ||
-      !fechaHoraActual
+      !fechaHoraActual.utilidades
     ) {
       return {
         estado: "cargando",
@@ -155,7 +210,7 @@ const TomarAsistenciaPersonal = () => {
     }
 
     // Si no es día escolar (es fin de semana)
-    if (fechaHoraActual.utilidades?.esDiaEscolar === false) {
+    if (fechaHoraActual.utilidades.esFinDeSemana) {
       return {
         estado: "no_disponible",
         mensaje: "No hay clases hoy",
@@ -169,16 +224,17 @@ const TomarAsistenciaPersonal = () => {
 
     // Verificamos si la fecha de datos de asistencia es de un día anterior
     const fechaActual = new Date(fechaHoraActual.fechaHora!);
-    const esNuevoDia =
-      datosAsistenciaHoyDirectivo.getFechaLocalPeru().getDay() <
-      fechaActual.getDay();
+    const fechaDatosAsistencia = new Date(
+      datosAsistenciaHoyDirectivo.getFechaLocalPeru()
+    );
+    const esNuevoDia = fechaDatosAsistencia.getDate() !== fechaActual.getDate();
 
     // Caso: Estamos en un nuevo día pero aún no es hora de sincronizar datos
     if (esNuevoDia && !haySincronizacionDatos) {
       return {
         estado: "preparando",
-        mensaje: "Preparando datos para hoy",
-        descripcion: "Se actualizará la información para el nuevo día escolar.",
+        mensaje: "Datos pendientes de actualización",
+        descripcion: `Se actualizará la información para ${fechaHoraActual.utilidades.diaSemana} ${fechaHoraActual.utilidades.diaMes} a partir de las ${HORA_ACTUALIZACION_DATOS_ASISTENCIA_DIARIOS}:00.`,
         tiempoRestante: null,
         botonActivo: false,
         colorEstado: "bg-blue-50",
@@ -201,13 +257,14 @@ const TomarAsistenciaPersonal = () => {
           (tiempoRestanteParaInicioAsistencia.total / 3600000) * 100
         ), // Suponiendo 1 hora de espera total
         mostrarContadorPersonal: true,
-        etiquetaPersonal: "Personal Programado",
+        etiquetaPersonal: "Personal por registrar",
+        iconoPersonal: "usuarios",
       };
     }
 
     // Si ya pasó la hora de cierre de asistencia
-    const horaActual = fechaHoraActual.utilidades!.hora;
-    const minutosActual = fechaHoraActual.utilidades!.minutos;
+    const horaActual = fechaHoraActual.utilidades.hora;
+    const minutosActual = fechaHoraActual.utilidades.minutos;
     const horaCierre = fechaHoraCierreAsistencia!.getHours();
     const minutosCierre = fechaHoraCierreAsistencia!.getMinutes();
 
@@ -228,7 +285,8 @@ const TomarAsistenciaPersonal = () => {
         botonActivo: false,
         colorEstado: "bg-red-50",
         mostrarContadorPersonal: true,
-        etiquetaPersonal: "Registros Completados",
+        etiquetaPersonal: "Asistencias registradas",
+        iconoPersonal: "verificacion",
       };
     }
 
@@ -245,12 +303,73 @@ const TomarAsistenciaPersonal = () => {
       botonActivo: true,
       colorEstado: "bg-green-50",
       mostrarContadorPersonal: true,
-      etiquetaPersonal: "Personal Pendiente",
+      etiquetaPersonal: "Personal pendiente",
+      iconoPersonal: "reloj",
+      tiempoDisponible: tiempoRestanteParaCierreAsistencia.formateado,
     };
   };
 
   // Obtener el estado actual
   const estadoSistema = determinarEstadoSistema();
+
+  // Función para renderizar el icono de personal adecuado según el estado
+  const renderIconoPersonal = () => {
+    if (
+      !estadoSistema.iconoPersonal ||
+      estadoSistema.iconoPersonal === "usuarios"
+    ) {
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-6 w-6 text-purple-500"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+          />
+        </svg>
+      );
+    } else if (estadoSistema.iconoPersonal === "verificacion") {
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-6 w-6 text-purple-500"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+      );
+    } else if (estadoSistema.iconoPersonal === "reloj") {
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-6 w-6 text-purple-500"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+      );
+    }
+  };
 
   return (
     <div className="w-full max-w-4xl mx-auto">
@@ -320,9 +439,12 @@ const TomarAsistenciaPersonal = () => {
           <div>
             <p className="text-xs text-blue-700 font-medium">Estado</p>
             <p className="text-lg font-bold text-gray-800">
-              {estadoSistema.estado === "cargando" ? (
+              {estadoSistema.estado === "sincronizando" ||
+              estadoSistema.estado === "cargando" ? (
                 <span className="flex items-center">
-                  Cargando...
+                  {estadoSistema.estado === "sincronizando"
+                    ? "Sincronizando..."
+                    : "Cargando..."}
                   <svg
                     className="animate-spin ml-2 h-4 w-4 text-blue-500"
                     xmlns="http://www.w3.org/2000/svg"
@@ -345,15 +467,17 @@ const TomarAsistenciaPersonal = () => {
                   </svg>
                 </span>
               ) : estadoSistema.estado === "disponible" ? (
-                "Disponible Ahora"
+                "Disponible ahora"
               ) : estadoSistema.estado === "pendiente" ? (
-                "En espera"
+                "Esperando apertura"
               ) : estadoSistema.estado === "cerrado" ? (
-                "Cerrado"
+                "Período cerrado"
               ) : estadoSistema.estado === "preparando" ? (
-                "Sincronizando"
+                "Actualización pendiente"
+              ) : estadoSistema.estado === "en_proceso" ? (
+                "Registro en curso"
               ) : (
-                "No disponible"
+                "No disponible hoy"
               )}
             </p>
           </div>
@@ -363,20 +487,7 @@ const TomarAsistenciaPersonal = () => {
         {estadoSistema.mostrarContadorPersonal && (
           <div className="bg-purple-50 rounded-lg p-4 shadow-sm flex items-center">
             <div className="bg-white p-2 rounded-full mr-3">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6 text-purple-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
+              {renderIconoPersonal()}
             </div>
             <div>
               <p className="text-xs text-purple-700 font-medium">
@@ -407,36 +518,47 @@ const TomarAsistenciaPersonal = () => {
               ? "bg-orange-500 text-white"
               : estadoSistema.estado === "cerrado"
               ? "bg-red-500 text-white"
-              : estadoSistema.estado === "preparando"
+              : estadoSistema.estado === "preparando" ||
+                estadoSistema.estado === "sincronizando"
               ? "bg-blue-500 text-white"
+              : estadoSistema.estado === "en_proceso"
+              ? "bg-emerald-500 text-white"
               : "bg-gray-500 text-white"
           }`}
         >
           <h2 className="text-xl font-bold">
             {estadoSistema.estado === "disponible"
-              ? "Iniciar Proceso de Registro"
+              ? "Iniciar registro de asistencia"
               : estadoSistema.estado === "pendiente"
-              ? "Proceso de Registro Pendiente"
+              ? "Período de registro programado"
               : estadoSistema.estado === "cerrado"
-              ? "Registro de Asistencia Finalizado"
+              ? "Registro de asistencia completado"
               : estadoSistema.estado === "preparando"
-              ? "Actualizando Sistema"
+              ? "Datos pendientes de actualización"
+              : estadoSistema.estado === "sincronizando"
+              ? "Sincronizando información"
+              : estadoSistema.estado === "en_proceso"
+              ? "Procesando registro de asistencia"
               : estadoSistema.estado === "no_disponible"
-              ? "No Hay Registro Programado"
-              : "Cargando Sistema"}
+              ? "Día no laborable"
+              : "Cargando sistema"}
           </h2>
           <p className="opacity-90">
             {estadoSistema.estado === "disponible"
-              ? "El sistema está listo para iniciar el registro de asistencia"
+              ? "El sistema está listo para iniciar el registro de asistencia del personal"
               : estadoSistema.estado === "pendiente"
-              ? "El registro de asistencia aún no está disponible"
+              ? "El registro de asistencia iniciará automáticamente en su horario programado"
               : estadoSistema.estado === "cerrado"
-              ? "El período de registro ya ha concluido por hoy"
+              ? "Todos los registros de asistencia del día han sido procesados"
               : estadoSistema.estado === "preparando"
-              ? "Sincronizando datos para el nuevo día escolar"
+              ? "Los datos para el día de hoy se están preparando"
+              : estadoSistema.estado === "sincronizando"
+              ? "Actualizando la información del sistema para la jornada actual"
+              : estadoSistema.estado === "en_proceso"
+              ? "Por favor complete el registro de todos los miembros del personal"
               : estadoSistema.estado === "no_disponible"
-              ? "No hay actividades escolares programadas hoy"
-              : "Cargando la información necesaria..."}
+              ? "No hay actividades programadas para registrar hoy"
+              : "Obteniendo la información necesaria..."}
           </p>
         </div>
 
@@ -456,21 +578,27 @@ const TomarAsistenciaPersonal = () => {
                   ? "bg-orange-50 text-orange-800 border-l-4 border-orange-500"
                   : estadoSistema.estado === "cerrado"
                   ? "bg-red-50 text-red-800 border-l-4 border-red-500"
-                  : estadoSistema.estado === "preparando"
+                  : estadoSistema.estado === "preparando" ||
+                    estadoSistema.estado === "sincronizando"
                   ? "bg-indigo-50 text-indigo-800 border-l-4 border-indigo-500"
+                  : estadoSistema.estado === "en_proceso"
+                  ? "bg-emerald-50 text-emerald-800 border-l-4 border-emerald-500"
                   : "bg-gray-50 text-gray-800 border-l-4 border-gray-500"
               }`}
             >
               <svg
-                className={`w-6 h-6 mr-2 ${
+                className={`w-6 h-6 mr-2 flex-shrink-0 ${
                   estadoSistema.estado === "disponible"
                     ? "text-blue-500"
                     : estadoSistema.estado === "pendiente"
                     ? "text-orange-500"
                     : estadoSistema.estado === "cerrado"
                     ? "text-red-500"
-                    : estadoSistema.estado === "preparando"
+                    : estadoSistema.estado === "preparando" ||
+                      estadoSistema.estado === "sincronizando"
                     ? "text-indigo-500"
+                    : estadoSistema.estado === "en_proceso"
+                    ? "text-emerald-500"
                     : "text-gray-500"
                 }`}
                 fill="none"
@@ -488,7 +616,7 @@ const TomarAsistenciaPersonal = () => {
               <div className="text-left">
                 {estadoSistema.estado === "disponible" && (
                   <span>
-                    El registro estará disponible hasta las{" "}
+                    El período de registro permanecerá abierto hasta las{" "}
                     <strong>
                       {formatearISOaFormato12Horas(
                         String(
@@ -499,21 +627,22 @@ const TomarAsistenciaPersonal = () => {
                     </strong>
                     .
                     <br />
-                    Asegúrese de completar el proceso para todo el personal
-                    antes de esa hora.
+                    Una vez iniciado el proceso, debe completar la asistencia de
+                    todo el personal para evitar registros incompletos.
                   </span>
                 )}
                 {estadoSistema.estado === "pendiente" && (
                   <span>
-                    El registro de asistencia estará disponible en{" "}
+                    El sistema abrirá el registro de asistencia en{" "}
                     <strong>{estadoSistema.tiempoRestante}</strong>.
                     <br />
-                    Se habilitará automáticamente cuando llegue el momento.
+                    Toda la información del personal está lista y preparada para
+                    el momento de apertura.
                   </span>
                 )}
                 {estadoSistema.estado === "cerrado" && (
                   <span>
-                    El período de registro finalizó a las{" "}
+                    El registro de asistencia concluyó a las{" "}
                     <strong>
                       {formatearISOaFormato12Horas(
                         String(
@@ -524,30 +653,58 @@ const TomarAsistenciaPersonal = () => {
                     </strong>
                     .
                     <br />
-                    Los reportes de asistencia ya están disponibles en la
-                    sección correspondiente.
+                    Para consultar los registros completos, visite la sección
+                    &quot;Reportes de asistencia&quot; donde encontrará el
+                    detalle de cada miembro del personal.
                   </span>
                 )}
                 {estadoSistema.estado === "preparando" && (
                   <span>
-                    El sistema está sincronizando datos para el nuevo día
-                    escolar.
+                    El sistema actualiza automáticamente los datos de cada día a
+                    las{" "}
+                    <strong>
+                      {HORA_ACTUALIZACION_DATOS_ASISTENCIA_DIARIOS}:00 AM
+                    </strong>
+                    .
                     <br />
-                    Este proceso es automático y estará disponible a partir de
-                    las {HORA_ACTUALIZACION_DATOS_ASISTENCIA_DIARIOS}:05 AM.
+                    Esta actualización prepara toda la información necesaria
+                    para las operaciones del día y no requiere intervención
+                    manual.
+                  </span>
+                )}
+                {estadoSistema.estado === "sincronizando" && (
+                  <span>
+                    El sistema está actualizando la información para el día de
+                    hoy.
+                    <br />
+                    Este proceso normalmente toma unos segundos. Por favor,
+                    espere mientras se completa la sincronización.
+                  </span>
+                )}
+                {estadoSistema.estado === "en_proceso" && (
+                  <span>
+                    Se está procesando la asistencia de todo el personal.
+                    <br />
+                    Complete el proceso para todos los miembros pendientes.
+                    Tiene disponible{" "}
+                    <strong>{estadoSistema.tiempoDisponible}</strong> para
+                    finalizar.
                   </span>
                 )}
                 {estadoSistema.estado === "cargando" && (
                   <span>
-                    Inicializando el sistema de registro de asistencia...
+                    Inicializando los componentes del sistema de registro.
+                    <br />
+                    La aplicación estará lista en unos momentos.
                   </span>
                 )}
                 {estadoSistema.estado === "no_disponible" && (
                   <span>
-                    No hay actividades escolares programadas para hoy.
+                    No se programan actividades de registro para días no
+                    laborables.
                     <br />
-                    El sistema de registro se activará automáticamente el
-                    próximo día escolar.
+                    El sistema reanudará las operaciones automáticamente el
+                    próximo día hábil.
                   </span>
                 )}
               </div>
@@ -566,7 +723,35 @@ const TomarAsistenciaPersonal = () => {
                 </div>
                 <div className="flex justify-between text-xs text-gray-500 mt-1">
                   <span>Tiempo transcurrido</span>
-                  <span>Tiempo restante: {estadoSistema.tiempoRestante}</span>
+                  <span>Apertura en: {estadoSistema.tiempoRestante}</span>
+                </div>
+              </div>
+            )}
+
+          {/* Barra de progreso para estado en proceso */}
+          {estadoSistema.estado === "en_proceso" &&
+            tiempoRestanteParaCierreAsistencia && (
+              <div className="mb-6">
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div
+                    className="bg-emerald-400 h-2.5 rounded-full"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        (tiempoRestanteParaCierreAsistencia.total /
+                          (fechaHoraCierreAsistencia!.getTime() -
+                            fechaHoraInicioAsistencia!.getTime())) *
+                          100
+                      )}%`,
+                    }}
+                  ></div>
+                </div>
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>Tiempo transcurrido</span>
+                  <span>
+                    Tiempo restante:{" "}
+                    {tiempoRestanteParaCierreAsistencia.formateado}
+                  </span>
                 </div>
               </div>
             )}
@@ -574,45 +759,78 @@ const TomarAsistenciaPersonal = () => {
           {/* Botón de acción */}
           <div className="text-center">
             <button
+              onClick={iniciarRegistroAsistencia}
               className={`flex items-center justify-center mx-auto px-8 py-3 rounded-lg font-medium transition-all ${
                 estadoSistema.botonActivo
-                  ? "bg-green-500 text-white hover:bg-green-600"
+                  ? "bg-green-500 text-white hover:bg-green-600 active:bg-green-700"
                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
               disabled={!estadoSistema.botonActivo}
             >
-              <svg
-                className="w-5 h-5 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                ></path>
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                ></path>
-              </svg>
-              Iniciar Registro de Asistencia
+              {estadoSistema.estado === "en_proceso" ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Procesando registros...
+                </>
+              ) : (
+                <>
+                  <svg
+                    className="w-5 h-5 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                    ></path>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    ></path>
+                  </svg>
+                  Iniciar Registro de Asistencia
+                </>
+              )}
             </button>
             <p className="text-sm text-gray-500 mt-3">
-              {estadoSistema.botonActivo
+              {estadoSistema.estado === "disponible"
                 ? "Al hacer clic en el botón, comenzará el proceso de registro para todo el personal"
                 : estadoSistema.estado === "pendiente"
-                ? "El botón se habilitará cuando sea la hora programada para el registro"
+                ? "El botón se habilitará automáticamente cuando sea la hora programada para el registro"
                 : estadoSistema.estado === "cerrado"
-                ? "El período de registro ha concluido por hoy"
+                ? "El período de registro ha concluido para el día de hoy"
                 : estadoSistema.estado === "preparando"
-                ? "Espere a que el sistema complete la sincronización"
-                : "El botón se activará cuando el sistema esté listo"}
+                ? "Espere a que se completen las actualizaciones programadas del sistema"
+                : estadoSistema.estado === "sincronizando"
+                ? "El sistema está sincronizando la información, espere un momento"
+                : estadoSistema.estado === "en_proceso"
+                ? "El proceso de registro está en curso, no cierre esta ventana"
+                : "El sistema no está disponible en este momento"}
             </p>
           </div>
         </div>
