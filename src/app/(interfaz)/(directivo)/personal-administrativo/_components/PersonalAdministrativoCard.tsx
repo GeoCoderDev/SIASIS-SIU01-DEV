@@ -24,7 +24,14 @@ const PersonalAdministrativoCard = ({
   PersonalAdministrativo: PersonalAdministrativoSinContraseña;
 }) => {
   return (
-    <div  className="flex flex-col items-center text-center gap-2.5 p-6 sm:p-6 rounded-[10px] shadow-[0_0_3px_6px_#00000050]">
+    <div    className="
+    flex flex-col justify-between items-center text-center gap-2.5
+    p-4 sm:p-5
+    rounded-[10px]
+    shadow-[0_0_3px_6px_#00000050]
+    w-full xs:w-[16rem] sm:w-[17rem] md:w-[18rem] lg:w-[18rem]
+    min-h-[28rem]
+    mx-auto">
       <FotoPerfilClientSide
         className="w-[5rem] sm:w-[5rem] md:w-[5rem]"
         Google_Drive_Foto_ID={Google_Drive_Foto_ID}
