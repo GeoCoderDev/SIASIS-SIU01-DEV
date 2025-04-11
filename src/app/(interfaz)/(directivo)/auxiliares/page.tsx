@@ -32,28 +32,30 @@ const Auxiliares = () => {
 
   return (
     <div className="w-full max-w-[80rem] h-full flex flex-col justify-between">
-      <h1 className="text-[2.25rem] text-negro font-semibold mt-2 -text-center -w-full">
+      <h1 className="text-[2.185rem] sxs-only:text-[1.725rem] xs-only:text-[1.84rem] sm-only:text-[1.955rem] md-only:text-[2.07rem] text-negro font-semibold mt-2 text-center">
         LISTA DE AUXILIARES
       </h1>
 
       {error && <ErrorMessage error={error} />}
 
       {!isSomethingLoading && auxiliares && auxiliares.length === 0 && (
-        <span> No se encontraron Auxiliares Regitrados en el Sistema</span>
+        <span className="sxs-only:text-[12px] xs-only:text-[13px] sm-only:text-[14px] text-center w-full"> 
+          No se encontraron Auxiliares Regitrados en el Sistema
+        </span>
       )}
 
-      <div className="flex flex-wrap justify-evenly gap-y-8 w-full items-center -border-2 flex-1 pt-6 gap-x-[max(2.5rem,1vw)]">
+      <div className="flex flex-col items-center w-full flex-1 pt-8 sxs-only:pt-6 xs-only:pt-7 sm-only:pt-7 md-only:pt-8">
         {isSomethingLoading && (
-          <span>
-            Actualizando <Loader className="w-[2rem] p-2 bg-black " />
+          <span className="sxs-only:text-[12px] xs-only:text-[13px] sm-only:text-[14px] flex items-center">
+            Actualizando <Loader className="w-[2rem] sxs-only:w-[1.5rem] xs-only:w-[1.7rem] p-2 sxs-only:p-1.5 bg-black ml-2" />
           </span>
         )}
         {auxiliares && (
-          <>
+          <div className="flex flex-wrap justify-center w-full gap-y-6 sxs-only:gap-y-4 xs-only:gap-y-5 gap-x-4 sxs-only:gap-x-2 xs-only:gap-x-3">
             {auxiliares.map((auxiliar) => (
               <AuxiliardCard key={auxiliar.DNI_Auxiliar} Auxiliar={auxiliar} />
             ))}
-          </>
+          </div>
         )}
       </div>
     </div>

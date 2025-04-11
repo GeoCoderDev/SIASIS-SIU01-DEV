@@ -7,8 +7,8 @@ import { ZONA_HORARIA_LOCAL } from "@/constants/ZONA_HORARIA_LOCAL";
 // Modificar estos valores para cambiar el offset aplicado a la hora del servidor
 export const TIME_OFFSET = {
   days: 0,
-  hours: 2,
-  minutes: 25,
+  hours: 0,
+  minutes: 0,
   seconds: 0,
   enabled: true, // Habilitar/deshabilitar el offset
 };
