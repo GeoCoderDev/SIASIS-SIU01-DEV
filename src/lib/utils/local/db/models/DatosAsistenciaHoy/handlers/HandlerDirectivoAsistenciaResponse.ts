@@ -10,7 +10,7 @@ import { alterarUTCaZonaPeruana } from "@/lib/helpers/alteradores/alterarUTCaZon
 import { T_Comunicados, T_Eventos } from "@prisma/client";
 
 /**
- * Clase para manejar y acceder a los datos de asistencia
+ * Handler para los datos de asistencia específicos del Directivo
  */
 export class HandlerDirectivoAsistenciaResponse {
   private data: DirectivoAsistenciaResponse;

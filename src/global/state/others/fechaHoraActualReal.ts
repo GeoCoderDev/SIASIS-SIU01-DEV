@@ -2,6 +2,16 @@ import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { ReduxPayload } from "../ReducersPayload";
 import getRandomAPI03IntanceURL from "@/lib/helpers/functions/getRandomAPI03InstanceURL";
 import { ZONA_HORARIA_LOCAL } from "@/constants/ZONA_HORARIA_LOCAL";
+import {
+  DiasSemana,
+  diasSemanaTextos,
+  diasSemanaTextosCortos,
+} from "@/interfaces/shared/DiasSemana";
+import {
+  Meses,
+  mesesTextos,
+  mesesTextosCortos,
+} from "@/interfaces/shared/Meses";
 
 // Constante para el offset de tiempo (para pruebas)
 // Modificar estos valores para cambiar el offset aplicado a la hora del servidor
@@ -12,57 +22,6 @@ export const TIME_OFFSET = {
   seconds: 0,
   enabled: true, // Habilitar/deshabilitar el offset
 };
-
-// Constantes para días y meses en español
-export const DIAS_SEMANA = [
-  "Domingo",
-  "Lunes",
-  "Martes",
-  "Miércoles",
-  "Jueves",
-  "Viernes",
-  "Sábado",
-];
-
-export const DIAS_SEMANA_CORTOS = [
-  "Dom",
-  "Lun",
-  "Mar",
-  "Mié",
-  "Jue",
-  "Vie",
-  "Sáb",
-];
-
-export const MESES = [
-  "Enero",
-  "Febrero",
-  "Marzo",
-  "Abril",
-  "Mayo",
-  "Junio",
-  "Julio",
-  "Agosto",
-  "Septiembre",
-  "Octubre",
-  "Noviembre",
-  "Diciembre",
-];
-
-export const MESES_CORTOS = [
-  "Ene",
-  "Feb",
-  "Mar",
-  "Abr",
-  "May",
-  "Jun",
-  "Jul",
-  "Ago",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dic",
-];
 
 // Interfaces para datos de tiempo formateados y utilidades
 export interface FormatosHora {
@@ -81,7 +40,6 @@ export interface UtilidadesTiempo {
   minutos: number;
   segundos: number;
   esDiaEscolar: boolean;
-  esHorarioLaboral: boolean;
   // Nuevos campos
   diaSemana: string; // Nombre del día (Lunes, Martes, etc)
   diaSemanaCorto: string; // Abreviatura (Lun, Mar, etc)
@@ -100,19 +58,6 @@ export interface UtilidadesTiempo {
   timestamp: number; // timestamp en milisegundos
 }
 
-export interface TiempoRestante {
-  total: number;
-  dias: number;
-  horas: number;
-  minutos: number;
-  segundos: number;
-  yaVencido: boolean;
-  formateado: string;
-  // Nuevos campos
-  formatoCorto: string; // Ejemplo: "2d 5h 30m"
-  porcentajeCompletado: number; // 0-100, útil para barras de progreso
-  enRango: boolean; // true si el tiempo está dentro de un rango especificado
-}
 
 // Interfaz para la fecha y hora actual con datos formateados
 export interface FechaHoraActualRealState {
@@ -283,9 +228,9 @@ const actualizarFormatosYUtilidades = (state: FechaHoraActualRealState) => {
 
     // Nuevos formatos
     fechaLegible: `${
-      DIAS_SEMANA[fechaHoraDate.getDay()]
+      diasSemanaTextos[fechaHoraDate.getDay() as DiasSemana]
     }, ${fechaHoraDate.getDate()} de ${
-      MESES[fechaHoraDate.getMonth()]
+      mesesTextos[fechaHoraDate.getMonth() as Meses]
     } de ${fechaHoraDate.getFullYear()}`,
 
     fechaNumericaCorta: `${fechaHoraDate
@@ -303,9 +248,9 @@ const actualizarFormatosYUtilidades = (state: FechaHoraActualRealState) => {
   };
 
   // Obtener datos adicionales de la fecha
-  const diaSemanaIndice = fechaHoraDate.getDay();
+  const diaSemanaIndice = fechaHoraDate.getDay() as DiasSemana;
   const diaMes = fechaHoraDate.getDate();
-  const mesIndice = fechaHoraDate.getMonth();
+  const mesIndice = fechaHoraDate.getMonth() as Meses;
   const año = fechaHoraDate.getFullYear();
   const hora = fechaHoraDate.getHours();
   const minutos = fechaHoraDate.getMinutes();
@@ -326,15 +271,14 @@ const actualizarFormatosYUtilidades = (state: FechaHoraActualRealState) => {
     minutos,
     segundos,
     esDiaEscolar: diaSemanaIndice >= 1 && diaSemanaIndice <= 5, // Lunes a Viernes
-    esHorarioLaboral: hora >= 7 && hora < 19, // 7am a 7pm
 
     // Nuevos campos
-    diaSemana: DIAS_SEMANA[diaSemanaIndice],
-    diaSemanaCorto: DIAS_SEMANA_CORTOS[diaSemanaIndice],
+    diaSemana: diasSemanaTextos[diaSemanaIndice],
+    diaSemanaCorto: diasSemanaTextosCortos[diaSemanaIndice],
     diaSemanaIndice,
     diaMes,
-    mes: MESES[mesIndice],
-    mesCorto: MESES_CORTOS[mesIndice],
+    mes: mesesTextos[mesIndice],
+    mesCorto: mesesTextosCortos[mesIndice],
     mesIndice,
     año,
     diasEnMes,
@@ -426,185 +370,6 @@ const fechaHoraActualRealSlice = createSlice({
       });
   },
 });
-
-// Función selectora para obtener tiempo restante hasta una fecha objetivo
-export const tiempoRestanteHasta = (
-  state: { fechaHoraActualReal: FechaHoraActualRealState },
-  fechaObjetivoPeruana: string | Date,
-  fechaInicio?: string | Date
-): TiempoRestante | null => {
-  if (!state.fechaHoraActualReal.fechaHora) return null;
-
-  // Usamos directamente la fecha actual sin transformaciones adicionales de zona horaria
-  const fechaActual = fechaInicio
-    ? typeof fechaInicio === "string"
-      ? new Date(fechaInicio)
-      : fechaInicio
-    : new Date(state.fechaHoraActualReal.fechaHora);
-
-  // Convertir la fecha objetivo a un objeto Date
-  const fechaObjetivoObj =
-    typeof fechaObjetivoPeruana === "string"
-      ? new Date(fechaObjetivoPeruana)
-      : fechaObjetivoPeruana;
-
-  // Calcular diferencia en milisegundos
-  const diffMs = fechaObjetivoObj.getTime() - fechaActual.getTime();
-
-  // Calcular porcentaje completado si se proporciona una fecha de inicio
-  let porcentajeCompletado = 0;
-  let enRango = false;
-
-  if (fechaInicio) {
-    const fechaInicioObj =
-      typeof fechaInicio === "string" ? new Date(fechaInicio) : fechaInicio;
-
-    const duracionTotal = fechaObjetivoObj.getTime() - fechaInicioObj.getTime();
-    const tiempoTranscurrido = fechaActual.getTime() - fechaInicioObj.getTime();
-
-    if (duracionTotal > 0) {
-      porcentajeCompletado = Math.min(
-        100,
-        Math.max(0, (tiempoTranscurrido / duracionTotal) * 100)
-      );
-      enRango = tiempoTranscurrido >= 0 && tiempoTranscurrido <= duracionTotal;
-    }
-  }
-
-  // Si la fecha ya pasó
-  if (diffMs <= 0) {
-    return {
-      total: 0,
-      dias: 0,
-      horas: 0,
-      minutos: 0,
-      segundos: 0,
-      yaVencido: true,
-      formateado: "Fecha vencida",
-      formatoCorto: "Vencido",
-      porcentajeCompletado: 100,
-      enRango: false,
-    };
-  }
-
-  // Convertir a unidades de tiempo
-  const segundos = Math.floor((diffMs / 1000) % 60);
-  const minutos = Math.floor((diffMs / (1000 * 60)) % 60);
-  const horas = Math.floor((diffMs / (1000 * 60 * 60)) % 24);
-  const dias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  // Formato legible
-  let formateado = "";
-  if (dias > 0) formateado += `${dias} día${dias > 1 ? "s" : ""} `;
-  if (horas > 0 || dias > 0)
-    formateado += `${horas} hora${horas > 1 ? "s" : ""} `;
-  if (minutos > 0 || horas > 0 || dias > 0)
-    formateado += `${minutos} minuto${minutos > 1 ? "s" : ""} `;
-  formateado += `${segundos} segundo${segundos > 1 ? "s" : ""}`;
-
-  // Formato corto
-  let formatoCorto = "";
-  if (dias > 0) formatoCorto += `${dias}d `;
-  if (horas > 0 || dias > 0) formatoCorto += `${horas}h `;
-  if (minutos > 0 || (horas === 0 && dias === 0))
-    formatoCorto += `${minutos}m `;
-  if (horas === 0 && dias === 0) formatoCorto += `${segundos}s`;
-  formatoCorto = formatoCorto.trim();
-
-  return {
-    total: diffMs,
-    dias,
-    horas,
-    minutos,
-    segundos,
-    yaVencido: false,
-    formateado,
-    formatoCorto,
-    porcentajeCompletado: fechaInicio ? porcentajeCompletado : 0,
-    enRango: fechaInicio ? enRango : true,
-  };
-};
-
-/**
- * Calcula la diferencia entre dos fechas
- * @param fechaInicio Fecha de inicio
- * @param fechaFin Fecha de fin
- * @returns Objeto con la diferencia en días, horas, minutos y segundos
- */
-export const calcularDiferenciaEntreFechas = (
-  fechaInicio: Date | string,
-  fechaFin: Date | string
-): {
-  dias: number;
-  horas: number;
-  minutos: number;
-  segundos: number;
-  totalMs: number;
-  totalSegundos: number;
-  totalMinutos: number;
-  totalHoras: number;
-  totalDias: number;
-} => {
-  const inicio =
-    typeof fechaInicio === "string" ? new Date(fechaInicio) : fechaInicio;
-  const fin = typeof fechaFin === "string" ? new Date(fechaFin) : fechaFin;
-
-  const diffMs = fin.getTime() - inicio.getTime();
-  const totalSegundos = Math.floor(diffMs / 1000);
-  const totalMinutos = Math.floor(totalSegundos / 60);
-  const totalHoras = Math.floor(totalMinutos / 60);
-  const totalDias = Math.floor(totalHoras / 24);
-
-  const segundos = Math.floor((diffMs / 1000) % 60);
-  const minutos = Math.floor((diffMs / (1000 * 60)) % 60);
-  const horas = Math.floor((diffMs / (1000 * 60 * 60)) % 24);
-  const dias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  return {
-    dias,
-    horas,
-    minutos,
-    segundos,
-    totalMs: diffMs,
-    totalSegundos,
-    totalMinutos,
-    totalHoras,
-    totalDias,
-  };
-};
-
-/**
- * Obtiene una fecha formateada en español
- * @param fecha Fecha a formatear
- * @param formato Formato deseado
- * @returns Fecha formateada
- */
-export const formatearFechaEspañol = (
-  fecha: Date | string,
-  formato: "completo" | "corto" | "mediano" | "legible" | "numerico" = "legible"
-): string => {
-  const fechaObj = typeof fecha === "string" ? new Date(fecha) : fecha;
-  const dia = fechaObj.getDate();
-  const mes = fechaObj.getMonth();
-  const año = fechaObj.getFullYear();
-  const diaSemana = fechaObj.getDay();
-
-  switch (formato) {
-    case "completo":
-      return `${DIAS_SEMANA[diaSemana]}, ${dia} de ${MESES[mes]} de ${año}`;
-    case "corto":
-      return `${dia}/${mes + 1}/${año.toString().substring(2)}`;
-    case "mediano":
-      return `${dia} ${MESES_CORTOS[mes]} ${año}`;
-    case "numerico":
-      return `${dia.toString().padStart(2, "0")}/${(mes + 1)
-        .toString()
-        .padStart(2, "0")}/${año}`;
-    case "legible":
-    default:
-      return `${DIAS_SEMANA_CORTOS[diaSemana]} ${dia} de ${MESES[mes]}`;
-  }
-};
 
 export const {
   setFechaHoraActualReal,
