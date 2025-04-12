@@ -1,6 +1,6 @@
 "use client";
-import { tiempoRestanteHasta } from "@/global/state/others/fechaHoraActualReal";
 import { RootState } from "@/global/store";
+import { tiempoRestanteHasta } from "@/lib/calc/time/tiempoRestanteHasta";
 import { alterarUTCaZonaPeruana } from "@/lib/helpers/alteradores/alterarUTCaZonaPeruana";
 import { useSelector } from "react-redux";
 
