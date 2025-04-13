@@ -4,7 +4,6 @@ import React from "react";
 const ThinLoader = ({ className, title }: IconProps) => {
   return (
     <div title={title}>
-      {" "}
       <svg
         className={`animate-spin aspect-square ${className}`}
         xmlns="http://www.w3.org/2000/svg"

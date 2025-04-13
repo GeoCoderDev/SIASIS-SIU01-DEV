@@ -78,6 +78,7 @@ const Header = ({
     const obtenerDatosAsistenciaHoy = async () => {
       const datosAsistenciaHoy = new DatosAsistenciaHoyIDB();
 
+      console.log("EJECUTANDO OBTENCION DE DATOS")
       await datosAsistenciaHoy.obtenerDatos();
     };
     obtenerDatosAsistenciaHoy();

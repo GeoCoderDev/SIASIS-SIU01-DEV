@@ -17,8 +17,8 @@ import {
 // Modificar estos valores para cambiar el offset aplicado a la hora del servidor
 export const TIME_OFFSET = {
   days: -1,
-  hours: -19,
-  minutes: 0,
+  minutes: -4,
+  hours: 0, // Agregar propiedad 'hours' con un valor predeterminado
   seconds: 0,
   enabled: process.env.NODE_ENV === "development", // Habilitar/deshabilitar el offset
 };
