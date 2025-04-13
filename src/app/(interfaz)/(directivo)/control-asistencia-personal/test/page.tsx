@@ -1,31 +1,47 @@
 "use client";
-import { RootState } from "@/global/store";
-import { tiempoRestanteHasta } from "@/lib/calc/time/tiempoRestanteHasta";
-import { alterarUTCaZonaPeruana } from "@/lib/helpers/alteradores/alterarUTCaZonaPeruana";
+
+import { DatosAsistenciaHoyIDB } from "@/lib/utils/local/db/models/DatosAsistenciaHoy/DatosAsistenciaHoyIDB";
+import { useEffect } from "react";
 import { useSelector } from "react-redux";
 
-const RelojServidor = () => {
-  const fechaHoraActual = useSelector(
+import { RootState } from "@/global/store";
+
+import { DirectivoAsistenciaResponse } from "@/interfaces/shared/Asistencia/DatosAsistenciaHoyIE20935";
+import { HandlerDirectivoAsistenciaResponse } from "@/lib/utils/local/db/models/DatosAsistenciaHoy/handlers/HandlerDirectivoAsistenciaResponse";
+
+const PRUEBA = () => {
+  const { inicializado } = useSelector(
     (state: RootState) => state.others.fechaHoraActualReal
   );
+  console.log(inicializado);
 
-  // Obtener tiempo restante usando el selector
-  const tiempoRestante = useSelector((state: RootState) =>
-    tiempoRestanteHasta(
-      { fechaHoraActualReal: state.others.fechaHoraActualReal },
-      alterarUTCaZonaPeruana("2025-04-07T00:16:00.000Z")
-    )
-  );
+  useEffect(() => {
+    if (!inicializado) return;
+    const getData = async () => {
+      const datos = await new DatosAsistenciaHoyIDB().obtenerDatos();
+
+      const handler = new HandlerDirectivoAsistenciaResponse(
+        datos as DirectivoAsistenciaResponse
+      );
+
+      console.log(
+        "Personal",
+        handler.buscarPersonalAdministrativoPorDNI("15449593")
+      );
+      console.log(
+        "DEBERIA ESTAR",
+        handler.debeEstarPresentePersonalAhora("15449593")
+      );
+    };
+
+    getData();
+  }, [inicializado]);
 
   return (
     <>
-      <div>
-        <span>{fechaHoraActual.formateada?.horaCompleta}</span>
-        <br />
-        <span>{tiempoRestante?.formateado}</span>
-      </div>
+      <div></div>
     </>
   );
 };
 
-export default RelojServidor;
+export default PRUEBA;

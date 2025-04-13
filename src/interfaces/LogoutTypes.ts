@@ -8,6 +8,7 @@ export enum LogoutTypes {
   ERROR_BASE_DATOS = "ERROR_BASE_DATOS",
   ERROR_RED = "ERROR_RED",
   ERROR_DATOS_CORRUPTOS = "ERROR_DATOS_CORRUPTOS",
+  ERROR_PARSEO = "ERROR_PARSEO",
 }
 
 export interface ErrorDetailsForLogout {
@@ -18,4 +19,3 @@ export interface ErrorDetailsForLogout {
   contexto?: string;
   siasisComponent?: SiasisComponent;
 }
-

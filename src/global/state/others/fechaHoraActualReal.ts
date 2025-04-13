@@ -16,11 +16,11 @@ import {
 // Constante para el offset de tiempo (para pruebas)
 // Modificar estos valores para cambiar el offset aplicado a la hora del servidor
 export const TIME_OFFSET = {
-  days: 0,
-  hours: 0,
+  days: -1,
+  hours: -19,
   minutes: 0,
   seconds: 0,
-  enabled: true, // Habilitar/deshabilitar el offset
+  enabled: process.env.NODE_ENV === "development", // Habilitar/deshabilitar el offset
 };
 
 // Interfaces para datos de tiempo formateados y utilidades
@@ -57,7 +57,6 @@ export interface UtilidadesTiempo {
   esHoy: boolean; // true si la fecha es hoy (sin considerar la hora)
   timestamp: number; // timestamp en milisegundos
 }
-
 
 // Interfaz para la fecha y hora actual con datos formateados
 export interface FechaHoraActualRealState {

@@ -6,7 +6,7 @@ const PersonalIcon = ({ className, title }: IconProps) => {
     <div title={title}>
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className={`${className}`}
+        className={`aspect-square ${className}`}
         fill="none"
         stroke="currentColor"
       >

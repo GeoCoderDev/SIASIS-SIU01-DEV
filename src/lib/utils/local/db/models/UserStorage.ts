@@ -2,6 +2,8 @@ import { SuccessLoginData } from "@/interfaces/shared/apis/shared/login/types";
 import dbConnection from "../IndexedDBConnection";
 import { logout } from "@/lib/helpers/logout";
 import { LogoutTypes, ErrorDetailsForLogout } from "@/interfaces/LogoutTypes";
+import { Genero } from "@/interfaces/shared/Genero";
+import { RolesSistema } from "@/interfaces/shared/RolesSistema";
 
 // Extendemos SuccessLoginData con la nueva propiedad
 export interface UserData extends SuccessLoginData {
@@ -173,10 +175,13 @@ class UserStorage {
    * Obtiene solo el token de autenticación
    * @returns Promise que se resuelve con el token o null si no hay token
    */
-  public async getAuthToken(): Promise<string | null> {
+  public async getAuthToken(): Promise<string> {
     try {
       const userData = await this.getUserData();
-      return userData?.token || null;
+      if (!userData?.token) {
+        throw new Error("Token no disponible en los datos del usuario");
+      }
+      return userData.token;
     } catch (error) {
       this.handleError(error, "getAuthToken");
       throw error;
@@ -187,10 +192,13 @@ class UserStorage {
    * Obtiene el rol del usuario almacenado
    * @returns Promise que se resuelve con el rol del usuario o null si no hay datos
    */
-  public async getRol(): Promise<string | null> {
+  public async getRol(): Promise<RolesSistema> {
     try {
       const userData = await this.getUserData();
-      return userData?.Rol || null;
+      if (!userData?.Rol) {
+        throw new Error("Rol no disponible en los datos del usuario");
+      }
+      return userData.Rol;
     } catch (error) {
       this.handleError(error, "getRol");
       throw error;
@@ -201,7 +209,7 @@ class UserStorage {
    * Obtiene el género del usuario almacenado
    * @returns Promise que se resuelve con el género del usuario o null si no hay datos
    */
-  public async getGenero(): Promise<string | null> {
+  public async getGenero(): Promise<Genero | null> {
     try {
       const userData = await this.getUserData();
       return userData?.Genero || null;

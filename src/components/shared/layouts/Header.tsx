@@ -29,13 +29,13 @@ import {
 
 // Utilities
 import { logout } from "@/lib/helpers/logout";
-import { obtenerAsistenciaStoragePorRol } from "@/lib/utils/local/db/models/DatosAsistenciaHoy";
 
 // Constants
 import { RolesSistema } from "@/interfaces/shared/RolesSistema";
 import { Genero } from "@/interfaces/shared/Genero";
 import { RolesTextos } from "@/Assets/RolesTextos";
 import { ZONA_HORARIA_LOCAL } from "@/constants/ZONA_HORARIA_LOCAL";
+import { DatosAsistenciaHoyIDB } from "@/lib/utils/local/db/models/DatosAsistenciaHoy/DatosAsistenciaHoyIDB";
 
 /**
  * Componente Header - Barra superior con información del usuario y controles del sidebar
@@ -59,9 +59,11 @@ const Header = ({
     (state: RootState) => state.flags.sidebarIsOpen
   );
   const { delegarEvento } = useDelegacionEventos();
-  const { sincronizarConServidor, formateada } = useFechaHoraReal({
-    timezone: ZONA_HORARIA_LOCAL,
-  });
+  const { sincronizarConServidor, formateada, inicializado } = useFechaHoraReal(
+    {
+      timezone: ZONA_HORARIA_LOCAL,
+    }
+  );
 
   // Estados
   const [menuVisible, setMenuVisible] = useState(false);
@@ -71,14 +73,18 @@ const Header = ({
     setMenuVisible(!menuVisible);
   };
 
-  // Efecto para obtener datos de asistencia al cargar el componente
   useEffect(() => {
+    if (!inicializado) return;
     const obtenerDatosAsistenciaHoy = async () => {
-      const datosAsistenciaHoy = obtenerAsistenciaStoragePorRol(Rol);
+      const datosAsistenciaHoy = new DatosAsistenciaHoyIDB();
+
       await datosAsistenciaHoy.obtenerDatos();
     };
     obtenerDatosAsistenciaHoy();
+  }, [inicializado]);
 
+  // Efecto para obtener datos de asistencia al cargar el componente
+  useEffect(() => {
     // Sincronizar la hora cuando la ventana vuelve a ser visible
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") {

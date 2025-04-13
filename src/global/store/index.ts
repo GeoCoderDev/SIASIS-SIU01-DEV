@@ -3,13 +3,13 @@ import elementDimensionsReducer from "../state/ElementDimensions/index";
 import flagsReducer from "../state/Flags";
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import others from "../state/others";
-import asistenciaReducer from "../state/asistencia";
+// import asistenciaReducer from "../state/asistencia";
 
 const rootReducer = combineReducers({
   globalConstants: globalConstantsReducer,
   elementsDimensions: elementDimensionsReducer,
   flags: flagsReducer,
-  asistencia: asistenciaReducer,
+  // asistencia: asistenciaReducer,
   others: others,
 });
 
