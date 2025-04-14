@@ -220,6 +220,137 @@ class UserStorage {
   }
 
   /**
+   * Obtiene el nombre completo del usuario
+   * @returns Promise que se resuelve con el nombre completo o null si no hay datos
+   */
+  public async getNombres(): Promise<string | null> {
+    try {
+      const userData = await this.getUserData();
+      if (!userData?.Nombres) {
+        throw new Error("Nombres no disponibles en los datos del usuario");
+      }
+      return userData.Nombres;
+    } catch (error) {
+      this.handleError(error, "getNombres");
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene los apellidos del usuario
+   * @returns Promise que se resuelve con los apellidos o null si no hay datos
+   */
+  public async getApellidos(): Promise<string | null> {
+    try {
+      const userData = await this.getUserData();
+      if (!userData?.Apellidos) {
+        throw new Error("Apellidos no disponibles en los datos del usuario");
+      }
+      return userData.Apellidos;
+    } catch (error) {
+      this.handleError(error, "getApellidos");
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene el primer nombre del usuario
+   * @returns Promise que se resuelve con el primer nombre o null si no hay datos
+   */
+  public async getPrimerNombre(): Promise<string | null> {
+    try {
+      const nombres = await this.getNombres();
+      if (!nombres) return null;
+
+      // Dividir el nombre por espacios y tomar el primer elemento
+      const primerNombre = nombres.split(" ")[0];
+
+      return primerNombre;
+    } catch (error) {
+      this.handleError(error, "getPrimerNombre");
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene el primer apellido del usuario
+   * @returns Promise que se resuelve con el primer apellido o null si no hay datos
+   */
+  public async getPrimerApellido(): Promise<string | null> {
+    try {
+      const apellidos = await this.getApellidos();
+
+      if (!apellidos) return null;
+
+      // Dividir los apellidos por espacios y tomar el primer elemento
+      const primerApellido = apellidos.split(" ")[0];
+      return primerApellido;
+    } catch (error) {
+      this.handleError(error, "getPrimerApellido");
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene las iniciales del nombre y apellido del usuario
+   * @returns Promise que se resuelve con las iniciales o null si no hay datos
+   */
+  public async getIniciales(): Promise<string | null> {
+    try {
+      const primerNombre = await this.getPrimerNombre();
+      const primerApellido = await this.getPrimerApellido();
+
+      if (!primerNombre || !primerApellido) return null;
+
+      return `${primerNombre.charAt(0)}${primerApellido.charAt(
+        0
+      )}`.toUpperCase();
+    } catch (error) {
+      this.handleError(error, "getIniciales");
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene el nombre completo del usuario (nombres + apellidos)
+   * @returns Promise que se resuelve con el nombre completo o null si no hay datos
+   */
+  public async getNombreCompleto(): Promise<string | null> {
+    try {
+      const nombres = await this.getNombres();
+      const apellidos = await this.getApellidos();
+
+      if (!nombres || !apellidos) return null;
+
+      return `${nombres} ${apellidos}`;
+    } catch (error) {
+      this.handleError(error, "getNombreCompleto");
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene el nombre de usuario para mostrar en la interfaz
+   * @returns Promise que se resuelve con el nombre de usuario formateado
+   */
+  public async getNombreCompletoCorto(): Promise<string | null> {
+    try {
+      const userData = await this.getUserData();
+      if (!userData) return null;
+
+      const primerNombre = await this.getPrimerNombre();
+      const apellidos = await this.getPrimerApellido();
+
+      if (!primerNombre || !apellidos) return null;
+
+      return `${primerNombre} ${apellidos}`;
+    } catch (error) {
+      this.handleError(error, "getNombreCompletoCorto");
+      throw error;
+    }
+  }
+
+  /**
    * Guarda la última marca de tiempo de sincronización de las tablas
    * @param timestamp Marca de tiempo de la sincronización
    * @returns Promise que se resuelve cuando se ha guardado la marca de tiempo

@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { RequestCookie } from "next/dist/compiled/@edge-runtime/cookies";
 
-// Components
 import LogoCabecera from "../logos/LogoCabecera";
 import FooterIcon from "@/components/icons/FooterIcon";
 import HamburguesaIcon from "@/components/icons/HamburguesaIcon";
@@ -13,11 +12,9 @@ import DespliegueIcon from "@/components/icons/DespliegueIcon";
 import FotoPerfilSideServer from "../../utils/photos/FotoPerfilClientSide";
 import InterceptedLinkForDataThatCouldBeLost from "../InterceptedLinkForDataThatCouldBeLost";
 
-// Hooks
 import { useDelegacionEventos } from "@/hooks/useDelegacionDeEventos";
 import useFechaHoraReal from "@/hooks/useFechaHoraReal";
 
-// Store
 import { AppDispatch, RootState } from "@/global/store";
 import { setHeaderHeight } from "@/global/state/ElementDimensions/headerHeight";
 import { setWindowHeight } from "@/global/state/ElementDimensions/windowHeight";
@@ -27,10 +24,8 @@ import {
   switchSidebarIsOpen,
 } from "@/global/state/Flags/sidebarIsOpen";
 
-// Utilities
 import { logout } from "@/lib/helpers/logout";
 
-// Constants
 import { RolesSistema } from "@/interfaces/shared/RolesSistema";
 import { Genero } from "@/interfaces/shared/Genero";
 import { RolesTextos } from "@/Assets/RolesTextos";
@@ -59,7 +54,7 @@ const Header = ({
     (state: RootState) => state.flags.sidebarIsOpen
   );
   const { delegarEvento } = useDelegacionEventos();
-  const { sincronizarConServidor, formateada, inicializado } = useFechaHoraReal(
+  const { sincronizarConServidor, inicializado } = useFechaHoraReal(
     {
       timezone: ZONA_HORARIA_LOCAL,
     }
@@ -77,8 +72,6 @@ const Header = ({
     if (!inicializado) return;
     const obtenerDatosAsistenciaHoy = async () => {
       const datosAsistenciaHoy = new DatosAsistenciaHoyIDB();
-
-      console.log("EJECUTANDO OBTENCION DE DATOS")
       await datosAsistenciaHoy.obtenerDatos();
     };
     obtenerDatosAsistenciaHoy();
@@ -188,7 +181,7 @@ const Header = ({
       {/* Logo de la cabecera */}
       <LogoCabecera />
 
-      <div className="flex-1">{formateada?.horaCompleta}</div>
+      <div className="flex-1"></div>
 
       {/* Información del usuario y menú */}
       <div className="justify-self-end flex items-center justify-center gap-4">
@@ -215,7 +208,7 @@ const Header = ({
         </div>
 
         {/* Foto de perfil */}
-        <FotoPerfilSideServer Google_Drive_Foto_ID={Google_Drive_Foto_ID} />
+        <FotoPerfilSideServer className="w-12" Google_Drive_Foto_ID={Google_Drive_Foto_ID} />
 
         {/* Icono de menú desplegable */}
         <div id="despliegue-icon" onClick={toggleMenu} className="relative">

@@ -9,7 +9,7 @@ import { Link } from "next-view-transitions";
 import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { ErrorDetailsForLogout } from "@/interfaces/LogoutTypes";
-import getRandomSIU01IntanceURL from '../../lib/helpers/functions/getRandomSIU01IntanceURL';
+import getRandomSIU01IntanceURL from "../../lib/helpers/functions/getRandomSIU01IntanceURL";
 
 export type RolForLoginSelection =
   | "Directivo"
@@ -25,7 +25,7 @@ interface RolBotonProps {
   path: string;
 }
 
-const RolBoton = ({ path, icon, rol }: RolBotonProps) => {
+export const RolBoton = ({ path, icon, rol }: RolBotonProps) => {
   return (
     <Link
       href={getRandomSIU01IntanceURL() + path}

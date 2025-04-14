@@ -138,7 +138,6 @@ export class DatosAsistenciaHoyIDB {
   private async fetchDatosFromServer(): Promise<BaseAsistenciaResponse> {
     try {
       const response = await fetch("/api/datos-asistencia-hoy");
-      console.log("SE HIZO FETCH");
       if (!response.ok) {
         throw new Error(
           `Error en la respuesta del servidor: ${response.status} ${response.statusText}`
@@ -292,12 +291,11 @@ export class DatosAsistenciaHoyIDB {
 
     try {
       const storedData = await this.obtenerDatosAlmacenados();
-      console.log("datos alamcenados", storedData);
 
       const fechaHoyISO = this.formatearFechaSoloDia(fechaHoyRedux);
 
       // No sincronizar si es fin de semana
-      if (this.esFinDeSemana(fechaHoyRedux) &&storedData) {
+      if (this.esFinDeSemana(fechaHoyRedux) && storedData) {
         if (storedData && storedData.rol) {
           return storedData.datos as T;
         }
@@ -309,7 +307,6 @@ export class DatosAsistenciaHoyIDB {
         !storedData ||
         !this.esMismoDia(storedData.fechaGuardado, fechaHoyISO)
       ) {
-        console.log("se hace FETCH")
         const freshData = await this.fetchDatosFromServer();
         await this.guardarDatosInterno(freshData);
         return freshData as T;
