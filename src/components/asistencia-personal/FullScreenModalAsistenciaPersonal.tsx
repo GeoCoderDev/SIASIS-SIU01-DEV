@@ -1,7 +1,5 @@
 "use client";
 
-import { RolBoton } from "@/app/login/page";
-
 import ProfesorPrimariaIcon from "../icons/ProfesorPrimariaIcon";
 import AuxiliarIcon from "../icons/AuxiliarIcon";
 import ProfesorOTutorIcon from "../icons/ProfesorOTutorIcon";
@@ -9,6 +7,7 @@ import PersonasGenericasIcon from "../icons/PersonasGenericasIcon";
 import { useEffect } from "react";
 import { Speaker } from "@/lib/utils/voice/Speaker";
 import userStorage from "@/lib/utils/local/db/models/UserStorage";
+import { RolBoton } from "../shared/buttons/RolButton";
 
 const FullScreenModalAsistenciaPersonal = ({
   closeFullScreenModal,
