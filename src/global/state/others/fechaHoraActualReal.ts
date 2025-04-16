@@ -16,9 +16,9 @@ import {
 // Constante para el offset de tiempo (para pruebas)
 // Modificar estos valores para cambiar el offset aplicado a la hora del servidor
 export const TIME_OFFSET = {
-  days: -2,
+  days: 0,
   minutes: 0,
-  hours: -7, // Agregar propiedad 'hours' con un valor predeterminado
+  hours: -8, // Agregar propiedad 'hours' con un valor predeterminado
   seconds: 0,
   enabled: process.env.NODE_ENV === "development", // Habilitar/deshabilitar el offset
 };
@@ -29,6 +29,7 @@ export interface FormatosHora {
   fechaCorta: string;
   horaCompleta: string;
   horaSinSegundos: string;
+  
   // Nuevos formatos
   fechaLegible: string; // Ejemplo: "Lunes, 15 de Enero de 2024"
   fechaNumericaCorta: string; // Ejemplo: "15/01/2024"

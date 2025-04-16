@@ -9,9 +9,12 @@ import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { ErrorDetailsForLogout } from "@/interfaces/LogoutTypes";
 import { RolBoton } from "@/components/shared/buttons/RolButton";
+import { useTransitionRouter } from "next-view-transitions";
+import getRandomSIU01IntanceURL from "@/lib/helpers/functions/getRandomSIU01IntanceURL";
 
 const SeleccionRoles = () => {
   const searchParams = useSearchParams();
+  const router = useTransitionRouter();
 
   useEffect(() => {
     // Obtener los parámetros de la URL
@@ -66,42 +69,64 @@ const SeleccionRoles = () => {
 
         <div className="flex flex-row items-center justify-center max-w-full flex-wrap max-lg:short-height:gap-x-[3vw] max-sm:gap-x-[6vw] sm-only:gap-x-[min(2vw,2rem)] md-only:gap-x-[3rem] lg-only:gap-x-[3rem] xl-only:gap-x-[4rem] max-lg:short-height:gap-y-[3vh] max-sm:gap-y-[1rem] sm-only:gap-y-[1rem] md-only:gap-y-[1.3rem] lg-only:gap-y-[1.3rem] xl-only:gap-y-[2rem] md-only:mt-2 lg-only:mt-2 xl-only:mt-4">
           <RolBoton
-            path="/login/directivo"
+            className=""
+            onClick={() => {
+              router.push(getRandomSIU01IntanceURL() + "/login/directivo");
+            }}
             icon={
               <DirectivoIcon className="max-lg:short-height:h-[7.5vh] max-sm:w-[1.7rem] sm-only:w-[1.85rem] md-only:w-[2rem] lg-only:w-[2.6rem] xl-only:w-[3.4rem] text-negro" />
             }
             rol="Directivo"
           />
           <RolBoton
-            path="/login/profesor-primaria"
+            className=""
+            onClick={() => {
+              router.push(
+                getRandomSIU01IntanceURL() + "/login/profesor-primaria"
+              );
+            }}
             icon={
               <ProfesorPrimariaIcon className="max-lg:short-height:h-[7.5vh] max-sm:w-[1.65rem] sm-only:w-[2.1rem] md-only:w-[2rem] lg-only:w-[2.4rem] xl-only:w-[3rem] text-negro" />
             }
             rol="Profesor (Primaria)"
           />
           <RolBoton
-            path="/login/auxiliar"
+            className=""
+            onClick={() => {
+              router.push(getRandomSIU01IntanceURL() + "/login/auxiliar");
+            }}
             icon={
               <AuxiliarIcon className="max-lg:short-height:h-[7.75vh] max-sm:w-[1.55rem] sm-only:w-[1.7rem] md-only:w-[1.75rem] lg-only:w-[2rem] xl-only:w-[2.5rem] text-negro" />
             }
             rol="Auxiliar"
           />
           <RolBoton
-            path="/login/profesor-tutor-secundaria"
+            className=""
+            onClick={() => {
+              router.push(
+                getRandomSIU01IntanceURL() + "/login/profesor-tutor-secundaria"
+              );
+            }}
             icon={
               <ProfesorOTutorIcon className="max-lg:short-height:h-[7vh] max-sm:w-[1.5rem] sm-only:w-[1.7rem] md-only:w-[2rem] lg-only:w-[2rem] xl-only:w-[2.5rem] text-negro" />
             }
             rol="Profesor/Tutor (Secundaria)"
           />
           <RolBoton
-            path="/login/responsable"
+            className=""
+            onClick={() => {
+              router.push(getRandomSIU01IntanceURL() + "/login/responsable");
+            }}
             icon={
               <ResponsableIcon className="max-lg:short-height:h-[8vh] max-sm:w-[1.5rem] sm-only:w-[1.7rem] md-only:w-[1.7rem] lg-only:w-[1.9rem] xl-only:w-[2.3rem] text-negro" />
             }
             rol="Responsable (Padre/Apoderado)"
           />
           <RolBoton
-            path="/login/personal-administrativo"
+            className=""
+            onClick={() => {
+              router.push(getRandomSIU01IntanceURL() + "/login/responsable");
+            }}
             icon={
               <PersonasGenericasIcon className="max-lg:short-height:h-[8vh] max-sm:w-[1.65rem] sm-only:w-[1.9rem] md-only:w-[2rem] lg-only:w-[2.5rem] xl-only:w-[3rem] text-negro" />
             }

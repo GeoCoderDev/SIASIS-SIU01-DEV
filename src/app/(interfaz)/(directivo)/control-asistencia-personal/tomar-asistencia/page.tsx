@@ -408,6 +408,7 @@ const TomarAsistenciaPersonal = () => {
     <>
       {showFullScreenModalAsistenciaPersonal && (
         <FullScreenModalAsistenciaPersonal
+          fechaHoraActual={fechaHoraActual}
           closeFullScreenModal={() => {
             setShowFullScreenModalAsistenciaPersonal(false);
           }}
