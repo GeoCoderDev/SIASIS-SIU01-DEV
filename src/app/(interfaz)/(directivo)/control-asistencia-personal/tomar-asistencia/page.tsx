@@ -24,14 +24,16 @@ const TomarAsistenciaPersonal = () => {
   const [
     showFullScreenModalAsistenciaPersonal,
     setShowFullScreenModalAsistenciaPersonal,
-  ] = useState(false);
+  ] = useState(true);
 
   const fechaHoraActual = useSelector(
     (state: RootState) => state.others.fechaHoraActualReal
   );
 
-  const [datosAsistenciaHoyDirectivo, setDatosAsistenciaHoyDirectivo] =
-    useState<null | HandlerDirectivoAsistenciaResponse>();
+  const [
+    handlerDatosAsistenciaHoyDirectivo,
+    setHandlerDatosAsistenciaHoyDirectivo,
+  ] = useState<null | HandlerDirectivoAsistenciaResponse>(null);
 
   const [sincronizando, setSincronizando] = useState(false);
   const [inicioRegistro, setInicioRegistro] = useState(false);
@@ -39,14 +41,15 @@ const TomarAsistenciaPersonal = () => {
 
   const fetchDataAsistence = async () => {
     setSincronizando(true);
-    setDatosAsistenciaHoyDirectivo(null);
+    setHandlerDatosAsistenciaHoyDirectivo(null);
 
     try {
       const datosAsistenciaHoyDirectivoIDB = new DatosAsistenciaHoyIDB();
+
       const handlerDirectivoAsistenciaResponse =
         (await datosAsistenciaHoyDirectivoIDB.getHandler()) as HandlerDirectivoAsistenciaResponse;
 
-      setDatosAsistenciaHoyDirectivo(handlerDirectivoAsistenciaResponse);
+      setHandlerDatosAsistenciaHoyDirectivo(handlerDirectivoAsistenciaResponse);
     } catch (error) {
       console.error("Error al obtener datos de asistencia:", error);
     } finally {
@@ -67,11 +70,12 @@ const TomarAsistenciaPersonal = () => {
 
   // Efecto para verificar si necesitamos actualizar los datos cuando cambia el día
   useEffect(() => {
-    if (!datosAsistenciaHoyDirectivo || !fechaHoraActual.utilidades) return;
+    if (!handlerDatosAsistenciaHoyDirectivo || !fechaHoraActual.utilidades)
+      return;
 
     // Verificamos si los datos son de un día anterior y ya pasó la hora de sincronización
     const fechaDatosAsistencia = new Date(
-      datosAsistenciaHoyDirectivo.getFechaLocalPeru()
+      handlerDatosAsistenciaHoyDirectivo.getFechaLocalPeru()
     );
     const diaDatosAsistencia = fechaDatosAsistencia.getDate();
     const diaActual = fechaHoraActual.utilidades.diaMes;
@@ -91,40 +95,42 @@ const TomarAsistenciaPersonal = () => {
       haySincronizacionDatos &&
       diaDatosAsistencia !== diaActual &&
       !esFinDeSemana &&
-      !datosAsistenciaHoyDirectivo.esHoyDiaDeEvento()
+      !handlerDatosAsistenciaHoyDirectivo.esHoyDiaDeEvento()
     ) {
       console.log("Detectado cambio de día, actualizando datos...");
       fetchDataAsistence();
     }
   }, [
     haySincronizacionDatos,
-    datosAsistenciaHoyDirectivo,
+    handlerDatosAsistenciaHoyDirectivo,
     fechaHoraActual.utilidades,
   ]);
 
   // Procesamos las fechas y horas solo si tenemos los datos disponibles
-  const fechaHoraInicioAsistencia = datosAsistenciaHoyDirectivo
+  const fechaHoraInicioAsistencia = handlerDatosAsistenciaHoyDirectivo
     ? new Date(
         alterarUTCaZonaPeruana(
           String(
-            datosAsistenciaHoyDirectivo.getHorarioTomaAsistenciaGeneral().Inicio
+            handlerDatosAsistenciaHoyDirectivo.getHorarioTomaAsistenciaGeneral()
+              .Inicio
           )
         )
       )
     : null;
 
-  const fechaHoraCierreAsistencia = datosAsistenciaHoyDirectivo
+  const fechaHoraCierreAsistencia = handlerDatosAsistenciaHoyDirectivo
     ? new Date(
         alterarUTCaZonaPeruana(
           String(
-            datosAsistenciaHoyDirectivo.getHorarioTomaAsistenciaGeneral().Fin
+            handlerDatosAsistenciaHoyDirectivo.getHorarioTomaAsistenciaGeneral()
+              .Fin
           )
         )
       )
     : null;
 
   const tiempoRestanteParaInicioAsistencia = useSelector((state: RootState) =>
-    datosAsistenciaHoyDirectivo && fechaHoraInicioAsistencia
+    handlerDatosAsistenciaHoyDirectivo && fechaHoraInicioAsistencia
       ? tiempoRestanteHasta(
           { fechaHoraActualReal: state.others.fechaHoraActualReal },
           fechaHoraInicioAsistencia
@@ -133,7 +139,7 @@ const TomarAsistenciaPersonal = () => {
   );
 
   const tiempoRestanteParaCierreAsistencia = useSelector((state: RootState) =>
-    datosAsistenciaHoyDirectivo && fechaHoraCierreAsistencia
+    handlerDatosAsistenciaHoyDirectivo && fechaHoraCierreAsistencia
       ? tiempoRestanteHasta(
           { fechaHoraActualReal: state.others.fechaHoraActualReal },
           fechaHoraCierreAsistencia
@@ -156,7 +162,7 @@ const TomarAsistenciaPersonal = () => {
 
   // Función para formatear fecha de evento
   const formatearFechaEvento = (fecha: Date) => {
-    const fechaObj = new Date(fecha);
+    const fechaObj = new Date(alterarUTCaZonaPeruana(String(fecha)));
     return `${fechaObj.getDate()} de ${
       mesesTextos[(fechaObj.getMonth() + 1) as Meses]
     } de ${fechaObj.getFullYear()}`;
@@ -175,11 +181,11 @@ const TomarAsistenciaPersonal = () => {
   const determinarEstadoSistema = () => {
     // Verificamos primero si es un día de evento (feriado, celebración, etc.)
     if (
-      datosAsistenciaHoyDirectivo &&
-      datosAsistenciaHoyDirectivo.esHoyDiaDeEvento()
+      handlerDatosAsistenciaHoyDirectivo &&
+      handlerDatosAsistenciaHoyDirectivo.esHoyDiaDeEvento()
     ) {
       const eventoInfo =
-        datosAsistenciaHoyDirectivo.esHoyDiaDeEvento() as T_Eventos;
+        handlerDatosAsistenciaHoyDirectivo.esHoyDiaDeEvento() as T_Eventos;
       return {
         estado: "evento",
         mensaje: "Día no laborable",
@@ -225,7 +231,7 @@ const TomarAsistenciaPersonal = () => {
 
     // Si no tenemos datos aún
     if (
-      !datosAsistenciaHoyDirectivo ||
+      !handlerDatosAsistenciaHoyDirectivo ||
       !tiempoRestanteParaInicioAsistencia ||
       !tiempoRestanteParaCierreAsistencia ||
       !fechaHoraActual.utilidades
@@ -258,7 +264,7 @@ const TomarAsistenciaPersonal = () => {
     // Verificamos si la fecha de datos de asistencia es de un día anterior
     const fechaActual = new Date(fechaHoraActual.fechaHora!);
     const fechaDatosAsistencia = new Date(
-      datosAsistenciaHoyDirectivo.getFechaLocalPeru()
+      handlerDatosAsistenciaHoyDirectivo.getFechaLocalPeru()
     );
     const esNuevoDia = fechaDatosAsistencia.getDate() !== fechaActual.getDate();
 
@@ -311,7 +317,8 @@ const TomarAsistenciaPersonal = () => {
         mensaje: "Registro de asistencia cerrado",
         descripcion: `El período de registro finalizó a las ${formatearISOaFormato12Horas(
           String(
-            datosAsistenciaHoyDirectivo.getHorarioTomaAsistenciaGeneral().Fin!
+            handlerDatosAsistenciaHoyDirectivo.getHorarioTomaAsistenciaGeneral()
+              .Fin!
           )
         )}`,
         tiempoRestante: null,
@@ -329,7 +336,8 @@ const TomarAsistenciaPersonal = () => {
       mensaje: "Sistema listo para registro",
       descripcion: `El registro estará disponible hasta las ${formatearISOaFormato12Horas(
         String(
-          datosAsistenciaHoyDirectivo.getHorarioTomaAsistenciaGeneral().Fin!
+          handlerDatosAsistenciaHoyDirectivo.getHorarioTomaAsistenciaGeneral()
+            .Fin!
         )
       )}`,
       tiempoRestante: tiempoRestanteParaCierreAsistencia.formateado,
@@ -406,15 +414,25 @@ const TomarAsistenciaPersonal = () => {
 
   return (
     <>
-      {showFullScreenModalAsistenciaPersonal && (
-        <FullScreenModalAsistenciaPersonal
-          fechaHoraActual={fechaHoraActual}
-          closeFullScreenModal={() => {
-            setShowFullScreenModalAsistenciaPersonal(false);
-          }}
-        />
-      )}
-      <div className="w-full max-w-3xl mx-auto scale-80 transform origin-top">
+      {showFullScreenModalAsistenciaPersonal &&
+        handlerDatosAsistenciaHoyDirectivo && (
+          <FullScreenModalAsistenciaPersonal
+            handlerDatosAsistenciaHoyDirectivo={
+              handlerDatosAsistenciaHoyDirectivo
+            }
+            tiempoRestante={tiempoRestanteParaCierreAsistencia}
+            fechaHoraActual={fechaHoraActual}
+            closeFullScreenModal={() => {
+              setShowFullScreenModalAsistenciaPersonal(false);
+            }}
+          />
+        )}
+      <div
+        className={`w-full max-w-3xl mx-auto scale-80 transform origin-top ${
+          showFullScreenModalAsistenciaPersonal &&
+          "transition-all hidden overflow-hidden"
+        }`}
+      >
         <div className="text-center mb-3">
           <h1 className="text-xl sm-only:text-2xl md-only:text-2xl lg-only:text-2xl font-semibold text-gray-800">
             Registro de Asistencia Diaria
@@ -493,11 +511,11 @@ const TomarAsistenciaPersonal = () => {
                   {estadoSistema.etiquetaPersonal}
                 </p>
                 <p className="text-sm font-bold text-gray-800">
-                  {datosAsistenciaHoyDirectivo
+                  {handlerDatosAsistenciaHoyDirectivo
                     ? `${
-                        datosAsistenciaHoyDirectivo.getTotalPersonalAdministrativo() +
-                        datosAsistenciaHoyDirectivo.getTotalProfesoresPrimaria() +
-                        datosAsistenciaHoyDirectivo.getTotalProfesoresSecundaria()
+                        handlerDatosAsistenciaHoyDirectivo.getTotalPersonalAdministrativo() +
+                        handlerDatosAsistenciaHoyDirectivo.getTotalProfesoresPrimaria() +
+                        handlerDatosAsistenciaHoyDirectivo.getTotalProfesoresSecundaria()
                       } miembros`
                     : "Cargando..."}
                 </p>
@@ -628,7 +646,7 @@ const TomarAsistenciaPersonal = () => {
                       <strong>
                         {formatearISOaFormato12Horas(
                           String(
-                            datosAsistenciaHoyDirectivo!.getHorarioTomaAsistenciaGeneral()
+                            handlerDatosAsistenciaHoyDirectivo!.getHorarioTomaAsistenciaGeneral()
                               .Fin!
                           )
                         )}

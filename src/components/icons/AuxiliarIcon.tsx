@@ -1,10 +1,10 @@
 import { IconProps } from "@/interfaces/IconProps";
 
-const AuxiliarIcon = ({className}:IconProps) => {
+const AuxiliarIcon = ({ className }: IconProps) => {
   return (
-    <div>
+    <div className="text-inherit">
       <svg
-        className={` ${className}`}
+        className={`text-inherit ${className}`}
         viewBox="0 0 38 46"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"

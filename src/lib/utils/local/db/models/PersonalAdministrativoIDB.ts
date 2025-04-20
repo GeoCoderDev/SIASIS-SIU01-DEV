@@ -19,7 +19,7 @@ import { SiasisAPIS } from "@/interfaces/shared/SiasisComponents";
 import comprobarSincronizacionDeTabla from "@/lib/helpers/validations/comprobarSincronizacionDeTabla";
 import fetchSiasisApiGenerator from "@/lib/helpers/generators/fetchSiasisApisGenerator";
 import ultimaActualizacionTablasLocalesIDB from "./UltimaActualizacionTablasLocalesIDB";
-import { DatabaseModificationOperations } from "@/interfaces/shared/DatabaseModificatioOperations";
+import { DatabaseModificationOperations } from "@/interfaces/shared/DatabaseModificationOperations";
 import { GetPersonalAdministrativoSuccessResponse } from "@/interfaces/shared/apis/api01/personal-administrativo/types";
 
 // Tipo para la entidad (sin atributos de fechas)
@@ -110,7 +110,8 @@ export class PersonalAdministrativoIDB {
       }
 
       // Extraer el personal administrativo del cuerpo de la respuesta
-      const { data: personalAdministrativo } = objectResponse as GetPersonalAdministrativoSuccessResponse;
+      const { data: personalAdministrativo } =
+        objectResponse as GetPersonalAdministrativoSuccessResponse;
 
       // Actualizar personal administrativo en la base de datos local
       const result = await this.upsertFromServer(personalAdministrativo);
@@ -240,13 +241,14 @@ export class PersonalAdministrativoIDB {
   private async getAllDNIs(): Promise<string[]> {
     try {
       const store = await IndexedDBConnection.getStore(this.nombreTablaLocal);
-      
+
       return new Promise<string[]>((resolve, reject) => {
         const dnis: string[] = [];
         const request = store.openCursor();
-        
+
         request.onsuccess = (event) => {
-          const cursor = (event.target as IDBRequest).result as IDBCursorWithValue;
+          const cursor = (event.target as IDBRequest)
+            .result as IDBCursorWithValue;
           if (cursor) {
             // Añadir el DNI del personal administrativo actual
             dnis.push(cursor.value.DNI_Personal_Administrativo);
@@ -256,13 +258,16 @@ export class PersonalAdministrativoIDB {
             resolve(dnis);
           }
         };
-        
+
         request.onerror = () => {
           reject(request.error);
         };
       });
     } catch (error) {
-      console.error("Error al obtener todos los DNIs del personal administrativo:", error);
+      console.error(
+        "Error al obtener todos los DNIs del personal administrativo:",
+        error
+      );
       throw error;
     }
   }
@@ -278,20 +283,23 @@ export class PersonalAdministrativoIDB {
         this.nombreTablaLocal,
         "readwrite"
       );
-      
+
       return new Promise<void>((resolve, reject) => {
         const request = store.delete(dni);
-        
+
         request.onsuccess = () => {
           resolve();
         };
-        
+
         request.onerror = () => {
           reject(request.error);
         };
       });
     } catch (error) {
-      console.error(`Error al eliminar personal administrativo con DNI ${dni}:`, error);
+      console.error(
+        `Error al eliminar personal administrativo con DNI ${dni}:`,
+        error
+      );
       throw error;
     }
   }
@@ -304,34 +312,42 @@ export class PersonalAdministrativoIDB {
    */
   private async upsertFromServer(
     personalAdministrativoServidor: PersonalAdministrativoSinContraseña[]
-  ): Promise<{ created: number; updated: number; deleted: number; errors: number }> {
+  ): Promise<{
+    created: number;
+    updated: number;
+    deleted: number;
+    errors: number;
+  }> {
     const result = { created: 0, updated: 0, deleted: 0, errors: 0 };
 
     try {
       // 1. Obtener los DNIs actuales en caché
       const dnisLocales = await this.getAllDNIs();
-      
+
       // 2. Crear conjunto de DNIs del servidor para búsqueda rápida
       const dnisServidor = new Set(
         personalAdministrativoServidor.map(
           (personal) => personal.DNI_Personal_Administrativo
         )
       );
-      
+
       // 3. Identificar DNIs que ya no existen en el servidor
-      const dnisAEliminar = dnisLocales.filter(dni => !dnisServidor.has(dni));
-      
+      const dnisAEliminar = dnisLocales.filter((dni) => !dnisServidor.has(dni));
+
       // 4. Eliminar registros que ya no existen en el servidor
       for (const dni of dnisAEliminar) {
         try {
           await this.deleteByDNI(dni);
           result.deleted++;
         } catch (error) {
-          console.error(`Error al eliminar personal administrativo ${dni}:`, error);
+          console.error(
+            `Error al eliminar personal administrativo ${dni}:`,
+            error
+          );
           result.errors++;
         }
       }
-      
+
       // 5. Procesar en lotes para evitar transacciones demasiado largas
       const BATCH_SIZE = 20;
 

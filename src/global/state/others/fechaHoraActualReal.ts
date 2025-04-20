@@ -18,7 +18,7 @@ import {
 export const TIME_OFFSET = {
   days: 0,
   minutes: 0,
-  hours: -8, // Agregar propiedad 'hours' con un valor predeterminado
+  hours: 0, // Agregar propiedad 'hours' con un valor predeterminado
   seconds: 0,
   enabled: process.env.NODE_ENV === "development", // Habilitar/deshabilitar el offset
 };
@@ -29,7 +29,7 @@ export interface FormatosHora {
   fechaCorta: string;
   horaCompleta: string;
   horaSinSegundos: string;
-  
+
   // Nuevos formatos
   fechaLegible: string; // Ejemplo: "Lunes, 15 de Enero de 2024"
   fechaNumericaCorta: string; // Ejemplo: "15/01/2024"
@@ -145,7 +145,7 @@ export const obtenerTrimestre = (fecha: Date): number => {
 export const esMismoDia = (fecha1: Date, fecha2: Date): boolean => {
   return (
     fecha1.getFullYear() === fecha2.getFullYear() &&
-    fecha1.getMonth() === fecha2.getMonth() &&
+    fecha1.getMonth() === fecha2.getMonth() + 1 &&
     fecha1.getDate() === fecha2.getDate()
   );
 };
@@ -230,7 +230,7 @@ const actualizarFormatosYUtilidades = (state: FechaHoraActualRealState) => {
     fechaLegible: `${
       diasSemanaTextos[fechaHoraDate.getDay() as DiasSemana]
     }, ${fechaHoraDate.getDate()} de ${
-      mesesTextos[fechaHoraDate.getMonth() as Meses]
+      mesesTextos[(fechaHoraDate.getMonth() + 1) as Meses]
     } de ${fechaHoraDate.getFullYear()}`,
 
     fechaNumericaCorta: `${fechaHoraDate
@@ -250,7 +250,7 @@ const actualizarFormatosYUtilidades = (state: FechaHoraActualRealState) => {
   // Obtener datos adicionales de la fecha
   const diaSemanaIndice = fechaHoraDate.getDay() as DiasSemana;
   const diaMes = fechaHoraDate.getDate();
-  const mesIndice = fechaHoraDate.getMonth() as Meses;
+  const mesIndice = (fechaHoraDate.getMonth() + 1) as Meses;
   const año = fechaHoraDate.getFullYear();
   const hora = fechaHoraDate.getHours();
   const minutos = fechaHoraDate.getMinutes();
@@ -344,7 +344,7 @@ const fechaHoraActualRealSlice = createSlice({
     avanzarMes: (state, action: PayloadAction<ReduxPayload<number>>) => {
       if (state.fechaHora) {
         const fechaActual = new Date(state.fechaHora);
-        fechaActual.setMonth(fechaActual.getMonth() + action.payload.value);
+        fechaActual.setMonth(fechaActual.getMonth() + 1 + action.payload.value);
         state.fechaHora = fechaActual.toISOString();
         actualizarFormatosYUtilidades(state);
       }

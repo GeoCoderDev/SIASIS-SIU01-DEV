@@ -1,10 +1,10 @@
 import { IconProps } from "@/interfaces/IconProps";
 
-const DirectivoIcon = ({ className }: IconProps) => {
+const DirectivoIcon = ({ className, title }: IconProps) => {
   return (
-    <div>
+    <div title={title}>
       <svg
-        className={` ${className}`}
+        className={`text-inherit ${className}`}
         viewBox="0 0 44 41"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"

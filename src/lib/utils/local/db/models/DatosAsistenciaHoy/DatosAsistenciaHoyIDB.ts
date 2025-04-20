@@ -299,13 +299,12 @@ export class DatosAsistenciaHoyIDB {
         if (storedData && storedData.rol) {
           return storedData.datos as T;
         }
-
         return null; // No hay datos válidos para hoy (fin de semana)
       }
 
       if (
         !storedData ||
-        !this.esMismoDia(storedData.fechaGuardado, fechaHoyISO)
+        !this.esMismoDia(String(storedData.datos.FechaLocalPeru), fechaHoyISO)
       ) {
         const freshData = await this.fetchDatosFromServer();
         await this.guardarDatosInterno(freshData);

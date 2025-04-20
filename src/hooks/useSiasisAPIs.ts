@@ -10,6 +10,8 @@ import { logout } from "@/lib/helpers/logout";
 import { FetchCancelable } from "@/lib/utils/FetchCancellable";
 import { LogoutTypes } from "@/interfaces/LogoutTypes";
 import { SiasisAPIS } from "@/interfaces/shared/SiasisComponents";
+import getAPI01InstanceForRol from "@/lib/helpers/functions/getAPI01InstanceForRole";
+import { RolesSistema } from "@/interfaces/shared/RolesSistema";
 
 interface FetchSiasisAPIs {
   endpoint: string;
@@ -20,9 +22,22 @@ interface FetchSiasisAPIs {
   userAutheticated?: boolean;
 }
 
-const useSiasisAPIs = (siasisAPI: SiasisAPIS) => {
+/**
+ * Este hook recibe 2 parametros, el primero es la api a usar
+ * @param siasisAPI 
+ * @param loggedUserRolForAPI01 
+ * @returns 
+ */
+const useSiasisAPIs = (
+  siasisAPI: SiasisAPIS,
+  loggedUserRolForAPI01?: RolesSistema
+) => {
   const urlAPI =
-    siasisAPI === "API01" ? getRandomAPI01IntanceURL : getRandomAPI02IntanceURL;
+    siasisAPI === "API01"
+      ? !loggedUserRolForAPI01
+        ? getRandomAPI01IntanceURL
+        : getAPI01InstanceForRol
+      : getRandomAPI02IntanceURL;
 
   const [fetchCancelables, setFetchCancelables] = useState<FetchCancelable[]>(
     []
@@ -69,7 +84,7 @@ const useSiasisAPIs = (siasisAPI: SiasisAPIS) => {
 
       // Crear la instancia FetchCancelable
       const fetchCancelable = new FetchCancelable(
-        `${urlAPI()}${endpoint}`,
+        `${urlAPI(loggedUserRolForAPI01!)}${endpoint}`,
         {
           method,
           headers,

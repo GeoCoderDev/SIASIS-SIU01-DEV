@@ -9,6 +9,7 @@ export enum LogoutTypes {
   ERROR_RED = "ERROR_RED",
   ERROR_DATOS_CORRUPTOS = "ERROR_DATOS_CORRUPTOS",
   ERROR_PARSEO = "ERROR_PARSEO",
+  PERMISOS_INSUFICIENTES = "PERMISOS_INSUFICIENTES",
 }
 
 export interface ErrorDetailsForLogout {

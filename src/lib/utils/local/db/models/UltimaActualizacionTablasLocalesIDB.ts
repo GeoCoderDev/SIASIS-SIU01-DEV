@@ -3,7 +3,7 @@ import TablasSistema, {
   TablasLocal,
   ITablaInfo,
 } from "../../../../../interfaces/shared/TablasSistema";
-import { DatabaseModificationOperations } from "../../../../../interfaces/shared/DatabaseModificatioOperations";
+import { DatabaseModificationOperations } from "../../../../../interfaces/shared/DatabaseModificationOperations";
 import { logout } from "@/lib/helpers/logout";
 import { LogoutTypes } from "@/interfaces/LogoutTypes";
 

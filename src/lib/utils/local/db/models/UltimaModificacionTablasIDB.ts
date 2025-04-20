@@ -4,7 +4,7 @@ import TablasSistema, {
   TablasRemoto,
   ITablaInfo,
 } from "../../../../../interfaces/shared/TablasSistema";
-import { DatabaseModificationOperations } from "../../../../../interfaces/shared/DatabaseModificatioOperations";
+import { DatabaseModificationOperations } from "../../../../../interfaces/shared/DatabaseModificationOperations";
 import { T_Ultima_Modificacion_Tablas } from "@prisma/client";
 
 import { logout } from "@/lib/helpers/logout";

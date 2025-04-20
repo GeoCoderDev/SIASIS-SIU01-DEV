@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
 
 import { LogoutTypes, ErrorDetailsForLogout } from "@/interfaces/LogoutTypes";
 import { RolesSistema } from "@/interfaces/shared/RolesSistema";
-import { JWTPayload } from "@/interfaces/shared/JWTPayload";
 import { NOMBRE_ARCHIVO_CON_DATOS_ASISTENCIA_DIARIOS } from "@/constants/NOMBRE_ARCHIVOS_EN_BLOBS";
-import { borrarCookiesDeSesion } from "../auth/close/_utils/borrarCookiesDeSesion";
-import { formatErrorDetailsForUrl } from "@/lib/helpers/parsers/errorDetailsInURL";
 import {
   AuxiliarAsistenciaResponse,
   BaseAsistenciaResponse,
@@ -19,147 +15,91 @@ import {
 } from "@/interfaces/shared/Asistencia/DatosAsistenciaHoyIE20935";
 
 import { NivelEducativo } from "@/interfaces/shared/NivelEducativo";
+import { verifyAuthToken } from "@/lib/utils/backend/auth/functions/jwtComprobations";
+import { redirectToLogin } from "@/lib/utils/backend/auth/functions/redirectToLogin";
 
 export async function GET(req: NextRequest) {
   try {
-    // Obtener cookies
-    const token = req.cookies.get("token")?.value;
-    const rol = req.cookies.get("Rol")?.value as RolesSistema | undefined;
+    const { decodedToken, rol, error } = await verifyAuthToken(req);
 
-    // Verificar si existen las cookies necesarias
-    if (!token || !rol) {
-      return redirectToLogin(LogoutTypes.SESION_EXPIRADA, {
-        mensaje: "Sesión no encontrada",
-        origen: "api/obtenerDatosAsistencia",
-      });
-    }
-
-    // Seleccionar la clave JWT correcta según el rol
-    const jwtKey = getJwtKeyForRole(rol);
-    if (!jwtKey) {
-      return redirectToLogin(LogoutTypes.ERROR_DATOS_CORRUPTOS, {
-        mensaje: "Configuración de seguridad inválida",
-        origen: "api/obtenerDatosAsistencia",
-      });
-    }
-
-    // Decodificar el token JWT
-    let decodedToken: JWTPayload;
-    try {
-      decodedToken = jwt.verify(token, jwtKey) as JWTPayload;
-    } catch (error) {
-      console.log(error);
-      return redirectToLogin(LogoutTypes.ERROR_DATOS_CORRUPTOS, {
-        mensaje: "Token de seguridad inválido",
-        origen: "api/obtenerDatosAsistencia",
-        siasisComponent: "SIU01",
-      });
-    }
-
-    // Verificar que el rol en el token coincida con el rol en la cookie
-    if (decodedToken.Rol !== rol) {
-      return redirectToLogin(LogoutTypes.ERROR_DATOS_CORRUPTOS, {
-        mensaje: "Datos de sesión inconsistentes",
-        origen: "api/obtenerDatosAsistencia",
-        contexto: "Rol en token no coincide con rol en cookie",
-      });
-    }
+    if (error) return error;
 
     // Una vez autenticado correctamente, obtener los datos del blob
     // Modificar el bloque try-catch para la obtención de datos del blob
-    try {
-      // Usar la URL de descarga segura para obtener el contenido
-      const response = await fetch(
-        `${process.env
-          .THIS_INSTANCE_VERCEL_BLOB_BASE_URL!}/${NOMBRE_ARCHIVO_CON_DATOS_ASISTENCIA_DIARIOS}`
+
+    const response = await fetch(
+      `${process.env
+        .RDP04_THIS_INSTANCE_VERCEL_BLOB_BASE_URL!}/${NOMBRE_ARCHIVO_CON_DATOS_ASISTENCIA_DIARIOS}`
+    );
+
+    //Se procede a buscar el respaldo de datos de asistencia de hoy de Google Drive
+
+    // const response = await fetch(
+    //   "https://drive.google.com/uc?export=download&id=11PncPCPnndt15GbWwSuxHzgESRpmYFlk"
+    // );
+
+    if (!response.ok) {
+      throw new Error(
+        `Error en la respuesta del servidor: ${response.status} ${response.statusText}`
       );
-
-      //Se procede a buscar el respaldo de datos de asistencia de hoy de Google Drive
-            
-      // const response = await fetch(
-      //   "https://drive.google.com/uc?export=download&id=11PncPCPnndt15GbWwSuxHzgESRpmYFlk"
-      // );
-
-      if (!response.ok) {
-        throw new Error(
-          `Error en la respuesta del servidor: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const datosCompletos =
-        (await response.json()) as DatosAsistenciaHoyIE20935;
-
-      // Filtrar datos según el rol
-      const datosFiltrados = filtrarDatosSegunRol(
-        datosCompletos,
-        rol,
-        decodedToken.ID_Usuario
-      );
-
-      // Devolver los datos filtrados
-      return NextResponse.json(datosFiltrados);
-    } catch (error) {
-      console.error("Error al obtener datos de asistencia:", error);
-      // Determinar el tipo de error
-      let logoutType = LogoutTypes.ERROR_SISTEMA;
-      const errorDetails: ErrorDetailsForLogout = {
-        mensaje: "Error al recuperar datos de asistencia",
-        origen: "api/datos-asistencia-hoy",
-        timestamp: Date.now(),
-        siasisComponent: "RDP04",
-      };
-
-      if (error instanceof Error) {
-        // Si es un error de red o problemas de conexión
-        if (
-          error.message.includes("fetch") ||
-          error.message.includes("network") ||
-          error.message.includes("ECONNREFUSED") ||
-          error.message.includes("timeout")
-        ) {
-          logoutType = LogoutTypes.ERROR_RED;
-          errorDetails.mensaje =
-            "Error de conexión al obtener datos de asistencia";
-        }
-        // Si es un error de parseo de JSON
-        else if (
-          error.message.includes("JSON") ||
-          error.message.includes("parse")
-        ) {
-          logoutType = LogoutTypes.ERROR_DATOS_CORRUPTOS;
-          errorDetails.mensaje = "Error al procesar los datos de asistencia";
-          errorDetails.contexto = "Formato de datos inválido";
-        }
-
-        errorDetails.mensaje += `: ${error.message}`;
-      }
-
-      return redirectToLogin(logoutType, errorDetails);
     }
+
+    const datosCompletos = (await response.json()) as DatosAsistenciaHoyIE20935;
+
+    // Filtrar datos según el rol
+    const datosFiltrados = filtrarDatosSegunRol(
+      datosCompletos,
+      rol,
+      decodedToken.ID_Usuario
+    );
+
+    // Devolver los datos filtrados
+    return NextResponse.json(datosFiltrados);
   } catch (error) {
-    console.error("Error general:", error);
-    return redirectToLogin(LogoutTypes.ERROR_SISTEMA, {
-      mensaje: "Error inesperado del sistema",
+    console.error("Error al obtener datos de asistencia:", error);
+    // Determinar el tipo de error
+    let logoutType = LogoutTypes.ERROR_SISTEMA;
+    const errorDetails: ErrorDetailsForLogout = {
+      mensaje: "Error al recuperar datos de asistencia",
       origen: "api/datos-asistencia-hoy",
-    });
+      timestamp: Date.now(),
+      siasisComponent: "RDP04",
+    };
+
+    if (error instanceof Error) {
+      // Si es un error de red o problemas de conexión
+      if (
+        error.message.includes("fetch") ||
+        error.message.includes("network") ||
+        error.message.includes("ECONNREFUSED") ||
+        error.message.includes("timeout")
+      ) {
+        logoutType = LogoutTypes.ERROR_RED;
+        errorDetails.mensaje =
+          "Error de conexión al obtener datos de asistencia";
+      }
+      // Si es un error de parseo de JSON
+      else if (
+        error.message.includes("JSON") ||
+        error.message.includes("parse")
+      ) {
+        logoutType = LogoutTypes.ERROR_DATOS_CORRUPTOS;
+        errorDetails.mensaje = "Error al procesar los datos de asistencia";
+        errorDetails.contexto = "Formato de datos inválido";
+      }
+
+      errorDetails.mensaje += `: ${error.message}`;
+    }
+
+    return redirectToLogin(logoutType, errorDetails);
   }
-}
-
-// Función para obtener la clave JWT según el rol
-function getJwtKeyForRole(rol: RolesSistema): string | undefined {
-  const keys = {
-    [RolesSistema.Directivo]: process.env.JWT_KEY_DIRECTIVOS,
-    [RolesSistema.ProfesorPrimaria]: process.env.JWT_KEY_PROFESORES_PRIMARIA,
-    [RolesSistema.Auxiliar]: process.env.JWT_KEY_AUXILIARES,
-    [RolesSistema.ProfesorSecundaria]:
-      process.env.JWT_KEY_PROFESORES_SECUNDARIA,
-    [RolesSistema.Tutor]: process.env.JWT_KEY_TUTORES,
-    [RolesSistema.Responsable]: process.env.JWT_KEY_RESPONSABLES,
-    [RolesSistema.PersonalAdministrativo]:
-      process.env.JWT_KEY_PERSONAL_ADMINISTRATIVO,
-  };
-
-  return keys[rol];
+  // } catch (error) {
+  //   console.error("Error general:", error);
+  //   return redirectToLogin(LogoutTypes.ERROR_SISTEMA, {
+  //     mensaje: "Error inesperado del sistema",
+  //     origen: "api/datos-asistencia-hoy",
+  //   });
+  // }
 }
 
 // Función para filtrar los datos según el rol
@@ -189,6 +129,7 @@ function filtrarDatosSegunRol(
         ListaDeProfesoresSecundaria: datos.ListaDeProfesoresSecundaria,
         HorariosLaboraresGenerales: datos.HorariosLaboraresGenerales,
         HorariosEscolares: datos.HorariosEscolares,
+        ListaDeAuxiliares: datos.ListaDeAuxiliares,
       } as DirectivoAsistenciaResponse;
 
     case RolesSistema.ProfesorPrimaria:
@@ -257,24 +198,4 @@ function filtrarDatosSegunRol(
       // Por defecto, solo devolver los datos base
       return datosBase;
   }
-}
-
-// Función para eliminar cookies y redirigir a login
-function redirectToLogin(
-  logoutType: LogoutTypes,
-  errorDetails?: ErrorDetailsForLogout
-) {
-  let location = `/login?LOGOUT_TYPE=${logoutType}`;
-
-  if (errorDetails) {
-    location += `&ERROR_DETAILS=${formatErrorDetailsForUrl(errorDetails)}`;
-  }
-
-  return new Response(null, {
-    status: 302,
-    headers: {
-      ...borrarCookiesDeSesion(),
-      Location: location,
-    },
-  });
 }

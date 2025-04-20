@@ -4,7 +4,7 @@ const ProfesorPrimariaIcon = ({ className }: IconProps) => {
   return (
     <div>
       <svg
-        className={` ${className}`}
+        className={`text-inherit ${className}`}
         viewBox="0 0 48 47"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
