@@ -24,7 +24,7 @@ const TomarAsistenciaPersonal = () => {
   const [
     showFullScreenModalAsistenciaPersonal,
     setShowFullScreenModalAsistenciaPersonal,
-  ] = useState(true);
+  ] = useState(process.env.NODE_ENV === "development");
 
   const fechaHoraActual = useSelector(
     (state: RootState) => state.others.fechaHoraActualReal
@@ -40,7 +40,7 @@ const TomarAsistenciaPersonal = () => {
   const [modoFinDeSemana, setModoFinDeSemana] = useState(false);
 
   const fetchDataAsistence = async () => {
-    setSincronizando(process.env.NODE_ENV === "development");
+    setSincronizando(true);
     setHandlerDatosAsistenciaHoyDirectivo(null);
 
     try {
