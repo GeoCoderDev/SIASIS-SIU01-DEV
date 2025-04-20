@@ -40,7 +40,7 @@ const TomarAsistenciaPersonal = () => {
   const [modoFinDeSemana, setModoFinDeSemana] = useState(false);
 
   const fetchDataAsistence = async () => {
-    setSincronizando(true);
+    setSincronizando(process.env.NODE_ENV === "development");
     setHandlerDatosAsistenciaHoyDirectivo(null);
 
     try {
