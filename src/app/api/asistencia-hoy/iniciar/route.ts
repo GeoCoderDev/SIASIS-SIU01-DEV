@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
 
     // Construir la respuesta
     const respuesta: EstadoTomaAsistenciaResponseBody = {
-      Tipo: tipoAsistencia,
+      TipoAsistencia: tipoAsistencia,
       Dia: dia,
       Mes: mes as Meses,
       Anio: anio,
