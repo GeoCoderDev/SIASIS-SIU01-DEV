@@ -1,6 +1,7 @@
 import { SiasisComponent } from "./shared/SiasisComponents";
 
 export enum LogoutTypes {
+  ERROR_DATOS_NO_DISPONIBLES = "ERROR_DATOS_NO_DISPONIBLES",
   DECISION_USUARIO = "DECISION_USUARIO",
   SESION_EXPIRADA = "SESION_EXPIRADA",
   ERROR_SISTEMA = "ERROR_SISTEMA",

@@ -16,7 +16,10 @@ import VolverIcon from "../icons/VolverIcon";
 import { ListaPersonal, obtenerTextoRol } from "./ListadoPersonal";
 import { SeleccionEntradaSalida } from "./SeleccionEntradaSalida";
 import { HandlerDirectivoAsistenciaResponse } from "@/lib/utils/local/db/models/DatosAsistenciaHoy/handlers/HandlerDirectivoAsistenciaResponse";
-import { ModoRegistro } from "@/interfaces/shared/ModoRegistroPersonal";
+import {
+  ModoRegistro,
+  modoRegistroTextos,
+} from "@/interfaces/shared/ModoRegistroPersonal";
 import { RolesSistema } from "@/interfaces/shared/RolesSistema";
 
 const FullScreenModalAsistenciaPersonal = ({
@@ -63,14 +66,14 @@ const FullScreenModalAsistenciaPersonal = ({
   const handleRolSelection = (rol: RolesSistema) => {
     setCargando(true);
 
+    // Audio feedback
+    const speaker = Speaker.getInstance();
+    speaker.start(`Ha seleccionado el rol ${obtenerTextoRol(rol)}`);
+
     // Simulamos una pequeña carga para mejorar la experiencia
     setTimeout(() => {
       setRolSeleccionado(rol);
       setCargando(false);
-
-      // Audio feedback
-      const speaker = Speaker.getInstance();
-      speaker.start(`Ha seleccionado el rol ${obtenerTextoRol(rol)}`);
     }, 300);
   };
 
@@ -78,14 +81,14 @@ const FullScreenModalAsistenciaPersonal = ({
   const handleModoSelection = (modo: ModoRegistro | null) => {
     setCargando(true);
 
+    // Audio feedback
+    const speaker = Speaker.getInstance();
+    speaker.start(`Registrando ${modoRegistroTextos[modo!]}`);
+
     // Simulamos una pequeña carga para mejorar la experiencia
     setTimeout(() => {
       setModoRegistro(modo);
       setCargando(false);
-
-      // Audio feedback
-      const speaker = Speaker.getInstance();
-      speaker.start(`Registrando ${modo}`);
     }, 300);
   };
 

@@ -41,7 +41,6 @@ export interface UtilidadesTiempo {
   minutos: number;
   segundos: number;
   esDiaEscolar: boolean;
-  // Nuevos campos
   diaSemana: string; // Nombre del día (Lunes, Martes, etc)
   diaSemanaCorto: string; // Abreviatura (Lun, Mar, etc)
   diaSemanaIndice: number; // 0-6 (0 = Domingo, 6 = Sábado)

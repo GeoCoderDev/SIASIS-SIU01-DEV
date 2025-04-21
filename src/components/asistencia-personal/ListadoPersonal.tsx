@@ -7,7 +7,7 @@ import {
   modoRegistroTextos,
 } from "@/interfaces/shared/ModoRegistroPersonal";
 import { HandlerDirectivoAsistenciaResponse } from "@/lib/utils/local/db/models/DatosAsistenciaHoy/handlers/HandlerDirectivoAsistenciaResponse";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import {
   RegistrarAsistenciaIndividualRequestBody,
@@ -17,6 +17,9 @@ import { AsistenciaDePersonalIDB } from "../../lib/utils/local/db/models/Asisten
 import { FechaHoraActualRealState } from "@/global/state/others/fechaHoraActualReal";
 import { RolesSistema } from "@/interfaces/shared/RolesSistema";
 import useSiasisAPIs from "@/hooks/useSiasisAPIs";
+import { ActoresSistema } from "@/interfaces/shared/ActoresSistema";
+import { Loader2 } from "lucide-react";
+import { ConsultarAsistenciasDiariasPorActorEnRedisResponseBody } from "@/interfaces/shared/AsistenciaRequests";
 
 // Obtener texto según el rol
 export const obtenerTextoRol = (rol: RolesSistema): string => {
@@ -47,21 +50,81 @@ export const ListaPersonal = ({
   fechaHoraActual: FechaHoraActualRealState;
 }) => {
   const { toast } = useToast();
-  const [procesando, setProcesando] = useState(false);
+  const [procesando, setProcesando] = useState<string | null>(null); // Guarda el DNI que se está procesando
+  const [asistenciasMarcadas, setAsistenciasMarcadas] = useState<string[]>([]);
+  const [cargandoAsistencias, setCargandoAsistencias] = useState(true);
 
   const { fetchSiasisAPI } = useSiasisAPIs("API01", RolesSistema.Directivo);
-  // Obtenemos los datos del personal usando el método que acabamos de crear
+
+  // Obtenemos los datos del personal
   const personal = rol
     ? handlerDatosAsistenciaHoyDirectivo.obtenerPersonalPorRol(rol)
     : [];
+
+  // Cargar las asistencias ya registradas
+  useEffect(() => {
+    const cargarAsistenciasRegistradas = async () => {
+      try {
+        setCargandoAsistencias(true);
+
+        // Mapear el rol de RolesSistema a ActoresSistema
+        let actorParam: ActoresSistema;
+        switch (rol) {
+          case RolesSistema.ProfesorPrimaria:
+            actorParam = ActoresSistema.ProfesorPrimaria;
+            break;
+          case RolesSistema.ProfesorSecundaria:
+          case RolesSistema.Tutor:
+            actorParam = ActoresSistema.ProfesorSecundaria;
+            break;
+          case RolesSistema.Auxiliar:
+            actorParam = ActoresSistema.Auxiliar;
+            break;
+          case RolesSistema.PersonalAdministrativo:
+            actorParam = ActoresSistema.PersonalAdministrativo;
+            break;
+          default:
+            actorParam = ActoresSistema.Auxiliar; // Valor por defecto
+        }
+
+        // Consultar las asistencias ya registradas
+        const response = await fetch(
+          `/api/asistencia-hoy/consultar-redis?Actor=${actorParam}&ModoRegistro=${modoRegistro}`
+        );
+
+        if (response.ok) {
+          const data =
+            (await response.json()) as ConsultarAsistenciasDiariasPorActorEnRedisResponseBody;
+
+          const asistenciaDePersonalIDB = new AsistenciaDePersonalIDB();
+
+          await asistenciaDePersonalIDB.sincronizarAsistenciasDesdeRedis(data);
+
+          // Extraer los DNIs de las personas que ya han marcado asistencia
+          const dnis = data.Resultados.map((resultado) => resultado.DNI);
+          setAsistenciasMarcadas(dnis);
+        } else {
+          console.error("Error al cargar asistencias:", await response.text());
+        }
+      } catch (error) {
+        console.error("Error al consultar asistencias registradas:", error);
+      } finally {
+        setCargandoAsistencias(false);
+      }
+    };
+
+    if (rol && modoRegistro) {
+      cargarAsistenciasRegistradas();
+    }
+  }, [rol, modoRegistro]);
 
   // Manejador para cuando se selecciona una persona
   const handlePersonaSeleccionada = async (
     personal: PersonalParaTomarAsistencia
   ) => {
-    if (procesando) return;
+    if (procesando !== null) return;
 
-    setProcesando(true);
+    setProcesando(personal.DNI); // Establecer el DNI específico que se está procesando
 
     try {
       // Obtener la hora programada usando el método simplificado
@@ -82,17 +145,8 @@ export const ListaPersonal = ({
         ).shift()} ${personal.Apellidos.split(" ").shift()}`
       );
 
-      console.log(
-        JSON.stringify({
-          DNI: personal.DNI,
-          Actor: rol,
-          ModoRegistro: modoRegistro,
-          FechaHoraEsperada: horaEsperada.toISOString(),
-        })
-      );
-
       const fecthCancelable = await fetchSiasisAPI({
-        endpoint: "/api/asistencia/marcar",
+        endpoint: "/api/asistencia-diaria/marcar",
         method: "POST",
         body: JSON.stringify({
           DNI: personal.DNI,
@@ -107,10 +161,11 @@ export const ListaPersonal = ({
 
       const data =
         (await response.json()) as RegistrarAsistenciaIndividualSuccessResponse;
+      console.log(data);
 
-      const asistenciaDePersonal = new AsistenciaDePersonalIDB();
+      const asistenciaDePersonalIDB = new AsistenciaDePersonalIDB();
 
-      await asistenciaDePersonal.marcarAsistencia({
+      await asistenciaDePersonalIDB.marcarAsistencia({
         datos: {
           Rol: rol!,
           Dia: fechaHoraActual.utilidades!.diaMes,
@@ -126,6 +181,9 @@ export const ListaPersonal = ({
       });
 
       if (data.success) {
+        // Actualizar el estado para marcar esta persona como que ya registró asistencia
+        setAsistenciasMarcadas((prev) => [...prev, personal.DNI]);
+
         toast({
           title: "Asistencia registrada",
           description: `${modoRegistro} registrada correctamente`,
@@ -146,7 +204,7 @@ export const ListaPersonal = ({
         variant: "destructive",
       });
     } finally {
-      setProcesando(false);
+      setProcesando(null);
     }
   };
 
@@ -175,8 +233,11 @@ export const ListaPersonal = ({
           Ahora haz clic en tu nombre
         </h3>
 
-        {procesando && (
-          <p className="text-center text-orange-500 mt-1">Procesando...</p>
+        {cargandoAsistencias && (
+          <p className="text-center text-blue-500 mt-1">
+            <Loader2 className="inline-block w-4 h-4 mr-1 animate-spin" />
+            Cargando asistencias registradas...
+          </p>
         )}
       </div>
 
@@ -190,7 +251,12 @@ export const ListaPersonal = ({
                 key={persona.DNI}
                 personal={persona}
                 handlePersonalSeleccionado={handlePersonaSeleccionada}
-                disabled={procesando}
+                disabled={
+                  !cargandoAsistencias &&
+                  asistenciasMarcadas.includes(persona.DNI)
+                }
+                loading={procesando === persona.DNI}
+                globalLoading={cargandoAsistencias} // Pasar el estado de carga global
               />
             ))}
           </div>

@@ -19,6 +19,11 @@ import ThinLoader from "@/components/icons/thinStyle/ThinLoader";
 import ThinInformationIcon from "@/components/icons/thinStyle/ThinInformationIcon";
 import { T_Eventos } from "@prisma/client";
 import FullScreenModalAsistenciaPersonal from "@/components/asistencia-personal/FullScreenModalAsistenciaPersonal";
+import {
+  EstadoTomaAsistenciaResponseBody,
+  IniciarTomaAsistenciaRequestBody,
+  TipoAsistencia,
+} from "@/interfaces/shared/AsistenciaRequests";
 
 const TomarAsistenciaPersonal = () => {
   const [
@@ -36,7 +41,8 @@ const TomarAsistenciaPersonal = () => {
   ] = useState<null | HandlerDirectivoAsistenciaResponse>(null);
 
   const [sincronizando, setSincronizando] = useState(false);
-  const [inicioRegistro, setInicioRegistro] = useState(false);
+  const [estadoTomaAsistenciaDePersonal, setEstadoTomaAsistenciaDePersonal] =
+    useState<EstadoTomaAsistenciaResponseBody | null>(null);
   const [modoFinDeSemana, setModoFinDeSemana] = useState(false);
 
   const fetchDataAsistence = async () => {
@@ -65,6 +71,7 @@ const TomarAsistenciaPersonal = () => {
   // Carga inicial al montar el componente
   useEffect(() => {
     if (!fechaHoraActual.inicializado) return;
+
     fetchDataAsistence();
   }, [fechaHoraActual.inicializado]);
 
@@ -105,6 +112,18 @@ const TomarAsistenciaPersonal = () => {
     handlerDatosAsistenciaHoyDirectivo,
     fechaHoraActual.utilidades,
   ]);
+
+  useEffect(() => {
+    const obtenerEstadoAsistencia = async () => {
+      const estadoTomaAsistenciaDePersonalActual =
+        await new DatosAsistenciaHoyIDB().obtenerEstadoTomaAsistencia(
+          TipoAsistencia.ParaPersonal
+        );
+
+      setEstadoTomaAsistenciaDePersonal(estadoTomaAsistenciaDePersonalActual);
+    };
+    obtenerEstadoAsistencia();
+  }, []);
 
   // Procesamos las fechas y horas solo si tenemos los datos disponibles
   const fechaHoraInicioAsistencia = handlerDatosAsistenciaHoyDirectivo
@@ -169,45 +188,97 @@ const TomarAsistenciaPersonal = () => {
   };
 
   // Función para iniciar el registro de asistencia
-  const iniciarRegistroAsistencia = () => {
-    console.log("Iniciando proceso de registro de asistencia");
+  const iniciarOContinuarRegistroAsistencia = async () => {
+    if (!estadoTomaAsistenciaDePersonal?.AsistenciaIniciada) {
+      const response = await fetch(`/api/asistencia-hoy/iniciar`, {
+        method: "POST",
+        body: JSON.stringify({
+          TipoAsistencia: TipoAsistencia.ParaPersonal,
+        } as IniciarTomaAsistenciaRequestBody),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const estadoActualTomaDeAsisteniaDePersonal =
+        (await response.json()) as EstadoTomaAsistenciaResponseBody;
+
+      const datosAsistenciaHoy = new DatosAsistenciaHoyIDB();
+
+      datosAsistenciaHoy.guardarEstadoTomaAsistencia(
+        estadoActualTomaDeAsisteniaDePersonal
+      );
+    }
 
     setShowFullScreenModalAsistenciaPersonal(true);
-    setInicioRegistro(true);
-    // Aquí se podría navegar a otra página o abrir un modal
   };
 
-  // Determinar el estado actual del sistema de asistencia
   const determinarEstadoSistema = () => {
     // Verificamos primero si es un día de evento (feriado, celebración, etc.)
+    // SOLO si estamos dentro del rango del evento
     if (
       handlerDatosAsistenciaHoyDirectivo &&
       handlerDatosAsistenciaHoyDirectivo.esHoyDiaDeEvento()
     ) {
       const eventoInfo =
         handlerDatosAsistenciaHoyDirectivo.esHoyDiaDeEvento() as T_Eventos;
-      return {
-        estado: "evento",
-        mensaje: "Día no laborable",
-        descripcion: `Hoy es "${eventoInfo.Nombre}", no se requiere tomar asistencia.`,
-        tiempoRestante: null,
-        botonActivo: false,
-        colorEstado: "bg-purple-50",
-        mostrarContadorPersonal: false,
-        nombreEvento: eventoInfo.Nombre,
-        fechaInicio: eventoInfo.Fecha_Inicio,
-        fechaConclusion: eventoInfo.Fecha_Conclusion,
-      };
+
+      // Convertir las fechas del evento a objetos Date para compararlas
+      const fechaInicioEvento = new Date(
+        alterarUTCaZonaPeruana(String(eventoInfo.Fecha_Inicio))
+      );
+      const fechaConclusionEvento = new Date(
+        alterarUTCaZonaPeruana(String(eventoInfo.Fecha_Conclusion))
+      );
+      const fechaActualObj = new Date(fechaHoraActual.fechaHora!);
+
+      // Comparar solo las fechas (sin horas)
+      const fechaActualSinHora = new Date(
+        fechaActualObj.getFullYear(),
+        fechaActualObj.getMonth(),
+        fechaActualObj.getDate()
+      );
+      const fechaInicioSinHora = new Date(
+        fechaInicioEvento.getFullYear(),
+        fechaInicioEvento.getMonth(),
+        fechaInicioEvento.getDate()
+      );
+      const fechaConclusionSinHora = new Date(
+        fechaConclusionEvento.getFullYear(),
+        fechaConclusionEvento.getMonth(),
+        fechaConclusionEvento.getDate()
+      );
+
+      // Verificar si la fecha actual está dentro del rango del evento
+      const dentroDelRangoEvento =
+        fechaActualSinHora >= fechaInicioSinHora &&
+        fechaActualSinHora <= fechaConclusionSinHora;
+
+      if (dentroDelRangoEvento) {
+        return {
+          estado: "evento",
+          mensaje: "Día no laborable",
+          descripcion: `Hoy es "${eventoInfo.Nombre}", no se requiere tomar asistencia.`,
+          tiempoRestante: null,
+          botonActivo: false,
+          colorEstado: "bg-purple-50",
+          mostrarContadorPersonal: false,
+          nombreEvento: eventoInfo.Nombre,
+          fechaInicio: eventoInfo.Fecha_Inicio,
+          fechaConclusion: eventoInfo.Fecha_Conclusion,
+        };
+      }
+      // Si no estamos en el rango del evento, continuamos con la verificación de fin de semana
     }
 
     // Si estamos en proceso de registro, permanecemos en ese estado
-    if (inicioRegistro) {
+    if (estadoTomaAsistenciaDePersonal?.AsistenciaIniciada) {
       return {
         estado: "en_proceso",
         mensaje: "Registro en proceso",
         descripcion: "El registro de asistencia está siendo procesado.",
         tiempoRestante: null,
-        botonActivo: false,
+        botonActivo: !showFullScreenModalAsistenciaPersonal,
         colorEstado: "bg-green-100",
         mostrarContadorPersonal: true,
         etiquetaPersonal: "Personal pendiente",
@@ -260,7 +331,6 @@ const TomarAsistenciaPersonal = () => {
         mostrarContadorPersonal: false,
       };
     }
-
     // Verificamos si la fecha de datos de asistencia es de un día anterior
     const fechaActual = new Date(fechaHoraActual.fechaHora!);
     const fechaDatosAsistencia = new Date(
@@ -585,7 +655,7 @@ const TomarAsistenciaPersonal = () => {
                 : estadoSistema.estado === "sincronizando"
                 ? "Sincronizando información"
                 : estadoSistema.estado === "en_proceso"
-                ? "Procesando registro de asistencia"
+                ? "Registro de asistencia en proceso"
                 : estadoSistema.estado === "no_disponible"
                 ? "Día no laborable"
                 : estadoSistema.estado === "evento"
@@ -828,27 +898,31 @@ const TomarAsistenciaPersonal = () => {
 
             {/* Botón de acción */}
             <div className="text-center">
-              <button
-                onClick={iniciarRegistroAsistencia}
-                className={`flex items-center justify-center mx-auto px-6 py-2 rounded-lg text-sm font-medium transition-all ${
-                  estadoSistema.botonActivo
-                    ? "bg-green-500 text-white hover:bg-green-600 active:bg-green-700"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                }`}
-                disabled={!estadoSistema.botonActivo}
-              >
-                {estadoSistema.estado === "en_proceso" ? (
-                  <>
-                    <ThinLoader className="-ml-1 mr-2 w-4 text-white" />
-                    Procesando registros...
-                  </>
-                ) : (
-                  <>
-                    <PlayIcon className="w-5 mr-2" />
-                    Iniciar Registro de Asistencia
-                  </>
-                )}
-              </button>
+              {estadoTomaAsistenciaDePersonal && (
+                <button
+                  onClick={iniciarOContinuarRegistroAsistencia}
+                  className={`flex items-center justify-center mx-auto px-6 py-2 rounded-lg text-sm font-medium transition-all ${
+                    estadoSistema.botonActivo
+                      ? "bg-green-500 text-white hover:bg-green-600 active:bg-green-700"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+                  disabled={!estadoSistema.botonActivo}
+                >
+                  {estadoSistema.estado === "en_proceso" ? (
+                    <>
+                      <ThinLoader className="-ml-1 mr-2 w-4 text-white" />
+                      Procesando registros...
+                    </>
+                  ) : (
+                    <>
+                      <PlayIcon className="w-5 mr-2" />
+                      {estadoTomaAsistenciaDePersonal?.AsistenciaIniciada
+                        ? "Continuar toma de asistencia"
+                        : "Iniciar Registro de Asistencia"}
+                    </>
+                  )}
+                </button>
+              )}
               <p className="text-xs text-gray-500 mt-2">
                 {estadoSistema.estado === "disponible"
                   ? "Al hacer clic, comenzará el proceso de registro para todo el personal"

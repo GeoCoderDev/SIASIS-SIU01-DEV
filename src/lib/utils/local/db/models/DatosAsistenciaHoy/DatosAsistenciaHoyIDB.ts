@@ -19,6 +19,11 @@ import { HandlerProfesorTutorSecundariaAsistenciaResponse } from "./handlers/Han
 import { HandlerResponsableAsistenciaResponse } from "./handlers/HandlerResponsableAsistenciaResponse";
 import { HandlerPersonalAdministrativoAsistenciaResponse } from "./handlers/HandlerPersonalAdministrativoAsistenciaResponse";
 import userStorage from "../UserStorage";
+import { Meses } from "@/interfaces/shared/Meses";
+import {
+  EstadoTomaAsistenciaResponseBody,
+  TipoAsistencia,
+} from "@/interfaces/shared/AsistenciaRequests";
 
 // Interfaz para el objeto guardado en IndexedDB
 export interface DatosAsistenciaAlmacenados {
@@ -29,8 +34,15 @@ export interface DatosAsistenciaAlmacenados {
 }
 
 export class DatosAsistenciaHoyIDB {
-  protected storeName: string = "datos_asistencia_hoy";
-  protected static STORAGE_KEY = "datos_asistencia_actuales";
+  private readonly storeName: string = "datos_asistencia_hoy";
+  private static readonly STORAGE_KEY = "datos_asistencia_actuales";
+  // Constantes para las nuevas keys
+  private static readonly ESTADO_PERSONAL_KEY =
+    "estado_toma_asistencia_de_personal";
+  private static readonly ESTADO_SECUNDARIA_KEY =
+    "estado_toma_asistencia_estudiantes_secundaria";
+  private static readonly ESTADO_PRIMARIA_KEY =
+    "estado_toma_asistencia_estudiantes_primaria";
 
   /**
    * Maneja los errores según su tipo y realiza logout si es necesario
@@ -206,54 +218,250 @@ export class DatosAsistenciaHoyIDB {
   }
 
   /**
-   * Guarda los datos de asistencia en IndexedDB
+   * Obtiene el estado de toma de asistencia según la key especificada
+   * Si no hay datos en IndexedDB, intenta obtenerlos del API
    */
-  // protected async guardarDatosAsistencia(
-  //   datos: BaseAsistenciaResponse
-  // ): Promise<void> {
-  //   const rol = await userStorage.getRol();
-  //   try {
-  //     const store = await IndexedDBConnection.getStore(
-  //       this.storeName,
-  //       "readwrite"
-  //     );
+  public async obtenerEstadoTomaAsistencia(
+    tipoAsistencia: TipoAsistencia
+  ): Promise<EstadoTomaAsistenciaResponseBody | null> {
+    try {
+      const key = this.getKeyPorTipo(tipoAsistencia);
+      const store = await IndexedDBConnection.getStore(this.storeName);
 
-  //     const datosAlmacenados: DatosAsistenciaAlmacenados = {
-  //       id: DatosAsistenciaHoyIDB.STORAGE_KEY,
-  //       rol,
-  //       datos,
-  //       fechaGuardado: new Date().toISOString(),
-  //     };
+      // Primero intentamos obtener del IndexedDB
+      const resultadoIDB =
+        await new Promise<EstadoTomaAsistenciaResponseBody | null>(
+          (resolve, reject) => {
+            const request = store.get(key);
+            request.onsuccess = () => {
+              resolve(request.result || null);
+            };
+            request.onerror = () => {
+              reject(request.error);
+            };
+          }
+        );
 
-  //     return new Promise((resolve, reject) => {
-  //       const request = store.put(
-  //         datosAlmacenados,
-  //         DatosAsistenciaHoyIDB.STORAGE_KEY
-  //       );
+      // Si encontramos datos en IndexedDB, los devolvemos
+      if (resultadoIDB) {
+        return resultadoIDB;
+      }
 
-  //       request.onsuccess = () => {
-  //         resolve();
-  //       };
+      // Si no hay datos en IndexedDB, consultamos la API
+      console.log(
+        `No se encontraron datos en IndexedDB para ${tipoAsistencia}, consultando API...`
+      );
 
-  //       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  //       request.onerror = (event: any) => {
-  //         reject(
-  //           new Error(
-  //             `Error al guardar datos de asistencia: ${
-  //               (event.target as IDBRequest).error
-  //             }`
-  //           )
-  //         );
-  //       };
-  //     });
-  //   } catch (error) {
-  //     this.handleError(error, "guardarDatosAsistencia", {
-  //       rol,
-  //       timestamp: Date.now(),
-  //     });
-  //     throw error;
-  //   }
-  // }
+      try {
+        const response = await fetch(
+          `/api/asistencia-hoy/consultar-estado?TipoAsistencia=${TipoAsistencia.ParaPersonal}`,
+          {
+            method: "GET",
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            `Error al consultar API: ${response.status} ${response.statusText}`
+          );
+        }
+
+        const datos =
+          (await response.json()) as EstadoTomaAsistenciaResponseBody;
+
+        // Guardar los datos obtenidos en IndexedDB para futuras consultas
+        if (datos) {
+          await this.guardarEstadoTomaAsistencia(datos);
+        }
+
+        return datos;
+      } catch (apiError) {
+        console.error(
+          `Error al consultar API para estado de asistencia ${tipoAsistencia}:`,
+          apiError
+        );
+
+        // Si falla la API, creamos un objeto con estado false basado en la fecha actual
+        const fechaActual = this.obtenerFechaActualDesdeRedux();
+        if (!fechaActual) return null;
+
+        const estadoDefault: EstadoTomaAsistenciaResponseBody = {
+          TipoAsistencia: tipoAsistencia,
+          Dia: fechaActual.getDate(),
+          Mes: (fechaActual.getMonth() + 1) as Meses,
+          Anio: fechaActual.getFullYear(),
+          AsistenciaIniciada: false,
+        };
+
+        // Guardamos este estado por defecto en IndexedDB
+        await this.guardarEstadoTomaAsistencia(estadoDefault);
+
+        return estadoDefault;
+      }
+    } catch (error) {
+      this.handleError(error, "obtenerEstadoTomaAsistencia", {
+        tipoAsistencia,
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Guarda el estado de toma de asistencia para el tipo especificado
+   */
+  public async guardarEstadoTomaAsistencia(
+    estado: EstadoTomaAsistenciaResponseBody
+  ): Promise<void> {
+    try {
+      const key = this.getKeyPorTipo(estado.TipoAsistencia);
+      const store = await IndexedDBConnection.getStore(
+        this.storeName,
+        "readwrite"
+      );
+
+      return new Promise((resolve, reject) => {
+        const request = store.put(estado, key);
+        request.onsuccess = () => {
+          resolve();
+        };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        request.onerror = (event: any) => {
+          reject(
+            new Error(
+              `Error al guardar estado de toma de asistencia: ${
+                (event.target as IDBRequest).error
+              }`
+            )
+          );
+        };
+      });
+    } catch (error) {
+      this.handleError(error, "guardarEstadoTomaAsistencia", {
+        estado,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Actualiza el campo AsistenciaIniciada para el tipo especificado
+   */
+  public async actualizarEstadoAsistenciaIniciada(
+    tipoAsistencia: TipoAsistencia,
+    iniciada: boolean
+  ): Promise<void> {
+    try {
+      const estadoActual = await this.obtenerEstadoTomaAsistencia(
+        tipoAsistencia
+      );
+      if (estadoActual) {
+        // Solo actualiza el campo AsistenciaIniciada
+        estadoActual.AsistenciaIniciada = iniciada;
+        await this.guardarEstadoTomaAsistencia(estadoActual);
+      } else {
+        // Si no existe un estado, crear uno con los datos actuales
+        const fechaActual = this.obtenerFechaActualDesdeRedux();
+        if (!fechaActual) {
+          throw new Error("No se pudo obtener la fecha actual");
+        }
+
+        const nuevoEstado: EstadoTomaAsistenciaResponseBody = {
+          TipoAsistencia: tipoAsistencia,
+          Dia: fechaActual.getDate(),
+          Mes: (fechaActual.getMonth() + 1) as Meses,
+          Anio: fechaActual.getFullYear(),
+          AsistenciaIniciada: iniciada,
+        };
+
+        await this.guardarEstadoTomaAsistencia(nuevoEstado);
+      }
+    } catch (error) {
+      this.handleError(error, "actualizarEstadoAsistenciaIniciada", {
+        tipoAsistencia,
+        iniciada,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Verifica si la asistencia está iniciada para el tipo especificado en la fecha actual
+   */
+  public async verificarAsistenciaIniciadaHoy(
+    tipoAsistencia: TipoAsistencia
+  ): Promise<boolean> {
+    try {
+      const estadoActual = await this.obtenerEstadoTomaAsistencia(
+        tipoAsistencia
+      );
+      if (!estadoActual) return false;
+
+      const fechaActual = this.obtenerFechaActualDesdeRedux();
+      if (!fechaActual) return false;
+
+      // Verificar que sea el mismo día
+      const esMismoDia =
+        estadoActual.Dia === fechaActual.getDate() &&
+        estadoActual.Mes === fechaActual.getMonth() + 1 &&
+        estadoActual.Anio === fechaActual.getFullYear();
+
+      return esMismoDia && estadoActual.AsistenciaIniciada;
+    } catch (error) {
+      this.handleError(error, "verificarAsistenciaIniciadaHoy", {
+        tipoAsistencia,
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Limpia todos los estados de toma de asistencia
+   */
+  public async limpiarTodosLosEstados(): Promise<void> {
+    try {
+      const store = await IndexedDBConnection.getStore(
+        this.storeName,
+        "readwrite"
+      );
+      const promises = [
+        this.deleteKey(store, DatosAsistenciaHoyIDB.ESTADO_PERSONAL_KEY),
+        this.deleteKey(store, DatosAsistenciaHoyIDB.ESTADO_SECUNDARIA_KEY),
+        this.deleteKey(store, DatosAsistenciaHoyIDB.ESTADO_PRIMARIA_KEY),
+      ];
+
+      await Promise.all(promises);
+    } catch (error) {
+      this.handleError(error, "limpiarTodosLosEstados");
+      throw error;
+    }
+  }
+
+  /**
+   * Método auxiliar para eliminar una key específica
+   */
+  private deleteKey(store: IDBObjectStore, key: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const request = store.delete(key);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Obtiene la key correspondiente según el tipo de estado
+   */
+  private getKeyPorTipo(tipoAsistencia: TipoAsistencia): string {
+    switch (tipoAsistencia) {
+      case TipoAsistencia.ParaPersonal:
+        return DatosAsistenciaHoyIDB.ESTADO_PERSONAL_KEY;
+      case TipoAsistencia.ParaEstudiantesSecundaria:
+        return DatosAsistenciaHoyIDB.ESTADO_SECUNDARIA_KEY;
+      case TipoAsistencia.ParaEstudiantesPrimaria:
+        return DatosAsistenciaHoyIDB.ESTADO_PRIMARIA_KEY;
+      default:
+        throw new Error("Tipo de estado no reconocido");
+    }
+  }
 
   /**
    * Obtiene los datos almacenados en IndexedDB

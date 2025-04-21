@@ -1,20 +1,32 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { logout } from "@/lib/helpers/logout";
 import { LogoutTypes, ErrorDetailsForLogout } from "@/interfaces/LogoutTypes";
-
 import IndexedDBConnection from "../../IndexedDBConnection";
 import { ModoRegistro } from "@/interfaces/shared/ModoRegistroPersonal";
-import { RegistroAsistenciaUnitariaPersonal } from "../../../../../../interfaces/shared/AsistenciaRequests";
+import {
+  ConsultarAsistenciasDiariasPorActorEnRedisResponseBody,
+  RegistroAsistenciaUnitariaPersonal,
+} from "../../../../../../interfaces/shared/AsistenciaRequests";
 import { RolesSistema } from "@/interfaces/shared/RolesSistema";
 import { Meses } from "@/interfaces/shared/Meses";
 import { ActoresSistema } from "@/interfaces/shared/ActoresSistema";
+
+export type EstadosAsistenciaDePersonal =
+  | "Puntual"
+  | "Tardanza"
+  | "Temprano"
+  | "Tarde"
+  | "Falta"
+  | "Tardanza Tolerada"
+  | "Cumplido"
+  | "Salida Anticipada Tolerada"
+  | "Salida Anticipada";
 
 // Interfaces para los registros de entrada/salida
 export interface RegistroEntradaSalida {
   timestamp: number; // Timestamp Unix en milisegundos
   desfaseSegundos: number;
-  estado: string; // "Puntual", "Tardanza", "Temprano", "Tarde", etc.
-  evidencia_id?: string;
+  estado: EstadosAsistenciaDePersonal;
 }
 
 // Interfaces para asistencia mensual
@@ -37,18 +49,6 @@ export enum TipoPersonal {
 export interface LlaveAsistenciaMensual {
   Dni_Personal: string;
   mes: Meses;
-}
-
-/**
- * Información para guardar el último registro
- */
-interface UltimoRegistroInfo {
-  tipoPersonal: TipoPersonal;
-  modoRegistro: ModoRegistro;
-  Dni_Personal: string;
-  dia: number;
-  mes: number;
-  registro: RegistroEntradaSalida;
 }
 
 export class AsistenciaDePersonalIDB {
@@ -140,6 +140,23 @@ export class AsistenciaDePersonalIDB {
 
     // Cerrar sesión con los detalles del error
     logout(logoutType, errorDetails);
+  }
+
+  /**
+   * Obtiene el nombre del índice para la búsqueda por personal (solo DNI)
+   * @param tipoPersonal Tipo de personal
+   * @returns Nombre del índice
+   */
+  private getIndexNameForPersonal(tipoPersonal: TipoPersonal): string {
+    // Mapeo de tipos de personal a nombres de índice
+    const indexMapping = {
+      [TipoPersonal.PROFESOR_PRIMARIA]: "por_profesor",
+      [TipoPersonal.PROFESOR_SECUNDARIA]: "por_profesor",
+      [TipoPersonal.AUXILIAR]: "por_auxiliar",
+      [TipoPersonal.PERSONAL_ADMINISTRATIVO]: "por_administrativo",
+    };
+
+    return indexMapping[tipoPersonal];
   }
 
   /**
@@ -408,97 +425,101 @@ export class AsistenciaDePersonalIDB {
   }
 
   /**
-   * Guarda el último registro de asistencia en el almacenamiento "datos_asistencia_hoy"
-   * para facilitar el acceso rápido y el modo offline
-   * @param info Información del último registro
-   * @returns Promesa que se resuelve cuando se completa la operación
-   */
-  private async guardarUltimoRegistro(info: UltimoRegistroInfo): Promise<void> {
-    try {
-      // Inicializar la conexión
-      await IndexedDBConnection.init();
-
-      // Obtener el store
-      const store = await IndexedDBConnection.getStore(
-        "datos_asistencia_hoy",
-        "readwrite"
-      );
-
-      // Clave única para el registro
-      const key = `${info.tipoPersonal}_${info.modoRegistro}_${info.Dni_Personal}`;
-
-      // Datos a guardar
-      const datos = {
-        ...info,
-        timestamp: Date.now(),
-        fecha: new Date().toISOString(),
-      };
-
-      return new Promise((resolve, reject) => {
-        try {
-          const request = store.put(datos, key);
-
-          request.onsuccess = () => {
-            resolve();
-          };
-
-          request.onerror = (event) => {
-            reject(
-              new Error(
-                `Error al guardar último registro: ${
-                  (event.target as IDBRequest).error
-                }`
-              )
-            );
-          };
-        } catch (error) {
-          reject(error);
-        }
-      });
-    } catch (error) {
-      console.error("Error al guardar último registro:", error);
-      // No hacemos logout aquí porque es una funcionalidad secundaria
-      // Si falla, no queremos interrumpir el flujo principal
-    }
-  }
-
-  /**
    * Obtiene el último registro de asistencia guardado para un personal específico
+   * consultando directamente la tabla correspondiente y buscando el registro más reciente
    * @param tipoPersonal Tipo de personal
-   * @param modoRegistro Tipo de registro (entrada o salida)
+   * @param modoRegistro Modo de registro (Entrada o Salida)
    * @param Dni_Personal ID del personal (DNI)
    * @returns Promesa que resuelve al último registro o null si no existe
    */
   public async obtenerUltimoRegistro(
-    tipoPersonal: TipoPersonal,
+    rol: RolesSistema,
     modoRegistro: ModoRegistro,
     Dni_Personal: string
-  ): Promise<UltimoRegistroInfo | null> {
+  ): Promise<{
+    tipoPersonal: TipoPersonal;
+    modoRegistro: ModoRegistro;
+    Dni_Personal: string;
+    dia: number;
+    mes: number;
+    Id_Registro_Mensual: number;
+    registro: RegistroEntradaSalida;
+  } | null> {
     try {
+      const tipoPersonal = this.obtenerTipoPersonalDesdeRolOActor(rol);
+
       // Inicializar la conexión
       await IndexedDBConnection.init();
 
-      // Obtener el store
-      const store = await IndexedDBConnection.getStore(
-        "datos_asistencia_hoy",
-        "readonly"
-      );
+      // Obtener el nombre del store correspondiente
+      const storeName = this.getStoreName(tipoPersonal, modoRegistro);
 
-      // Clave única para el registro
-      const key = `${tipoPersonal}_${modoRegistro}_${Dni_Personal}`;
+      // Obtener el store
+      const store = await IndexedDBConnection.getStore(storeName, "readonly");
+
+      // Obtener el campo de ID personal
+      const idField = this.getIdFieldForStore(tipoPersonal, modoRegistro);
+
+      // Obtener el nombre del índice para buscar por DNI de personal
+      const indexName = this.getIndexNameForPersonal(tipoPersonal);
 
       return new Promise((resolve, reject) => {
         try {
-          const request = store.get(key);
+          // Usar el índice para obtener todos los registros del personal
+          const index = store.index(indexName);
+          const request = index.getAll(Dni_Personal);
 
           request.onsuccess = () => {
-            resolve(request.result || null);
+            if (request.result && request.result.length > 0) {
+              // Ordenar por mes (de mayor a menor)
+              const registrosOrdenados = request.result.sort(
+                (a, b) => b.Mes - a.Mes
+              );
+
+              // Tomar el registro del mes más reciente
+              const registroMasReciente = registrosOrdenados[0];
+
+              // Obtener los datos de entrada o salida según corresponda
+              const registrosDias =
+                modoRegistro === ModoRegistro.Entrada
+                  ? registroMasReciente.Entradas
+                  : registroMasReciente.Salidas;
+
+              // Si no hay registros de días, retornar null
+              if (!registrosDias || Object.keys(registrosDias).length === 0) {
+                resolve(null);
+                return;
+              }
+
+              // Convertir las claves (días) a números y ordenar de mayor a menor
+              const diasOrdenados = Object.keys(registrosDias)
+                .map((dia) => parseInt(dia))
+                .sort((a, b) => b - a);
+
+              // Tomar el registro del día más reciente
+              const diaUltimo = diasOrdenados[0];
+              const registroUltimo = registrosDias[diaUltimo.toString()];
+
+              // Construir y retornar el objeto con la información completa
+              resolve({
+                tipoPersonal,
+                modoRegistro,
+                Dni_Personal,
+                dia: diaUltimo,
+                mes: registroMasReciente.Mes,
+                Id_Registro_Mensual: registroMasReciente[idField],
+                registro: registroUltimo,
+              });
+            } else {
+              // No se encontraron registros
+              resolve(null);
+            }
           };
 
           request.onerror = (event) => {
             reject(
               new Error(
-                `Error al obtener último registro: ${
+                `Error al obtener registros por DNI: ${
                   (event.target as IDBRequest).error
                 }`
               )
@@ -509,12 +530,14 @@ export class AsistenciaDePersonalIDB {
         }
       });
     } catch (error) {
-      console.error("Error al obtener último registro:", error);
-      // No hacemos logout aquí porque es una funcionalidad secundaria
-      return null;
+      this.handleError(error, "obtenerUltimoRegistro", {
+        rol,
+        modoRegistro,
+        Dni_Personal,
+      });
+      throw error;
     }
   }
-
   /**
    * Actualiza un registro de asistencia específico para un día
    * @param tipoPersonal Tipo de personal
@@ -578,17 +601,6 @@ export class AsistenciaDePersonalIDB {
           registroMensual
         );
       }
-
-      // Actualizar también el almacenamiento de registro actual para uso en modo offline
-      await this.guardarUltimoRegistro({
-        tipoPersonal,
-        modoRegistro,
-        Dni_Personal,
-        dia,
-        mes,
-        // Id_Registro_Mensual,
-        registro,
-      });
     } catch (error) {
       this.handleError(error, "actualizarRegistroDiario", {
         tipoPersonal,
@@ -963,7 +975,7 @@ export class AsistenciaDePersonalIDB {
    * @returns Tipo de personal correspondiente
    * @throws Error si el rol no es compatible con los tipos de personal soportados
    */
-  private obtenerTipoPersonalDesdeRol(
+  private obtenerTipoPersonalDesdeRolOActor(
     rol: RolesSistema | ActoresSistema
   ): TipoPersonal {
     // Usar switch para mayor claridad y control
@@ -1005,7 +1017,7 @@ export class AsistenciaDePersonalIDB {
   private determinarEstadoAsistencia(
     desfaseSegundos: number,
     modoRegistro: ModoRegistro
-  ): string {
+  ): EstadosAsistenciaDePersonal {
     // Constantes de tiempo en segundos
     const TOLERANCIA_TARDANZA = 5 * 60; // 5 minutos de tolerancia para tardanza
     const TOLERANCIA_TEMPRANO = 15 * 60; // 15 minutos de tolerancia para salida anticipada
@@ -1056,7 +1068,7 @@ export class AsistenciaDePersonalIDB {
       } = datos;
 
       // Determinar el tipo de personal según el rol
-      const tipoPersonal = this.obtenerTipoPersonalDesdeRol(rol);
+      const tipoPersonal = this.obtenerTipoPersonalDesdeRolOActor(rol);
 
       // Obtener fecha actual para el mes
       const fecha = new Date(Detalles.Timestamp);
@@ -1234,7 +1246,7 @@ export class AsistenciaDePersonalIDB {
    * @returns Promesa que resuelve a true si ha marcado entrada hoy
    */
   public async hasMarcadoEntradaHoy(
-    tipoPersonal: TipoPersonal,
+    rol: RolesSistema,
     Dni_Personal: string
   ): Promise<boolean> {
     try {
@@ -1242,6 +1254,8 @@ export class AsistenciaDePersonalIDB {
       const fecha = new Date();
       const mes = fecha.getMonth() + 1; // getMonth() devuelve 0-11
       const dia = fecha.getDate();
+
+      const tipoPersonal = this.obtenerTipoPersonalDesdeRolOActor(rol);
 
       // Obtener registro de entrada de hoy
       const registro = await this.obtenerRegistroDiario(
@@ -1255,7 +1269,7 @@ export class AsistenciaDePersonalIDB {
       return registro !== null;
     } catch (error) {
       this.handleError(error, "hasMarcadoEntradaHoy", {
-        tipoPersonal,
+        rol,
         Dni_Personal,
       });
       throw error;
@@ -1315,15 +1329,15 @@ export class AsistenciaDePersonalIDB {
     estado?: string;
   }> {
     try {
-      // Obtener el tipo de personal según el rol
-      const tipoPersonal = this.obtenerTipoPersonalDesdeRol(rol);
-
       // Intentar obtener primero desde el almacenamiento de registros actuales (más rápido)
       const ultimoRegistro = await this.obtenerUltimoRegistro(
-        tipoPersonal,
+        rol,
         modoRegistro,
         dni
       );
+
+      // Obtener el tipo de personal según el rol
+      const tipoPersonal = this.obtenerTipoPersonalDesdeRolOActor(rol);
 
       // Si existe un registro para hoy en el almacenamiento rápido
       if (ultimoRegistro) {
@@ -1470,6 +1484,275 @@ export class AsistenciaDePersonalIDB {
         fechaFin,
       });
       throw error;
+    }
+  }
+
+  /**
+   * Verifica si ya existe un registro diario para un personal específico
+   * @param tipoPersonal Tipo de personal
+   * @param modoRegistro Modo de registro (Entrada o Salida)
+   * @param dni ID del personal (DNI)
+   * @param mes Número de mes (1-12)
+   * @param dia Día del mes (1-31)
+   * @returns Promesa que resuelve a true si existe, false si no existe
+   */
+  private async verificarSiExisteRegistroDiario(
+    tipoPersonal: TipoPersonal,
+    modoRegistro: ModoRegistro,
+    dni: string,
+    mes: number,
+    dia: number
+  ): Promise<boolean> {
+    try {
+      // Inicializar la conexión
+      await IndexedDBConnection.init();
+
+      // Obtener el nombre del store correspondiente
+      const storeName = this.getStoreName(tipoPersonal, modoRegistro);
+
+      // Obtener el store
+      const store = await IndexedDBConnection.getStore(storeName, "readonly");
+
+      // Obtener el nombre del índice para buscar por DNI de personal
+      const indexName = this.getIndexNameForPersonal(tipoPersonal);
+
+      return new Promise((resolve, reject) => {
+        try {
+          // Usar el índice para obtener todos los registros del personal
+          const index = store.index(indexName);
+          const request = index.getAll(dni);
+
+          request.onsuccess = () => {
+            if (request.result && request.result.length > 0) {
+              // Buscar en los registros si existe alguno para el mes y día específicos
+              for (const registro of request.result) {
+                // Verificar si el mes coincide
+                if (registro.Mes === mes) {
+                  // Obtener los registros de entrada o salida según corresponda
+                  const registrosDias =
+                    modoRegistro === ModoRegistro.Entrada
+                      ? registro.Entradas
+                      : registro.Salidas;
+
+                  // Verificar si hay un registro para el día específico
+                  if (registrosDias && registrosDias[dia.toString()]) {
+                    resolve(true);
+                    return;
+                  }
+                }
+              }
+            }
+
+            // Si no se encontró ningún registro para el mes y día específicos
+            resolve(false);
+          };
+
+          request.onerror = (event) => {
+            reject(
+              new Error(
+                `Error al verificar existencia de registro diario: ${
+                  (event.target as IDBRequest).error
+                }`
+              )
+            );
+          };
+        } catch (error) {
+          reject(error);
+        }
+      });
+    } catch (error) {
+      console.error("Error al verificar existencia de registro diario:", error);
+      // En caso de error, asumimos que no existe para volver a intentar guardar
+      return false;
+    }
+  }
+
+  /**
+   * Obtiene el ID del registro mensual para un personal específico si existe
+   * @param tipoPersonal Tipo de personal
+   * @param modoRegistro Modo de registro (Entrada o Salida)
+   * @param dni ID del personal (DNI)
+   * @param mes Número de mes (1-12)
+   * @returns Promesa que resuelve al ID del registro mensual o null si no existe
+   */
+  private async obtenerIdRegistroMensual(
+    tipoPersonal: TipoPersonal,
+    modoRegistro: ModoRegistro,
+    dni: string,
+    mes: number
+  ): Promise<number | null> {
+    try {
+      // Inicializar la conexión
+      await IndexedDBConnection.init();
+
+      // Obtener el nombre del store correspondiente
+      const storeName = this.getStoreName(tipoPersonal, modoRegistro);
+
+      // Obtener el store
+      const store = await IndexedDBConnection.getStore(storeName, "readonly");
+
+      // Obtener el nombre del índice para buscar por DNI y mes
+      const indexName = this.getIndexNameForPersonalMes(tipoPersonal);
+
+      // Obtener el ID field correspondiente
+      const idField = this.getIdFieldForStore(tipoPersonal, modoRegistro);
+
+      return new Promise((resolve, reject) => {
+        try {
+          // Usamos el índice para buscar por la clave compuesta (DNI, mes)
+          const index = store.index(indexName);
+          const keyValue = [dni, mes];
+          const request = index.get(keyValue);
+
+          request.onsuccess = () => {
+            if (request.result) {
+              // Obtener el ID del registro mensual
+              resolve(request.result[idField]);
+            } else {
+              // No existe registro mensual
+              resolve(null);
+            }
+          };
+
+          request.onerror = (event) => {
+            reject(
+              new Error(
+                `Error al obtener ID del registro mensual: ${
+                  (event.target as IDBRequest).error
+                }`
+              )
+            );
+          };
+        } catch (error) {
+          reject(error);
+        }
+      });
+    } catch (error) {
+      console.error("Error al obtener ID del registro mensual:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Sincroniza las asistencias registradas en Redis con la base de datos local IndexedDB
+   * Solo añade los registros que no existen localmente y tienen un registro mensual existente
+   * @param datosRedis Datos de asistencia obtenidos desde Redis
+   * @returns Promesa que resuelve a un objeto con estadísticas de sincronización
+   */
+  public async sincronizarAsistenciasDesdeRedis(
+    datosRedis: ConsultarAsistenciasDiariasPorActorEnRedisResponseBody
+  ): Promise<{
+    totalRegistros: number;
+    registrosNuevos: number;
+    registrosExistentes: number;
+    noRegistroMensual: number;
+    errores: number;
+  }> {
+    // Estadísticas de sincronización
+    const stats = {
+      totalRegistros: datosRedis.Resultados.length,
+      registrosNuevos: 0,
+      registrosExistentes: 0,
+      noRegistroMensual: 0,
+      errores: 0,
+    };
+
+    try {
+      // Obtener el tipo de personal según el Actor
+      const tipoPersonal = this.obtenerTipoPersonalDesdeRolOActor(
+        datosRedis.Actor
+      );
+
+      // Usar el mes que viene directamente de Redis
+      const mesActual = datosRedis.Mes;
+      const diaActual = datosRedis.Dia;
+
+      if (diaActual === 0) {
+        console.error(
+          "No se pudo determinar el día desde los resultados de Redis"
+        );
+        return {
+          ...stats,
+          errores: stats.totalRegistros, // Todos fallaron
+        };
+      }
+
+      // Procesar cada resultado de Redis
+      for (const resultado of datosRedis.Resultados) {
+        try {
+          // Verificar si el registro ya existe localmente
+          const registroExistente = await this.verificarSiExisteRegistroDiario(
+            tipoPersonal,
+            datosRedis.ModoRegistro,
+            resultado.DNI,
+            mesActual,
+            diaActual
+          );
+
+          if (registroExistente) {
+            // El registro ya existe, no es necesario guardarlo nuevamente
+            stats.registrosExistentes++;
+            continue;
+          }
+
+          // Verificar si existe un registro mensual para este personal y mes
+          const idRegistroMensual = await this.obtenerIdRegistroMensual(
+            tipoPersonal,
+            datosRedis.ModoRegistro,
+            resultado.DNI,
+            mesActual
+          );
+
+          if (!idRegistroMensual) {
+            // No existe un registro mensual, no podemos agregar el registro diario
+            stats.noRegistroMensual++;
+            continue;
+          }
+
+          // Crear un registro compatible con nuestra interfaz local
+          const registro: RegistroAsistenciaUnitariaPersonal = {
+            esNuevoRegistro: false, // No es nuevo, estamos actualizando un registro mensual existente
+            Id_Registro_Mensual: idRegistroMensual,
+            ModoRegistro: datosRedis.ModoRegistro,
+            DNI: resultado.DNI,
+            Rol: datosRedis.Actor,
+            Dia: diaActual,
+            Detalles: {
+              Timestamp: resultado.Detalles.Timestamp,
+              DesfaseSegundos: resultado.Detalles.DesfaseSegundos,
+            },
+          };
+
+          // Guardar el registro en la base de datos local
+          await this.marcarAsistencia({
+            datos: registro,
+          });
+
+          // Incrementar contador de registros nuevos
+          stats.registrosNuevos++;
+        } catch (error) {
+          console.error(
+            `Error al sincronizar registro para DNI ${resultado.DNI}:`,
+            error
+          );
+          stats.errores++;
+        }
+      }
+
+      return stats;
+    } catch (error) {
+      this.handleError(error, "sincronizarAsistenciasDesdeRedis", {
+        actor: datosRedis.Actor,
+        modoRegistro: datosRedis.ModoRegistro,
+        mes: datosRedis.Mes,
+        totalRegistros: datosRedis.Resultados.length,
+      });
+
+      // Devolver estadísticas con errores
+      return {
+        ...stats,
+        errores: stats.totalRegistros, // Todos fallaron
+      };
     }
   }
 
