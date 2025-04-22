@@ -17,6 +17,40 @@ import {
   TipoAsistencia,
 } from "@/interfaces/shared/AsistenciaRequests";
 
+/**
+ * Calcula los segundos que faltan hasta las 23:59:59 del día actual en hora peruana
+ * @returns Segundos hasta el final del día en Perú
+ */
+function calcularSegundosHastaFinDiaPeru(): number {
+  // Obtener fecha y hora actual en UTC
+  const fechaUTC = new Date();
+  
+  
+  // Crear una nueva fecha que represente las 23:59:59 en Perú el día actual
+  // Para esto, usamos la fecha UTC y ajustamos manualmente la hora a 23:59:59 en zona horaria peruana (UTC-5)
+  // Por lo tanto, en UTC esto sería 04:59:59 del día siguiente
+  // Primero obtenemos la fecha actual en Perú para saber de qué día estamos hablando
+  const offsetPeruHoras = -5;
+  const fechaPeruanaActual = new Date(fechaUTC.getTime() + offsetPeruHoras * 60 * 60 * 1000);
+  const fechaPeruanaStr = fechaPeruanaActual.toISOString().split('T')[0];
+  
+  // Ahora creamos la fecha que representa las 23:59:59 en hora peruana de ese mismo día
+  // Esto es UTC 04:59:59 del día siguiente si no estamos cerca del cambio de día
+  const finDiaPeruanoEnUTC = new Date(`${fechaPeruanaStr}T23:59:59.999-05:00`);
+  
+  // Calcular diferencia en segundos
+  const segundosRestantes = Math.floor((finDiaPeruanoEnUTC.getTime() - fechaUTC.getTime()) / 1000);
+  
+  // Log para depuración
+  console.log(`Fecha UTC actual: ${fechaUTC.toISOString()}`);
+  console.log(`Fecha peruana calculada: ${fechaPeruanaActual.toISOString()}`);
+  console.log(`Fin del día peruano en UTC: ${finDiaPeruanoEnUTC.toISOString()}`);
+  console.log(`Segundos restantes calculados: ${segundosRestantes}`);
+  
+  // Asegurar que devolvemos al menos 1 segundo y como máximo un día
+  return Math.max(Math.min(segundosRestantes, 86400), 1);
+}
+
 export async function POST(req: NextRequest) {
   try {
     // Verificar autenticación - solo roles con permisos para iniciar asistencia
@@ -81,10 +115,15 @@ export async function POST(req: NextRequest) {
         );
     }
 
-    // Almacenar en Redis que la asistencia ha sido iniciada
-    // Establecemos el valor "true" y una duración de 24 horas (86400 segundos)
+    // Calcular segundos hasta el final del día en Perú
+    const segundosHastaFinDia = calcularSegundosHastaFinDiaPeru();
+    
+    console.log(`Estableciendo bandera con expiración de ${segundosHastaFinDia} segundos (hasta las 23:59:59 hora peruana)`);
+    console.log(`En tiempo legible: ${Math.floor(segundosHastaFinDia/3600)}h ${Math.floor((segundosHastaFinDia%3600)/60)}m ${segundosHastaFinDia%60}s`);
+
+    // Almacenar en Redis con expiración al final del día peruano
     const valorGuardado = await redisClient.set(redisKey, "true", {
-      ex: 86400,
+      ex: segundosHastaFinDia,
     });
 
     if (valorGuardado !== "OK") {
@@ -104,16 +143,10 @@ export async function POST(req: NextRequest) {
       Mes: mes as Meses,
       Anio: anio,
       AsistenciaIniciada: true,
+      
     };
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Estado de asistencia iniciado correctamente",
-        data: respuesta,
-      },
-      { status: 200 }
-    );
+    return NextResponse.json(respuesta, { status: 200 });
   } catch (error) {
     console.error("Error al iniciar estado de toma de asistencia:", error);
 
@@ -123,7 +156,7 @@ export async function POST(req: NextRequest) {
       mensaje: "Error al iniciar estado de toma de asistencia",
       origen: "api/estado-toma-asistencia",
       timestamp: Date.now(),
-      siasisComponent: "RDP04",
+      siasisComponent: "RDP05", // Componente Redis
     };
 
     if (error instanceof Error) {

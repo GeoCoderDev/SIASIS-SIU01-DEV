@@ -1071,20 +1071,20 @@ export class AsistenciaDePersonalIDB {
       const tipoPersonal = this.obtenerTipoPersonalDesdeRolOActor(rol);
 
       // Obtener fecha actual para el mes
-      const fecha = new Date(Detalles.Timestamp);
+      const fecha = new Date(Detalles!.Timestamp);
       const mes = fecha.getMonth() + 1; // getMonth() devuelve 0-11
 
       // Determinar el estado basado en el desfase
       const estado = this.determinarEstadoAsistencia(
-        Detalles.DesfaseSegundos,
+        Detalles!.DesfaseSegundos,
         modoRegistro
       );
 
       // Crear registro de asistencia
       const registro: RegistroEntradaSalida = {
-        timestamp: Detalles.Timestamp,
+        timestamp: Detalles!.Timestamp,
         estado: estado,
-        desfaseSegundos: Detalles.DesfaseSegundos,
+        desfaseSegundos: Detalles!.DesfaseSegundos,
       };
 
       // Actualizar el registro diario con el ID proporcionado
@@ -1717,7 +1717,7 @@ export class AsistenciaDePersonalIDB {
             DNI: resultado.DNI,
             Rol: datosRedis.Actor,
             Dia: diaActual,
-            Detalles: {
+            Detalles: resultado.Detalles && {
               Timestamp: resultado.Detalles.Timestamp,
               DesfaseSegundos: resultado.Detalles.DesfaseSegundos,
             },

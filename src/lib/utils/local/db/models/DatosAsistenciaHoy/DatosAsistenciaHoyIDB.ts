@@ -226,7 +226,10 @@ export class DatosAsistenciaHoyIDB {
   ): Promise<EstadoTomaAsistenciaResponseBody | null> {
     try {
       const key = this.getKeyPorTipo(tipoAsistencia);
-      const store = await IndexedDBConnection.getStore(this.storeName);
+      const store = await IndexedDBConnection.getStore(
+        this.storeName,
+        "readwrite"
+      );
 
       // Primero intentamos obtener del IndexedDB
       const resultadoIDB =
@@ -254,7 +257,7 @@ export class DatosAsistenciaHoyIDB {
 
       try {
         const response = await fetch(
-          `/api/asistencia-hoy/consultar-estado?TipoAsistencia=${TipoAsistencia.ParaPersonal}`,
+          `/api/asistencia-hoy/consultar-estado?TipoAsistencia=${tipoAsistencia}`,
           {
             method: "GET",
           }

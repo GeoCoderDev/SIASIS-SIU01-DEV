@@ -9,7 +9,7 @@ export interface RegistroAsistenciaUnitariaPersonal {
   DNI: string;
   Rol: RolesSistema | ActoresSistema;
   Dia: number;
-  Detalles: DetallesAsistenciaUnitariaPersonal;
+  Detalles: DetallesAsistenciaUnitariaPersonal | null;
   esNuevoRegistro: boolean;
 }
 
@@ -18,7 +18,7 @@ export type RegistroAsistenciaMensualPersonal = Pick<
   "DNI" | "Rol" | "ModoRegistro"
 > & {
   Mes: Meses;
-  RegistrosDelMes: Record<number, DetallesAsistenciaUnitariaPersonal>;
+  RegistrosDelMes: Record<number, DetallesAsistenciaUnitariaPersonal | null>;
 };
 
 export interface DetallesAsistenciaUnitariaPersonal {
@@ -29,7 +29,7 @@ export interface DetallesAsistenciaUnitariaPersonal {
 export interface AsistenciaDiariaResultado {
   DNI: string;
   AsistenciaMarcada: boolean;
-  Detalles: DetallesAsistenciaUnitariaPersonal;
+  Detalles: DetallesAsistenciaUnitariaPersonal | null;
 }
 
 export interface ConsultarAsistenciasDiariasPorActorEnRedisResponseBody {

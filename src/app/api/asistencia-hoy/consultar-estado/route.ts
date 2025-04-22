@@ -93,8 +93,8 @@ export async function GET(req: NextRequest) {
     const valor = await redisClient.get(redisKey);
 
     // Determinar si la asistencia está iniciada - Si no hay valor, simplemente consideramos que no está iniciada
-    const asistenciaIniciada = valor === "true";
-
+    const asistenciaIniciada = valor === true;
+    console.log("prueba", valor);
     // Construir la respuesta - siempre devolvemos una respuesta válida con el estado actual
     const respuesta: EstadoTomaAsistenciaResponseBody = {
       TipoAsistencia: tipoAsistencia,

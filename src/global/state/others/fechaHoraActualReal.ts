@@ -18,7 +18,7 @@ import {
 export const TIME_OFFSET = {
   days: 0,
   minutes: 0,
-  hours: 0, // Agregar propiedad 'hours' con un valor predeterminado
+  hours: -5, // Agregar propiedad 'hours' con un valor predeterminado
   seconds: 0,
   enabled: process.env.NODE_ENV === "development", // Habilitar/deshabilitar el offset
 };

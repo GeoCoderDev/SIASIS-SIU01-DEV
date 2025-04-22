@@ -119,7 +119,7 @@ const TomarAsistenciaPersonal = () => {
         await new DatosAsistenciaHoyIDB().obtenerEstadoTomaAsistencia(
           TipoAsistencia.ParaPersonal
         );
-
+        console.log("HOLAAA",estadoTomaAsistenciaDePersonalActual)
       setEstadoTomaAsistenciaDePersonal(estadoTomaAsistenciaDePersonalActual);
     };
     obtenerEstadoAsistencia();
@@ -187,8 +187,7 @@ const TomarAsistenciaPersonal = () => {
     } de ${fechaObj.getFullYear()}`;
   };
 
-  // Función para iniciar el registro de asistencia
-  const iniciarOContinuarRegistroAsistencia = async () => {
+  const iniciarTomaAsistenciaDePersonalHoy = async () => {
     if (!estadoTomaAsistenciaDePersonal?.AsistenciaIniciada) {
       const response = await fetch(`/api/asistencia-hoy/iniciar`, {
         method: "POST",
@@ -208,6 +207,13 @@ const TomarAsistenciaPersonal = () => {
       datosAsistenciaHoy.guardarEstadoTomaAsistencia(
         estadoActualTomaDeAsisteniaDePersonal
       );
+    }
+  };
+
+  // Función para iniciar el registro de asistencia
+  const iniciarOContinuarRegistroAsistencia = async () => {
+    if (!estadoTomaAsistenciaDePersonal?.AsistenciaIniciada) {
+      iniciarTomaAsistenciaDePersonalHoy();
     }
 
     setShowFullScreenModalAsistenciaPersonal(true);
@@ -908,14 +914,11 @@ const TomarAsistenciaPersonal = () => {
                   }`}
                   disabled={!estadoSistema.botonActivo}
                 >
+                  <PlayIcon className="w-5 mr-2" />
                   {estadoSistema.estado === "en_proceso" ? (
-                    <>
-                      <ThinLoader className="-ml-1 mr-2 w-4 text-white" />
-                      Procesando registros...
-                    </>
+                    <>Continuar toma de asistencia</>
                   ) : (
                     <>
-                      <PlayIcon className="w-5 mr-2" />
                       {estadoTomaAsistenciaDePersonal?.AsistenciaIniciada
                         ? "Continuar toma de asistencia"
                         : "Iniciar Registro de Asistencia"}
