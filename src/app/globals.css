@@ -31,8 +31,6 @@ input:-webkit-autofill {
   transition: background-color 5000s ease-in-out 0s;
 }
 
-
-
 /* Esto ayuda a dar la impresión de que el dropdown tiene bordes redondeados */
 
 select option {
@@ -94,8 +92,6 @@ select::-webkit-listbox {
   }
 }
 
-
-
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -151,8 +147,6 @@ select::-webkit-listbox {
     --chart-5: 340 75% 55%;
   }
 }
-
-
 
 @layer base {
   * {

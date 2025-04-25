@@ -39,7 +39,7 @@ const SidebarDirectivo = () => {
           if (windowWidth < 768) dispatch(switchSidebarIsOpen());
         }}
       >
-        <ul id="sidebar-ul" className="flex flex-col py-4">
+        <ul id="sidebar-ul" className="flex flex-col py-3.5">
           {allSiasisModules.map((props, index) => {
             return <SideBarElementDirectivo key={index} {...props} />;
           })}
@@ -82,9 +82,7 @@ const SidebarDirectivo = () => {
             width: max-content;
             max-width: 80%;
           }
-
-        }
-                  
+        }                  
     `}
       </style>
     </>

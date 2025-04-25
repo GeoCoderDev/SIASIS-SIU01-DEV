@@ -2,9 +2,9 @@ import { IconProps } from "@/interfaces/IconProps";
 
 const ResponsableIcon = ({ className, title }: IconProps) => {
   return (
-    <div title={title ?? ""}>
+    <div className="" title={title ?? ""}>
       <svg
-        className={`text-inherit ${className}`}
+        className={`${className}`}
         viewBox="0 0 33 45"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"

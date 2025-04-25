@@ -5,7 +5,7 @@ const ResponsablesIcon2 = ({ className, title }: IconProps) => {
   return (
     <div title={title ?? ""}>
       <svg
-        className={`${className}`}
+        className={`text-inherit ${className}`}
         viewBox="0 0 27 19"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-
 import { LogoutTypes, ErrorDetailsForLogout } from "@/interfaces/LogoutTypes";
 import { RolesSistema } from "@/interfaces/shared/RolesSistema";
 import { NOMBRE_ARCHIVO_CON_DATOS_ASISTENCIA_DIARIOS } from "@/constants/NOMBRE_ARCHIVOS_EN_BLOBS";

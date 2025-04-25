@@ -30,33 +30,33 @@ const SideBarElementDirectivo = ({
   return renderizar ? (
     <>
       {etiquetaSuperior && (
-        <span className="ml-6 mt-6 mb-2 text-[0.85rem]">
+        <span className="ml-5 mt-5 mb-2 text-[0.8rem]">
           {etiquetaSuperior}
         </span>
       )}
 
       <InterceptedLinkForDataThatCouldBeLost href={`${route}`}>
         <li
-          className={` flex items-center pl-5 pr-8 overflow-hidden min-w-[12.5rem] max-w-[25rem]  ${
+          className={`flex items-center pl-4 pr-7 overflow-hidden min-w-[11rem] max-w-[22rem] ${
             !isSelected && "hover:bg-gray-200"
-          } py-2 `}
+          } py-1.5`}
           title={text}
         >
           <span
             className={`flex items-center border-l-[3px] ${
               isSelected ? "border-color-interfaz" : "border-transparent"
-            } pl-4 gap-x-4 `}
+            } pl-4 gap-x-3`}
           >
             <IconTSX
-              className={`-border-2 border-blue-600 aspect-auto w-5 ${
+              className={`aspect-auto w-4 ${
                 isSelected ? "text-color-interfaz" : "text-negro"
               }`}
             />
 
             <span
-              className={`w-max text-[0.95rem] text-ellipsis text-nowrap ${
+              className={`w-max text-[0.85rem] text-ellipsis text-nowrap ${
                 isSelected && "text-color-interfaz overflow-hidden"
-              } `}
+              }`}
             >
               {text}
             </span>
