@@ -1,0 +1,55 @@
+name: Sync to Production Repositories
+
+on:
+  push:
+    branches:
+      - ie20935
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Configure Git
+        run: |
+          git config --global user.name "SIASIS IE20935 Sync Bot"
+          git config --global user.email "siasis-sync@asuncion8.edu.pe"
+      
+      # Repositorio 1
+      - name: Push to Repository 1
+        run: |
+          git remote add repo1 https://x-access-token:${{ secrets.REPO1_TOKEN }}@github.com/SIU01-ASUNCION8-SIASIS/SIU01-INS1-IE20935.git
+          git push repo1 ie20935:master
+        continue-on-error: true
+      
+      # # Repositorio 2
+      # - name: Push to Repository 2
+      #   run: |
+      #     git remote add repo2 https://x-access-token:${{ secrets.REPO2_TOKEN }}@github.com/RUTA-AL-REPOSITORIO-2.git
+      #     git push repo2 ie20935:main
+      #   continue-on-error: true
+      
+      # # Repositorio 3
+      # - name: Push to Repository 3
+      #   run: |
+      #     git remote add repo3 https://x-access-token:${{ secrets.REPO3_TOKEN }}@github.com/RUTA-AL-REPOSITORIO-3.git
+      #     git push repo3 ie20935:main
+      #   continue-on-error: true
+      
+      # # Repositorio 4
+      # - name: Push to Repository 4
+      #   run: |
+      #     git remote add repo4 https://x-access-token:${{ secrets.REPO4_TOKEN }}@github.com/RUTA-AL-REPOSITORIO-4.git
+      #     git push repo4 ie20935:main
+      #   continue-on-error: true
+      
+      # # Repositorio 5
+      # - name: Push to Repository 5
+      #   run: |
+      #     git remote add repo5 https://x-access-token:${{ secrets.REPO5_TOKEN }}@github.com/RUTA-AL-REPOSITORIO-5.git
+      #     git push repo5 ie20935:main
+      #   continue-on-error: true

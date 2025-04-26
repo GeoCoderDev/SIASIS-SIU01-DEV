@@ -2,6 +2,7 @@ import React, { forwardRef, useState, useEffect } from "react";
 
 interface SwitchProps {
   className?: string;
+  labelClassName?: string;
   toggleSize?: "sm" | "md" | "lg";
   trackColor?: string;
   activeColor?: string;
@@ -15,6 +16,7 @@ interface SwitchProps {
 const Switch = forwardRef<HTMLInputElement, SwitchProps>(
   (
     {
+      labelClassName,
       className = "",
       toggleSize = "md",
       trackColor = "bg-gray-300",
@@ -90,7 +92,10 @@ const Switch = forwardRef<HTMLInputElement, SwitchProps>(
         } ${className}`}
       >
         {label && (
-          <span className="ml-3 text-sm font-medium" onClick={handleChange}>
+          <span
+            className={` font-medium ${labelClassName}`}
+            onClick={handleChange}
+          >
             {label}
           </span>
         )}

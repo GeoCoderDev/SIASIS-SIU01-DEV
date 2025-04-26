@@ -55,15 +55,8 @@ const ProfesoresPrimaria = () => {
           ref={switchRef}
           label="Sin Aula"
           toggleSize="md"
-
+          labelClassName="text-[1rem] font-medium"
         />
-
-        
-
-
-
-        
-
       </form>
     </div>
   );
