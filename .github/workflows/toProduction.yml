@@ -5,8 +5,8 @@ on:
     branches:
       - ie20935
 
-# Permite la ejecución manual para pruebas
-workflow_dispatch:
+  # Permite la ejecución manual para pruebas
+  workflow_dispatch:
 
 jobs:
   sync:
