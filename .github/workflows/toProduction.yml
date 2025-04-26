@@ -22,7 +22,7 @@ jobs:
       # Repositorio 1
       - name: Push to Repository 1
         run: |
-          git remote add repo1 https://x-access-token:${{ secrets.REPO1_TOKEN }}@github.com/SIU01-ASUNCION8-SIASIS/SIU01-INS1-IE20935.git
+          git remote add repo1 https://x-access-token:${{ secrets.SIU01_INS1_REPOSITORIO_PRODUCCION_TOKEN }}@github.com/SIU01-ASUNCION8-SIASIS/SIU01-INS1-IE20935.git
           git push repo1 ie20935:master
         continue-on-error: true
       
