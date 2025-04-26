@@ -69,4 +69,6 @@ jobs:
           
           echo "Haciendo push de los cambios al repositorio destino 2..."
           git push origin master
+
+          cd ..
         continue-on-error: true
