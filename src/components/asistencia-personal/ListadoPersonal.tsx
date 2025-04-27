@@ -21,7 +21,6 @@ import { ActoresSistema } from "@/interfaces/shared/ActoresSistema";
 import { Loader2 } from "lucide-react";
 import { ConsultarAsistenciasDiariasPorActorEnRedisResponseBody } from "@/interfaces/shared/AsistenciaRequests";
 
-
 // Obtener texto según el rol
 export const obtenerTextoRol = (rol: RolesSistema): string => {
   switch (rol) {
