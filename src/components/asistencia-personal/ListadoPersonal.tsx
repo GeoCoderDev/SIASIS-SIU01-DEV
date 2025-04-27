@@ -21,6 +21,7 @@ import { ActoresSistema } from "@/interfaces/shared/ActoresSistema";
 import { Loader2 } from "lucide-react";
 import { ConsultarAsistenciasDiariasPorActorEnRedisResponseBody } from "@/interfaces/shared/AsistenciaRequests";
 
+
 // Obtener texto según el rol
 export const obtenerTextoRol = (rol: RolesSistema): string => {
   switch (rol) {
@@ -145,6 +146,7 @@ export const ListaPersonal = ({
         ).shift()} ${personal.Apellidos.split(" ").shift()}`
       );
 
+      console.log("JJJJJJJJJJJJ", horaEsperada);
       const fecthCancelable = await fetchSiasisAPI({
         endpoint: "/api/asistencia-diaria/marcar",
         method: "POST",
@@ -152,7 +154,7 @@ export const ListaPersonal = ({
           DNI: personal.DNI,
           Actor: rol,
           ModoRegistro: modoRegistro,
-          FechaHoraEsperadaISO: horaEsperada.toISOString(),
+          FechaHoraEsperadaISO: new Date(horaEsperada).toISOString(),
         } as RegistrarAsistenciaIndividualRequestBody),
       });
 
