@@ -107,12 +107,16 @@ export const redisClient = (tipoAsistencia?: TipoAsistencia) => {
     },
     
     set: async (key: string, value: any, expireIn?: number) => {
-      if (tipoAsistencia !== undefined) {
-        // Si se especifica un tipo, establecemos el valor en todas las instancias de ese tipo
-        await setInAllInstancesByType(tipoAsistencia, key, value, expireIn);
-      } else {
-        // Si no se especifica tipo, establecemos el valor en todas las instancias de todos los tipos
-        await setInAllInstances(key, value, expireIn);
+      try {
+        if (tipoAsistencia !== undefined) {
+          await setInAllInstancesByType(tipoAsistencia, key, value, expireIn);
+        } else {
+          await setInAllInstances(key, value, expireIn);
+        }
+        return "OK"; // Devuelve "OK" para mantener compatibilidad
+      } catch (error) {
+        console.error("Error en operación SET:", error);
+        throw error;
       }
     },
     

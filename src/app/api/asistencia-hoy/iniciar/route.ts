@@ -135,9 +135,8 @@ export async function POST(req: NextRequest) {
     const redisClientInstance = redisClient(tipoAsistencia);
 
     // Almacenar en Redis con expiración al final del día peruano
-    const valorGuardado = await redisClientInstance.set(redisKey, "true", {
-      ex: segundosHastaFinDia,
-    });
+    const valorGuardado = await redisClientInstance.set(redisKey, "true", 
+     segundosHastaFinDia    );
 
     if (valorGuardado !== "OK") {
       return NextResponse.json(
