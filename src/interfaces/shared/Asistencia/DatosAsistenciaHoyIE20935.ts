@@ -29,10 +29,7 @@ export type PersonalAdministrativoParaTomaDeAsistencia = Pick<
   | "Google_Drive_Foto_ID"
   | "Horario_Laboral_Entrada"
   | "Horario_Laboral_Salida"
-> & {
-  Hora_Entrada_Dia_Actual: string;
-  Hora_Salida_Dia_Actual: string;
-};
+>;
 
 export type ProfesoresPrimariaParaTomaDeAsistencia = Pick<
   T_Profesores_Primaria,
