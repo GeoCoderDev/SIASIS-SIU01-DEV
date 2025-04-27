@@ -171,7 +171,6 @@ export const ListaPersonal = ({
           Dia: fechaHoraActual.utilidades!.diaMes,
           DNI: personal.DNI,
           esNuevoRegistro: data.data.esNuevoRegistro,
-          Id_Registro_Mensual: data.data.Id_Registro_Mensual,
           ModoRegistro: modoRegistro,
           Detalles: {
             DesfaseSegundos: data.data.desfaseSegundos,
