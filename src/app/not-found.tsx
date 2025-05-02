@@ -6,7 +6,7 @@ const NotFound404 = () => {
       <div>No encontrado</div>
       <button
         onClick={async () => {
-          const res = await fetch("/api/evento", {
+          const res = await fetch("/api/dispatch-replication", {
             method: "POST",
           });
           if (res.status === 204) {
