@@ -1,9 +1,9 @@
 import ModalContainer from "../../ModalContainer";
 import BotonConIcono from "@/components/buttons/BotonConIcono";
-import AgregarIcon from "@/components/icons/AgregarIcon";
 import CalendarioIcon from "@/components/icons/CalendarioIcon";
+import GuardarIcon from "@/components/icons/GuardarIcon";
 
-const CreacionVacacionInterEscolar = ({
+const ModificarVacacionesInterescolares = ({
   eliminateModal,
 }: {
   eliminateModal: () => void;
@@ -16,7 +16,7 @@ const CreacionVacacionInterEscolar = ({
       <div className="pt-2 px-4">
         {/* Título */}
         <h2 className="text-xl sm:text-2xl font-bold text-center text-gray-800 mb-6">
-          Nuevo Periodo de Vacaciones
+          Período de Vacaciones
         </h2>
 
         {/* Fechas */}
@@ -45,7 +45,7 @@ const CreacionVacacionInterEscolar = ({
               <BotonConIcono
                 texto="01/08/2025"
                 IconTSX={<CalendarioIcon className="w-4 ml-2" />}
-                className="bg-red-500 text-white font-medium px-3 py-2 rounded-lg hover:bg-red-600 transition-colors xs-only:w-[150px]"
+                className="bg-red-600 text-white font-medium px-3 py-2 rounded-lg hover:bg-red-600 transition-colors xs-only:w-[150px]"
               />
               <p className="text-gray-600 font-medium">(Viernes)</p>
             </div>
@@ -55,9 +55,9 @@ const CreacionVacacionInterEscolar = ({
         {/* Botón Guardar */}
         <div className="flex justify-center">
           <BotonConIcono
-            texto="Agregar Periodo"
-            IconTSX={<AgregarIcon className="w-4 ml-2" />}
-            className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors xs-only:w-[250px]"
+            texto="Guardar Cambios"
+            IconTSX={<GuardarIcon className="w-4 ml-2" />}
+            className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-6 py-3 rounded-lg transition-colors xs-only:w-[250px]"
           />
         </div>
         <br />
@@ -66,4 +66,4 @@ const CreacionVacacionInterEscolar = ({
   );
 };
 
-export default CreacionVacacionInterEscolar;
+export default ModificarVacacionesInterescolares;
