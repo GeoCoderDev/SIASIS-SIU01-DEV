@@ -1,30 +1,30 @@
 import Link from "next/link";
 
-const Programacion = () => {
-  const cards = [
-    {
-      title: "Gestión de Fechas Escolares",
-      description:
-        "Administra las fechas clave del calendario escolar, incluyendo el inicio de clases y periodos de vacaciones.",
-      icon: "/images/svg/GestiónDeFechasEscolares.svg",
-      href: "programacion/gestion-fechas-escolares",
-    },
-    {
-      title: "Gestión de Horarios de Asistencia Escolares",
-      description:
-        "Configura y edita los horarios de registro de asistencia para los niveles de primaria y secundaria.",
-      icon: "/images/svg/AsistenciaEscolares.svg",
-      href: "programacion/gestion-horarios-asistencia",
-    },
-    {
-      title: "Gestión de Horarios Laborales",
-      description:
-        "Administra y ajusta los horarios laborales de los profesores de primaria, secundaria y auxiliares.",
-      icon: "/images/svg/HorarioLaboral.svg",
-      href: "programacion/gestion-horarios-laborales",
-    },
-  ];
+const cards = [
+  {
+    title: "Gestión de Fechas Escolares",
+    description:
+      "Administra las fechas clave del calendario escolar, incluyendo el inicio de clases y periodos de vacaciones.",
+    icon: "/images/svg/GestiónDeFechasEscolares.svg",
+    href: "programacion/gestion-fechas-escolares",
+  },
+  {
+    title: "Gestión de Horarios de Asistencia Escolares",
+    description:
+      "Configura y edita los horarios de registro de asistencia para los niveles de primaria y secundaria.",
+    icon: "/images/svg/AsistenciaEscolares.svg",
+    href: "programacion/gestion-horarios-asistencia",
+  },
+  {
+    title: "Gestión de Horarios Laborales",
+    description:
+      "Administra y ajusta los horarios laborales de los profesores de primaria, secundaria y auxiliares.",
+    icon: "/images/svg/HorarioLaboral.svg",
+    href: "programacion/gestion-horarios-laborales",
+  },
+];
 
+const Programacion = () => {
   return (
     <div className="w-full h-full flex flex-col">
       {/* Título */}
@@ -52,7 +52,7 @@ const Programacion = () => {
                   <h3 className="text-2xl sxs-only:text-xl xs-only:text-xl sm-only:text-2xl font-bold text-negro mb-8 sxs-only:mb-6 xs-only:mb-7 leading-tight">
                     {card.title}
                   </h3>
-                  
+
                   {/* Contenedor del icono */}
                   <div className="flex-shrink-0 mb-8 sxs-only:mb-6 xs-only:mb-7">
                     <img
@@ -61,7 +61,7 @@ const Programacion = () => {
                       className="w-20 h-20 sxs-only:w-16 sxs-only:h-16 xs-only:w-18 xs-only:h-18 sm-only:w-20 sm-only:h-20 md-only:w-24 md-only:h-24 lg-only:w-24 lg-only:h-24 xl-only:w-28 xl-only:h-28 mx-auto object-contain group-hover:scale-110 transition-transform duration-300"
                     />
                   </div>
-                  
+
                   {/* Descripción */}
                   <p className="text-lg sxs-only:text-base xs-only:text-base sm-only:text-lg text-gray-700 leading-relaxed">
                     {card.description}
