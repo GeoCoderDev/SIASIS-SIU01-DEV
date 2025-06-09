@@ -5,6 +5,8 @@ import Link from "next/link";
 import CreacionVacacionInterEscolar from "@/components/modals/programacion/gestion-fechas-escolares/CreacionVacacionInterEscolar";
 import ModificarVacacionesInterescolares from "@/components/modals/programacion/gestion-fechas-escolares/ModificarVacacionesInterescolares";
 import EliminarVacacionesInterescolares from "@/components/modals/programacion/gestion-fechas-escolares/EliminarVacacionesInterescolares";
+import ModificarSemanaGestionEscolar from "@/components/modals/programacion/gestion-fechas-escolares/ModificarSemanaGestionEscolar";
+import ModificarInicioFinAñoEscolar from "@/components/modals/programacion/gestion-fechas-escolares/ModificarInicioFinAñoEscolar";
 import BotonConIcono from "@/components/buttons/BotonConIcono";
 import BasureroIcon from "@/components/icons/BasureroIcon";
 import LapizIcon from "@/components/icons/LapizIcon";
@@ -24,6 +26,16 @@ const GestionFechasEscolares = () => {
   const [
     showElimiarVacacionesInterescolares,
     setShowElimiarVacacionesInterescolares,
+  ] = useState(false);
+
+  const [
+    showModificarSemanaGestionEscolar,
+    setShowModificarSemanaGestionEscolar,
+  ] = useState(false);
+
+  const [
+    showModificarInicioFinAñoEscolar,
+    setShowModificarInicioFinAñoEscolar,
   ] = useState(false);
 
   const fechasVacaciones = [
@@ -57,6 +69,22 @@ const GestionFechasEscolares = () => {
         <EliminarVacacionesInterescolares
           eliminateModal={() => {
             setShowElimiarVacacionesInterescolares(false);
+          }}
+        />
+      )}
+
+      {showModificarSemanaGestionEscolar && (
+        <ModificarSemanaGestionEscolar
+          eliminateModal={() => {
+            setShowModificarSemanaGestionEscolar(false);
+          }}
+        />
+      )}
+
+      {showModificarInicioFinAñoEscolar && (
+        <ModificarInicioFinAñoEscolar
+          eliminateModal={() => {
+            setShowModificarInicioFinAñoEscolar(false);
           }}
         />
       )}
@@ -173,7 +201,7 @@ const GestionFechasEscolares = () => {
                       IconTSX={<LapizIcon className="w-[1rem] ml-2" />}
                       className="bg-yellow-400 hover:bg-yellow-500 text-black font-bold px-4 py-2 rounded-md flex items-center text-[0.95rem] transition"
                       onClick={() => {
-                        setShowModificarVacacionesInterescolares(true);
+                        setShowModificarSemanaGestionEscolar(true);
                       }}
                     />
                 </div>
@@ -213,7 +241,7 @@ const GestionFechasEscolares = () => {
                       IconTSX={<LapizIcon className="w-[1rem] ml-2" />}
                       className="bg-yellow-400 hover:bg-yellow-500 text-black font-bold px-4 py-2 rounded-md flex items-center text-[0.95rem] transition"
                       onClick={() => {
-                        setShowModificarVacacionesInterescolares(true);
+                        setShowModificarInicioFinAñoEscolar(true);
                       }}
                     />
                 </div>

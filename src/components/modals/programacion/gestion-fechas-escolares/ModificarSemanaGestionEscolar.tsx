@@ -4,7 +4,7 @@ import BotonConIcono from "@/components/buttons/BotonConIcono";
 import CalendarioIcon from "@/components/icons/CalendarioIcon";
 import GuardarIcon from "@/components/icons/GuardarIcon";
 
-const ModificarVacacionesInterescolares = ({
+const ModificarSemanaGestionEscolar = ({
   eliminateModal,
 }: {
   eliminateModal: () => void;
@@ -60,7 +60,7 @@ const ModificarVacacionesInterescolares = ({
       <div className="pt-2 px-4">
         {/* Título */}
         <h2 className="text-xl sm:text-2xl font-bold text-center text-gray-800 mb-6">
-          Periodo de Vacaciones
+          Periodo de Semana de Gestión
         </h2>
 
         {/* Fechas */}
@@ -68,7 +68,7 @@ const ModificarVacacionesInterescolares = ({
           {/* Inicio */}
           <div className="flex-1 w-full">
             <label className="block text-base sm:text-lg font-semibold text-gray-800 mb-3 pl-[6px]">
-              Inicio de Vacaciones
+              Inicio de Semana
             </label>
             <div className="flex items-center gap-3">
               <div className="relative">
@@ -112,7 +112,7 @@ const ModificarVacacionesInterescolares = ({
           {/* Fin */}
           <div className="flex-1 w-full">
             <label className="block text-base sm:text-lg font-semibold text-gray-800 mb-3 pl-[6px]">
-              Fin de Vacaciones
+              Fin de Semana
             </label>
             <div className="flex items-center gap-3">
               <div className="relative">
@@ -168,4 +168,4 @@ const ModificarVacacionesInterescolares = ({
   );
 };
 
-export default ModificarVacacionesInterescolares;
+export default ModificarSemanaGestionEscolar;
