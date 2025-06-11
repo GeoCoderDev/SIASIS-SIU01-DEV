@@ -12,11 +12,7 @@ import {
   MessageProperty,
 } from "@/interfaces/shared/apis/types";
 import { useState, useEffect } from "react";
-import {
-  AsistenciaDePersonalIDB,
-  AsistenciaMensualPersonal,
-  RegistroEntradaSalida,
-} from "@/lib/utils/local/db/models/AsistenciaDePersonal/AsistenciaDePersonalIDB";
+import { AsistenciaDePersonalIDB } from "@/lib/utils/local/db/models/AsistenciaDePersonal/AsistenciaDePersonalIDB";
 import { convertirAFormato12Horas } from "@/lib/helpers/formatters/fechas-hora/formatearAFormato12Horas";
 import { ENTORNO } from "@/constants/ENTORNO";
 import { Entorno } from "@/interfaces/shared/Entornos";
@@ -24,6 +20,10 @@ import {
   EventosIDB,
   IEventoLocal,
 } from "@/lib/utils/local/db/models/EventosIDB";
+import {
+  AsistenciaMensualPersonal,
+  RegistroEntradaSalida,
+} from "@/interfaces/shared/AsistenciaRequests";
 
 // 🔧 CONSTANTE DE CONFIGURACIÓN PARA DESARROLLO
 const CONSIDERAR_DIAS_NO_ESCOLARES = false; // false = solo días laborales, true = incluir sábados y domingos
@@ -321,11 +321,11 @@ const RegistrosAsistenciaDePersonal = () => {
       );
 
       const resultado =
-        await asistenciaPersonalIDB.obtenerAsistenciaMensualConAPI(
-          rol,
+        await asistenciaPersonalIDB.obtenerAsistenciaMensualConAPI({
           dni,
-          mes
-        );
+          mes,
+          rol,
+        });
 
       if (!resultado.encontrado) {
         console.log(`❌ No se encontraron datos para ${dni} - mes ${mes}`);
@@ -702,11 +702,11 @@ const RegistrosAsistenciaDePersonal = () => {
       await obtenerEventos(parseInt(selectedMes));
 
       const resultado =
-        await asistenciaPersonalIDB.obtenerAsistenciaMensualConAPI(
-          selectedRol as RolesSistema,
+        await asistenciaPersonalIDB.obtenerAsistenciaMensualConAPI({
+          rol: selectedRol as RolesSistema,
           dni,
-          parseInt(selectedMes)
-        );
+          mes: parseInt(selectedMes),
+        });
 
       if (resultado.encontrado) {
         let datosParaMostrar: AsistenciaMensualPersonal;
