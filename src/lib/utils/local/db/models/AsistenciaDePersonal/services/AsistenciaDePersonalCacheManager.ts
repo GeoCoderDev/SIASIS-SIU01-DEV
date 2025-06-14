@@ -13,7 +13,7 @@ import {
   AsistenciaPersonalHoy,
   AsistenciasTomadasHoyIDB,
   ConsultaAsistenciaHoy,
-} from "../AsistenciasTomadasHoyIDB";
+} from "../../AsistenciasTomadasHoy/AsistenciasTomadasHoyIDB";
 import { AsistenciaDePersonalDateHelper } from "./AsistenciaDePersonalDateHelper";
 import { AsistenciaDePersonalMapper } from "./AsistenciaDePersonalMapper";
 import IndexedDBConnection from "../../../IndexedDBConnection";
