@@ -16,9 +16,6 @@ import { RolesSistema } from "@/interfaces/shared/RolesSistema";
 import { TipoAsistencia } from "@/interfaces/shared/AsistenciaRequests";
 import { HORA_MAXIMA_EXPIRACION_PARA_REGISTROS_EN_REDIS } from "@/constants/expirations";
 import { obtenerFechaActualPeru } from "../../_helpers/obtenerFechaActualPeru";
-// import { ENTORNO } from "@/constants/ENTORNO";
-// import { Entorno } from "@/interfaces/shared/Entornos";
-
 
 // Constantes de configuración
 const MINUTOS_TOLERANCIA = 5; // 5 minutos de tolerancia para considerar llegada temprana
