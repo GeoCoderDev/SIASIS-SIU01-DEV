@@ -1,4 +1,4 @@
-import { AsistenciaMensualPersonal } from "../AsistenciaDePersonalTypes";
+import { AsistenciaMensualPersonalLocal } from "../AsistenciaDePersonalTypes";
 import { AsistenciaDePersonalDateHelper } from "./AsistenciaDePersonalDateHelper";
 
 /**
@@ -22,8 +22,8 @@ export class AsistenciaDePersonalValidator {
    * MOTIVO: Durante el día actual puede haber entradas pero aún no salidas
    */
   public verificarSincronizacionEntradaSalida(
-    registroEntrada: AsistenciaMensualPersonal | null,
-    registroSalida: AsistenciaMensualPersonal | null
+    registroEntrada: AsistenciaMensualPersonalLocal | null,
+    registroSalida: AsistenciaMensualPersonalLocal | null
   ): {
     estanSincronizados: boolean;
     razon: string;
@@ -63,7 +63,7 @@ export class AsistenciaDePersonalValidator {
 
     // Función para contar días escolares excluyendo el día actual
     const contarDiasEscolaresSinActual = (
-      registro: AsistenciaMensualPersonal | null
+      registro: AsistenciaMensualPersonalLocal | null
     ): number => {
       if (!registro || !registro.registros) return 0;
 
@@ -134,8 +134,8 @@ export class AsistenciaDePersonalValidator {
    * Verifica si los registros locales necesitan actualización
    */
   public verificarSiNecesitaActualizacion(
-    registroEntrada: AsistenciaMensualPersonal | null,
-    registroSalida: AsistenciaMensualPersonal | null,
+    registroEntrada: AsistenciaMensualPersonalLocal | null,
+    registroSalida: AsistenciaMensualPersonalLocal | null,
     diaActual: number
   ): boolean {
     // Calcular el último día registrado en ambos registros
@@ -177,7 +177,7 @@ export class AsistenciaDePersonalValidator {
    * Verifica si el registro mensual tiene TODOS los días laborales anteriores
    */
   public verificarRegistroMensualCompleto(
-    registroMensual: AsistenciaMensualPersonal | null,
+    registroMensual: AsistenciaMensualPersonalLocal | null,
     diasLaboralesAnteriores: number[]
   ): boolean {
     if (!registroMensual || !registroMensual.registros) {
@@ -212,8 +212,8 @@ export class AsistenciaDePersonalValidator {
    * Verifica si un registro tiene datos históricos
    */
   public tieneRegistrosHistoricos(
-    registroEntrada: AsistenciaMensualPersonal | null,
-    registroSalida: AsistenciaMensualPersonal | null
+    registroEntrada: AsistenciaMensualPersonalLocal | null,
+    registroSalida: AsistenciaMensualPersonalLocal | null
   ): boolean {
     const sincronizacion = this.verificarSincronizacionEntradaSalida(
       registroEntrada,
@@ -230,7 +230,7 @@ export class AsistenciaDePersonalValidator {
    * Valida que un registro mensual tenga la estructura correcta
    */
   public validarEstructuraRegistroMensual(
-    registro: AsistenciaMensualPersonal | null
+    registro: AsistenciaMensualPersonalLocal | null
   ): { valido: boolean; errores: string[] } {
     const errores: string[] = [];
 
@@ -252,8 +252,8 @@ export class AsistenciaDePersonalValidator {
     }
 
     if (
-      typeof registro.Dni_Personal !== "string" ||
-      registro.Dni_Personal.length !== 8
+      typeof registro.ID_o_DNI_Personal !== "string" ||
+      registro.ID_o_DNI_Personal.length !== 8
     ) {
       errores.push("Dni_Personal debe ser un string de 8 caracteres");
     }
@@ -272,7 +272,7 @@ export class AsistenciaDePersonalValidator {
    * Verifica si un día específico está registrado
    */
   public existeDiaEnRegistro(
-    registro: AsistenciaMensualPersonal | null,
+    registro: AsistenciaMensualPersonalLocal | null,
     dia: number
   ): boolean {
     if (!registro || !registro.registros) {
@@ -286,7 +286,7 @@ export class AsistenciaDePersonalValidator {
    * Cuenta el total de días registrados (incluyendo fines de semana)
    */
   public contarTotalDiasRegistrados(
-    registro: AsistenciaMensualPersonal | null
+    registro: AsistenciaMensualPersonalLocal | null
   ): number {
     if (!registro || !registro.registros) {
       return 0;
@@ -299,7 +299,7 @@ export class AsistenciaDePersonalValidator {
    * Cuenta solo los días escolares registrados (lunes a viernes)
    */
   public contarDiasEscolaresRegistrados(
-    registro: AsistenciaMensualPersonal | null
+    registro: AsistenciaMensualPersonalLocal | null
   ): number {
     if (!registro || !registro.registros) {
       return 0;

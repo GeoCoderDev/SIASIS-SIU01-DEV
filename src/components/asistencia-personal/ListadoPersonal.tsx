@@ -96,15 +96,15 @@ export const ListaPersonal = ({
     if (eliminandoAsistencia !== null) return;
 
     try {
-      setEliminandoAsistencia(personal.DNI);
+      setEliminandoAsistencia(personal.ID_o_DNI);
 
       console.log(
-        `🗑️ Iniciando eliminación de asistencia para: ${personal.DNI}`
+        `🗑️ Iniciando eliminación de asistencia para: ${personal.ID_o_DNI}`
       );
 
       // Eliminar usando el modelo de IndexedDB
       const resultado = await asistenciaDePersonalIDB.eliminarAsistencia({
-        dni: personal.DNI,
+        dni: personal.ID_o_DNI,
         rol: rol,
         modoRegistro: modoRegistro,
       });
@@ -113,7 +113,7 @@ export const ListaPersonal = ({
         // ✅ Actualizar el mapa de asistencias registradas (eliminar la entrada)
         setAsistenciasRegistradas((prev) => {
           const nuevo = new Map(prev);
-          nuevo.delete(personal.DNI);
+          nuevo.delete(personal.ID_o_DNI);
           return nuevo;
         });
 
@@ -229,9 +229,9 @@ export const ListaPersonal = ({
             : [data.Resultados];
 
           resultados.forEach((resultado) => {
-            if (resultado && resultado.DNI) {
+            if (resultado && resultado.ID_o_DNI) {
               console.log("📝 Agregando al mapa:", resultado);
-              mapaAsistencias.set(resultado.DNI, resultado);
+              mapaAsistencias.set(resultado.ID_o_DNI, resultado);
             }
           });
 
@@ -266,14 +266,14 @@ export const ListaPersonal = ({
   ) => {
     if (procesando !== null) return;
 
-    setProcesando(personal.DNI);
+    setProcesando(personal.ID_o_DNI);
 
     try {
       // Obtener la hora esperada como string ISO directamente del JSON
       const horaEsperadaISO =
         handlerDatosAsistenciaHoyDirectivo.obtenerHorarioPersonalISO(
           rol!,
-          personal.DNI,
+          personal.ID_o_DNI,
           modoRegistro
         );
 
@@ -293,13 +293,14 @@ export const ListaPersonal = ({
       const response = await fetch("/api/asistencia-hoy/marcar", {
         method: "POST",
         body: JSON.stringify({
-          DNI: personal.DNI,
+          ID_o_DNI: personal.ID_o_DNI,
           Actor: rol,
           TipoAsistencia: TipoAsistencia.ParaPersonal,
           ModoRegistro: modoRegistro,
           FechaHoraEsperadaISO: horaEsperadaISO,
         } as RegistrarAsistenciaIndividualRequestBody),
       });
+
 
       if (!response.ok) {
         throw new Error(`Error HTTP: ${response.status}`);
@@ -313,7 +314,7 @@ export const ListaPersonal = ({
       if (data.success) {
         // ✅ NUEVO: Crear objeto AsistenciaDiariaResultado y agregarlo al mapa
         const nuevoRegistro: AsistenciaDiariaResultado = {
-          DNI: personal.DNI,
+          ID_o_DNI: personal.ID_o_DNI,
           AsistenciaMarcada: true,
           Detalles: {
             Timestamp: data.data.timestamp,
@@ -324,7 +325,7 @@ export const ListaPersonal = ({
         // Actualizar el mapa de asistencias registradas
         setAsistenciasRegistradas((prev) => {
           const nuevo = new Map(prev);
-          nuevo.set(personal.DNI, nuevoRegistro);
+          nuevo.set(personal.ID_o_DNI, nuevoRegistro);
           return nuevo;
         });
 
@@ -333,7 +334,7 @@ export const ListaPersonal = ({
           datos: {
             Rol: rol!,
             Dia: fechaHoraActual.utilidades!.diaMes,
-            DNI: personal.DNI,
+            DNI: personal.ID_o_DNI,
             esNuevoRegistro: data.data.esNuevoRegistro,
             ModoRegistro: modoRegistro,
             Detalles: {
@@ -440,12 +441,14 @@ export const ListaPersonal = ({
         <div className="max-w-4xl w-full">
           {/* Lista de personas con flex-wrap */}
           <div className="flex flex-wrap justify-center gap-2 sm-only:gap-3 md-only:gap-3 lg-only:gap-3 xl-only:gap-3">
-            {personal.map((persona) => {
+            {personal.map((persona, index) => {
               // ✅ NUEVO: Obtener la asistencia registrada para esta persona
-              const asistenciaPersona = asistenciasRegistradas.get(persona.DNI);
+              const asistenciaPersona = asistenciasRegistradas.get(
+                persona.ID_o_DNI
+              );
 
               // 🐛 DEBUG: Log para verificar datos
-              console.log(`🔍 Debug persona ${persona.DNI}:`, {
+              console.log(`🔍 Debug persona ${persona.ID_o_DNI}:`, {
                 asistenciaPersona,
                 tieneDatos: !!asistenciaPersona,
                 asistenciaMarcada: asistenciaPersona?.AsistenciaMarcada,
@@ -456,14 +459,14 @@ export const ListaPersonal = ({
 
               return (
                 <ItemTomaAsistencia
-                  key={persona.DNI}
+                  key={index}
                   personal={persona}
                   handlePersonalSeleccionado={handlePersonaSeleccionada}
                   handleEliminarAsistencia={handleEliminarAsistencia} // ← NUEVO: Pasar función de eliminación
                   asistenciaRegistrada={asistenciaPersona} // ← NUEVO: Pasar los datos de asistencia
                   timestampActual={timestampActual} // ← NUEVO: Pasar timestamp de Redux
-                  loading={procesando === persona.DNI}
-                  eliminando={eliminandoAsistencia === persona.DNI} // ← NUEVO: Estado de eliminación
+                  loading={procesando === persona.ID_o_DNI}
+                  eliminando={eliminandoAsistencia === persona.ID_o_DNI} // ← NUEVO: Estado de eliminación
                   globalLoading={cargandoAsistencias || isLoading}
                 />
               );

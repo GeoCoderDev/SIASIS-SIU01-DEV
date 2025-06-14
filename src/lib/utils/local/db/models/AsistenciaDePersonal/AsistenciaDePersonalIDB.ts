@@ -2,7 +2,7 @@
 import { SiasisAPIS } from "@/interfaces/shared/SiasisComponents";
 
 import {
-  AsistenciaMensualPersonal,
+  AsistenciaMensualPersonalLocal,
   TipoPersonal,
   ModoRegistro,
   RolesSistema,
@@ -79,7 +79,10 @@ export class AsistenciaDePersonalIDB {
 
     // Inicializar servicios que dependen de los base
     this.validator = new AsistenciaDePersonalValidator(this.dateHelper);
-    this.repository = new AsistenciaDePersonalRepository(this.mapper);
+    this.repository = new AsistenciaDePersonalRepository(
+      this.mapper,
+      this.dateHelper
+    );
     this.cacheManager = new AsistenciaDePersonalCacheManager(
       this.mapper,
       this.dateHelper
@@ -507,7 +510,7 @@ export class AsistenciaDePersonalIDB {
     tipoPersonal: TipoPersonal,
     modoRegistro: ModoRegistro,
     mes: Meses
-  ): Promise<AsistenciaMensualPersonal[]> {
+  ): Promise<AsistenciaMensualPersonalLocal[]> {
     try {
       return await this.repository.obtenerTodosRegistrosMensuales(
         tipoPersonal,

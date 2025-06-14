@@ -20,13 +20,11 @@ import {
   EventosIDB,
   IEventoLocal,
 } from "@/lib/utils/local/db/models/EventosIDB";
-import {
-  AsistenciaMensualPersonal,
-  RegistroEntradaSalida,
-} from "@/interfaces/shared/AsistenciaRequests";
+import { RegistroEntradaSalida } from "@/interfaces/shared/AsistenciaRequests";
+import { AsistenciaMensualPersonalLocal } from "@/lib/utils/local/db/models/AsistenciaDePersonal/AsistenciaDePersonalTypes";
 
 // 🔧 CONSTANTE DE CONFIGURACIÓN PARA DESARROLLO
-const CONSIDERAR_DIAS_NO_ESCOLARES = false; // false = solo días laborales, true = incluir sábados y domingos
+const CONSIDERAR_DIAS_NO_ESCOLARES = true; // false = solo días laborales, true = incluir sábados y domingos
 
 interface RegistroDia {
   fecha: string;
@@ -49,7 +47,7 @@ const RegistrosAsistenciaDePersonal = () => {
   const [dni, setDni] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingEventos, setLoadingEventos] = useState(false);
-  const [data, setData] = useState<AsistenciaMensualPersonal | null>(null);
+  const [data, setData] = useState<AsistenciaMensualPersonalLocal | null>(null);
   const [eventos, setEventos] = useState<IEventoLocal[]>([]);
   const [registros, setRegistros] = useState<RegistroDia[]>([]);
   const [error, setError] = useState<ErrorResponseAPIBase | null>(null);
@@ -709,7 +707,7 @@ const RegistrosAsistenciaDePersonal = () => {
         });
 
       if (resultado.encontrado) {
-        let datosParaMostrar: AsistenciaMensualPersonal;
+        let datosParaMostrar: AsistenciaMensualPersonalLocal;
 
         if (resultado.entrada) {
           datosParaMostrar = resultado.entrada;
@@ -892,8 +890,8 @@ const RegistrosAsistenciaDePersonal = () => {
             Asistencias del {roles.find((r) => r.value === selectedRol)?.label}
           </h3>
           <p className="text-gris-intermedio">
-            <span className="font-medium">DNI: {data.Dni_Personal}</span> - Mes:{" "}
-            {mesesTextos[data.mes as Meses]}
+            <span className="font-medium">DNI: {data.ID_o_DNI_Personal}</span> -
+            Mes: {mesesTextos[data.mes as Meses]}
           </p>
           <p className="text-xs text-gris-intermedio mt-1">
             Total de registros: {registros.length}{" "}

@@ -6,7 +6,7 @@ import {
   TipoAsistencia,
   EstadosAsistenciaPersonal,
   RolesSistema,
-  AsistenciaMensualPersonal,
+  AsistenciaMensualPersonalLocal,
   RegistroEntradaSalida,
 } from "../AsistenciaDePersonalTypes";
 import {
@@ -114,13 +114,13 @@ export class AsistenciaDePersonalCacheManager {
    * Integra datos del cache en el registro mensual
    */
   public integrarDatosDeCacheEnRegistroMensual(
-    registroMensual: AsistenciaMensualPersonal | null,
+    registroMensual: AsistenciaMensualPersonalLocal | null,
     datosCache: AsistenciaPersonalHoy,
     diaActual: number,
     modoRegistro: ModoRegistro,
     dni: string,
     fecha: string
-  ): AsistenciaMensualPersonal {
+  ): AsistenciaMensualPersonalLocal {
     // Si no existe registro mensual, crear uno nuevo
     if (!registroMensual) {
       const fechaObj = new Date(fecha);
@@ -131,8 +131,9 @@ export class AsistenciaDePersonalCacheManager {
       registroMensual = {
         Id_Registro_Mensual: 0, // ID temporal
         mes,
-        Dni_Personal: dni,
+        ID_o_DNI_Personal: dni,
         registros: {},
+        ultima_fecha_actualizacion: this.dateHelper.obtenerTimestampPeruano()
       };
     }
 
@@ -156,16 +157,16 @@ export class AsistenciaDePersonalCacheManager {
    * Combina datos históricos (IndexedDB) con datos del día actual (cache Redis)
    */
   public async combinarDatosHistoricosYActuales(
-    registroEntrada: AsistenciaMensualPersonal | null,
-    registroSalida: AsistenciaMensualPersonal | null,
+    registroEntrada: AsistenciaMensualPersonalLocal | null,
+    registroSalida: AsistenciaMensualPersonalLocal | null,
     rol: RolesSistema,
     dni: string,
     esConsultaMesActual: boolean,
     diaActual: number,
     mensajeBase: string
   ): Promise<{
-    entrada?: AsistenciaMensualPersonal;
-    salida?: AsistenciaMensualPersonal;
+    entrada?: AsistenciaMensualPersonalLocal;
+    salida?: AsistenciaMensualPersonalLocal;
     encontrado: boolean;
     mensaje: string;
   }> {
@@ -252,8 +253,8 @@ export class AsistenciaDePersonalCacheManager {
     dni: string,
     diaActual: number
   ): Promise<{
-    entrada?: AsistenciaMensualPersonal;
-    salida?: AsistenciaMensualPersonal;
+    entrada?: AsistenciaMensualPersonalLocal;
+    salida?: AsistenciaMensualPersonalLocal;
     encontrado: boolean;
     mensaje: string;
   }> {
@@ -286,8 +287,8 @@ export class AsistenciaDePersonalCacheManager {
       ),
     ]);
 
-    let entrada: AsistenciaMensualPersonal | undefined;
-    let salida: AsistenciaMensualPersonal | undefined;
+    let entrada: AsistenciaMensualPersonalLocal | undefined;
+    let salida: AsistenciaMensualPersonalLocal | undefined;
 
     if (entradaCache) {
       entrada = this.integrarDatosDeCacheEnRegistroMensual(

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
-  AsistenciaMensualPersonal,
+  AsistenciaMensualPersonalLocal,
   ModoRegistro,
   RolesSistema,
   OperationResult,
@@ -61,8 +61,8 @@ export class AsistenciaPersonalSyncService {
     dni: string,
     mes: number
   ): Promise<{
-    entrada?: AsistenciaMensualPersonal;
-    salida?: AsistenciaMensualPersonal;
+    entrada?: AsistenciaMensualPersonalLocal;
+    salida?: AsistenciaMensualPersonalLocal;
     sincronizado: boolean;
     mensaje: string;
   }> {
@@ -199,8 +199,10 @@ export class AsistenciaPersonalSyncService {
             {
               Id_Registro_Mensual: idReal,
               mes: asistenciaAPI.Mes,
-              Dni_Personal: asistenciaAPI.DNI_Usuario,
+              ID_o_DNI_Personal: asistenciaAPI.ID_O_DNI_Usuario,
               registros: registrosProcesados,
+              ultima_fecha_actualizacion:
+                this.dateHelper.obtenerTimestampPeruano(),
             }
           );
         }
@@ -512,6 +514,7 @@ export class AsistenciaPersonalSyncService {
     const stats: SincronizacionStats = {
       totalRegistros: (datosRedis.Resultados as AsistenciaDiariaResultado[])
         .length,
+
       registrosNuevos: 0,
       registrosExistentes: 0,
       errores: 0,
@@ -541,7 +544,7 @@ export class AsistenciaPersonalSyncService {
             await this.repository.verificarSiExisteRegistroDiario(
               tipoPersonal,
               datosRedis.ModoRegistro,
-              resultado.DNI,
+              resultado.ID_o_DNI,
               mesActual,
               diaActual
             );
@@ -560,13 +563,13 @@ export class AsistenciaPersonalSyncService {
 
           // Procesar registro (esto se delegará al servicio principal)
           console.log(
-            `🔄 Sincronizando registro: ${resultado.DNI} - ${datosRedis.ModoRegistro}`
+            `🔄 Sincronizando registro: ${resultado.ID_o_DNI} - ${datosRedis.ModoRegistro}`
           );
 
           stats.registrosNuevos++;
         } catch (error) {
           console.error(
-            `Error al sincronizar registro para DNI ${resultado.DNI}:`,
+            `Error al sincronizar registro para DNI ${resultado.ID_o_DNI}:`,
             error
           );
           stats.errores++;

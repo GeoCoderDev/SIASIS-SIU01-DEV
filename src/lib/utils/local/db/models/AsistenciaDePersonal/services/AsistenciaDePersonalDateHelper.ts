@@ -7,6 +7,7 @@ import store from "@/global/store";
  * - Calcular días escolares
  * - Validar rangos de fechas
  * - Determinar lógica de consulta a API
+ * - ✅ NUEVOS: Métodos para flujo inteligente de consultas
  */
 export class AsistenciaDePersonalDateHelper {
   /**
@@ -37,11 +38,275 @@ export class AsistenciaDePersonalDateHelper {
     }
   }
 
+  // ========================================================================================
+  // ✅ NUEVOS MÉTODOS PARA FLUJO INTELIGENTE
+  // ========================================================================================
+
+  /**
+   * ✅ NUEVO: Obtiene la hora actual desde Redux (0-23)
+   */
+  public obtenerHoraActual(): number | null {
+    const fechaActual = this.obtenerFechaActualDesdeRedux();
+    return fechaActual ? fechaActual.getHours() : null;
+  }
+
+  /**
+   * ✅ NUEVO: Verifica si es fin de semana (Sábado o Domingo)
+   */
+  public esFinDeSemana(): boolean {
+    const fechaActual = this.obtenerFechaActualDesdeRedux();
+    if (!fechaActual) return false;
+
+    const diaSemana = fechaActual.getDay(); // 0=domingo, 6=sábado
+    return diaSemana === 0 || diaSemana === 6;
+  }
+
+  /**
+   * ✅ NUEVO: Obtiene timestamp peruano (hora de Perú como número)
+   * Para el campo obligatorio `ultima_fecha_actualizacion`
+   */
+  public obtenerTimestampPeruano(): number {
+    const fechaActual = this.obtenerFechaActualDesdeRedux();
+    if (!fechaActual) {
+      console.warn("No se pudo obtener fecha desde Redux, usando Date.now()");
+      return Date.now();
+    }
+
+    return fechaActual.getTime();
+  }
+
+  /**
+   * ✅ NUEVO: Validar si estamos en horario escolar
+   * Combina lógica existente con nuevas validaciones
+   */
+  public validarHorarioEscolar(): {
+    esHorarioEscolar: boolean;
+    esDiaEscolar: boolean;
+    horaActual: number;
+    razon: string;
+  } {
+    const fechaActual = this.obtenerFechaActualDesdeRedux();
+
+    if (!fechaActual) {
+      return {
+        esHorarioEscolar: false,
+        esDiaEscolar: false,
+        horaActual: 0,
+        razon: "No se pudo obtener fecha desde Redux",
+      };
+    }
+
+    const horaActual = fechaActual.getHours();
+    const diaSemana = fechaActual.getDay(); // 0=domingo, 6=sábado
+    const esDiaEscolar = diaSemana >= 1 && diaSemana <= 5; // Lunes a Viernes
+
+    // Validar horario escolar (6:00 AM - 10:00 PM)
+    const esHorarioEscolar = horaActual >= 6 && horaActual < 22;
+
+    let razon = "";
+    if (!esDiaEscolar) {
+      razon = "Es fin de semana";
+    } else if (!esHorarioEscolar) {
+      razon =
+        horaActual < 6
+          ? "Muy temprano (antes de 6:00 AM)"
+          : "Muy tarde (después de 10:00 PM)";
+    } else {
+      razon = "Horario escolar válido";
+    }
+
+    return {
+      esHorarioEscolar: esHorarioEscolar && esDiaEscolar,
+      esDiaEscolar,
+      horaActual,
+      razon,
+    };
+  }
+
+  /**
+   * ✅ NUEVO: Determina tipo de consulta según mes
+   */
+  public determinarTipoConsulta(mes: number): {
+    tipo: "MES_FUTURO" | "MES_ANTERIOR" | "MES_ACTUAL";
+    debeLogout: boolean;
+    razon: string;
+  } {
+    const fechaActual = this.obtenerFechaActualDesdeRedux();
+
+    if (!fechaActual) {
+      return {
+        tipo: "MES_ACTUAL",
+        debeLogout: false,
+        razon: "No se pudo obtener fecha desde Redux",
+      };
+    }
+
+    const mesActual = fechaActual.getMonth() + 1;
+
+    if (mes > mesActual) {
+      return {
+        tipo: "MES_FUTURO",
+        debeLogout: true,
+        razon: "Consulta de mes futuro no permitida - logout forzado",
+      };
+    } else if (mes < mesActual) {
+      return {
+        tipo: "MES_ANTERIOR",
+        debeLogout: false,
+        razon: "Mes anterior - aplicar optimización IndexedDB",
+      };
+    } else {
+      return {
+        tipo: "MES_ACTUAL",
+        debeLogout: false,
+        razon: "Mes actual - aplicar lógica de horarios",
+      };
+    }
+  }
+
+  /**
+   * ✅ NUEVO: Determina estrategia de consulta para mes actual
+   */
+  public determinarEstrategiaConsultaMesActual(): {
+    estrategia:
+      | "NO_CONSULTAR"
+      | "REDIS_ENTRADAS"
+      | "REDIS_COMPLETO"
+      | "API_CONSOLIDADO";
+    razon: string;
+    horaActual: number;
+  } {
+    const fechaActual = this.obtenerFechaActualDesdeRedux();
+
+    if (!fechaActual) {
+      return {
+        estrategia: "API_CONSOLIDADO",
+        razon: "No se pudo obtener fecha desde Redux - usar API por seguridad",
+        horaActual: 0,
+      };
+    }
+
+    const horaActual = fechaActual.getHours();
+    const esFinDeSemana = this.esFinDeSemana();
+
+    // ✅ CORREGIDO: Fines de semana SÍ permiten consultas
+    if (esFinDeSemana) {
+      // En fines de semana, usar datos consolidados de API
+      return {
+        estrategia: "API_CONSOLIDADO",
+        razon: "Fin de semana - usar datos consolidados de API",
+        horaActual,
+      };
+    }
+
+    // Lógica de horarios para días escolares
+    if (horaActual < 6) {
+      return {
+        estrategia: "API_CONSOLIDADO", // ✅ CAMBIADO: NO bloquear, usar API
+        razon: "Antes de 6:00 AM - usar datos consolidados de API",
+        horaActual,
+      };
+    } else if (horaActual >= 6 && horaActual < 12) {
+      return {
+        estrategia: "REDIS_ENTRADAS",
+        razon:
+          "Horario de entradas (6:00-12:00) - consultar Redis para entradas",
+        horaActual,
+      };
+    } else if (horaActual >= 12 && horaActual < 22) {
+      return {
+        estrategia: "REDIS_COMPLETO",
+        razon:
+          "Horario completo (12:00-22:00) - consultar Redis para entradas y salidas",
+        horaActual,
+      };
+    } else {
+      return {
+        estrategia: "API_CONSOLIDADO",
+        razon: "Después de 22:00 - datos consolidados en PostgreSQL",
+        horaActual,
+      };
+    }
+  }
+
+  /**
+   * ✅ NUEVO: Valida si debe consultar API para mes anterior
+   */
+  public debeConsultarAPIMesAnterior(
+    existeEnIndexedDB: boolean,
+    ultimaFechaActualizacion: number | null,
+    mesConsultado: number
+  ): {
+    debeConsultar: boolean;
+    razon: string;
+  } {
+    if (!existeEnIndexedDB) {
+      return {
+        debeConsultar: true,
+        razon: "No existe en IndexedDB - consulta inicial requerida",
+      };
+    }
+
+    if (!ultimaFechaActualizacion) {
+      return {
+        debeConsultar: true,
+        razon: "Registro sin fecha de actualización - requiere actualización",
+      };
+    }
+
+    // Extraer mes de la última actualización
+    const fechaActualizacion = new Date(ultimaFechaActualizacion);
+    const mesActualizacion = fechaActualizacion.getMonth() + 1;
+
+    if (mesActualizacion === mesConsultado) {
+      return {
+        debeConsultar: true,
+        razon:
+          "Datos fueron actualizados en el mismo mes consultado - pueden haber cambiado",
+      };
+    } else {
+      return {
+        debeConsultar: false,
+        razon:
+          "Datos de mes finalizado - no consultar API (optimización aplicada)",
+      };
+    }
+  }
+
+  /**
+   * ✅ NUEVO: Crear timestamp con fecha actual de Perú
+   */
+  public crearTimestampActual(): number {
+    return this.obtenerTimestampPeruano();
+  }
+
+  /**
+   * ✅ NUEVO: Verificar si una fecha está en el pasado
+   */
+  public esFechaPasada(timestamp: number): boolean {
+    const fechaActual = this.obtenerFechaActualDesdeRedux();
+    if (!fechaActual) return false;
+
+    return timestamp < fechaActual.getTime();
+  }
+
+  /**
+   * ✅ NUEVO: Obtener diferencia en días entre dos timestamps
+   */
+  public obtenerDiferenciaDias(timestamp1: number, timestamp2: number): number {
+    const diferenciaMilisegundos = Math.abs(timestamp1 - timestamp2);
+    return Math.floor(diferenciaMilisegundos / (1000 * 60 * 60 * 24));
+  }
+
+  // ========================================================================================
+  // MÉTODOS ORIGINALES (SIN CAMBIOS)
+  // ========================================================================================
+
   /**
    * Calcula el día escolar del mes (sin contar fines de semana)
    */
   public calcularDiaEscolarDelMes(): number {
-    const fechaActual = new Date();
+    const fechaActual = this.obtenerFechaActualDesdeRedux() || new Date();
     const anio = fechaActual.getFullYear();
     const mes = fechaActual.getMonth(); // 0-11
     const diaActual = fechaActual.getDate();

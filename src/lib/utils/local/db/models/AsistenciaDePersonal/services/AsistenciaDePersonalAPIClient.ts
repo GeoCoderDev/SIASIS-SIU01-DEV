@@ -51,7 +51,7 @@ export class AsistenciaDePersonalAPIClient {
       const { fetchSiasisAPI } = fetchSiasisApiGenerator(this.siasisAPI);
 
       const fetchCancelable = await fetchSiasisAPI({
-        endpoint: `/api/personal/asistencias-mensuales?Rol=${rol}&DNI=${dni}&Mes=${mes}`,
+        endpoint: `/api/personal/asistencias-mensuales?Rol=${rol}&ID_O_DNI=${dni}&Mes=${mes}`,
         method: "GET",
       });
 
@@ -127,7 +127,7 @@ export class AsistenciaDePersonalAPIClient {
 
       // Crear el request body para la API de eliminación
       const requestBody: EliminarAsistenciaRequestBody = {
-        DNI: dni,
+        ID_o_DNI: dni,
         Actor: actor,
         ModoRegistro: modoRegistro,
         TipoAsistencia: TipoAsistencia.ParaPersonal,
