@@ -25,7 +25,7 @@ import {
 } from "@/interfaces/shared/apis/types";
 import {
   ConsultarAsistenciasTomadasPorActorEnRedisResponseBody,
-  DetallesAsistenciaUnitariaPersonal,
+  TipoAsistencia,
 } from "@/interfaces/shared/AsistenciaRequests";
 import { AsistenciaDePersonalMapper } from "./services/AsistenciaDePersonalMapper";
 import { AsistenciaDePersonalDateHelper } from "./services/AsistenciaDePersonalDateHelper";
@@ -87,7 +87,12 @@ export class AsistenciaDePersonalIDB {
       this.mapper,
       this.dateHelper
     );
-    this.apiClient = new AsistenciaDePersonalAPIClient(siasisAPI, this.mapper);
+    this.apiClient = new AsistenciaDePersonalAPIClient(
+      siasisAPI,
+      this.mapper,
+      this.dateHelper,
+      this.repository
+    );
 
     // Inicializar servicio de sincronización que coordina todos los demás
     this.syncService = new AsistenciaPersonalSyncService(
@@ -109,115 +114,33 @@ export class AsistenciaDePersonalIDB {
    * Si NO existe registro mensual, guarda en cache Redis en lugar de consultar API
    */
   public async marcarAsistencia(
-    params: ParametrosMarcadoAsistencia
+    params: ParametrosMarcadoAsistencia,
+    horaEsperadaISO: string // ✅ NUEVO parámetro
   ): Promise<void> {
     try {
       this.errorHandler.setLoading(true);
       this.errorHandler.clearErrors();
 
       const { datos } = params;
-      const {
-        ModoRegistro: modoRegistro,
-        DNI: dni,
-        Rol: rol,
-        Dia: dia,
-        Detalles,
-      } = datos;
+      const { ModoRegistro: modoRegistro, DNI: dni, Rol: rol } = datos;
 
-      // Usar fecha Redux en lugar de fecha del timestamp
-      const fechaActualRedux = this.dateHelper.obtenerFechaActualDesdeRedux();
-      if (!fechaActualRedux) {
-        throw new Error("No se pudo obtener la fecha desde Redux");
-      }
+      console.log(`🚀 Marcando asistencia vía API: ${dni} - ${modoRegistro}`);
 
-      const tipoPersonal = this.mapper.obtenerTipoPersonalDesdeRolOActor(rol);
-      const mes = fechaActualRedux.getMonth() + 1;
-
-      const estado = this.mapper.determinarEstadoAsistencia(
-        (Detalles as DetallesAsistenciaUnitariaPersonal)!.DesfaseSegundos,
-        modoRegistro
-      );
-
-      const registroEntradaSalida = {
-        timestamp: (Detalles as DetallesAsistenciaUnitariaPersonal)!.Timestamp,
-        estado: estado,
-        desfaseSegundos: (Detalles as DetallesAsistenciaUnitariaPersonal)!
-          .DesfaseSegundos,
-      };
-
-      console.log(
-        `🚀 Iniciando marcado de asistencia: ${dni} - ${modoRegistro} - día ${dia}`
-      );
-
-      // Verificar si ya existe un registro mensual en IndexedDB
-      const registroMensualExistente =
-        await this.repository.obtenerRegistroMensual(
-          tipoPersonal,
-          modoRegistro,
-          dni,
-          mes
-        );
-
-      if (registroMensualExistente) {
-        // CASO SIMPLE: Ya existe registro mensual → Agregar día actual directamente
-        console.log(
-          `📱 Registro mensual encontrado, agregando día ${dia} directamente`
-        );
-
-        // Verificar si el día ya existe
-        if (registroMensualExistente.registros[dia.toString()]) {
-          console.log(`⚠️ El día ${dia} ya tiene registro, sobrescribiendo`);
-        }
-
-        // Agregar/actualizar el día actual
-        registroMensualExistente.registros[dia.toString()] =
-          registroEntradaSalida;
-
-        // Guardar el registro actualizado
-        const resultado = await this.repository.guardarRegistroMensual(
-          tipoPersonal,
-          modoRegistro,
-          registroMensualExistente
-        );
-
-        if (resultado.exitoso) {
-          console.log(
-            `✅ Asistencia marcada exitosamente: ${rol} ${dni} - ${modoRegistro} - ${estado}`
-          );
-          this.errorHandler.handleSuccess("Asistencia registrada exitosamente");
-        } else {
-          throw new Error(resultado.mensaje);
-        }
-
-        return;
-      }
-
-      // NUEVA LÓGICA: No existe registro mensual → Guardar en cache Redis
-      console.log(`💾 No existe registro mensual, guardando en cache Redis`);
-
-      const fechaString = fechaActualRedux.toISOString().split("T")[0];
-      const asistenciaCache = this.cacheManager.crearAsistenciaParaCache(
+      // ✅ USAR API CLIENT en lugar de cache directo
+      const resultadoMarcado = await this.apiClient.marcarAsistenciaEnRedis(
         dni,
         rol,
         modoRegistro,
-        registroEntradaSalida.timestamp,
-        registroEntradaSalida.desfaseSegundos,
-        estado,
-        fechaString
+        horaEsperadaISO
       );
 
-      // Guardar en cache Redis
-      const resultadoCache = await this.cacheManager.guardarAsistenciaEnCache(
-        asistenciaCache
-      );
-
-      if (resultadoCache.exitoso) {
+      if (resultadoMarcado.exitoso) {
         console.log(
-          `✅ Asistencia marcada en cache: ${rol} ${dni} - ${modoRegistro} - ${estado}`
+          `✅ Asistencia marcada exitosamente: ${resultadoMarcado.mensaje}`
         );
         this.errorHandler.handleSuccess("Asistencia registrada exitosamente");
       } else {
-        throw new Error(resultadoCache.mensaje);
+        throw new Error(resultadoMarcado.mensaje);
       }
     } catch (error) {
       console.error(`❌ Error al marcar asistencia:`, error);
@@ -415,6 +338,66 @@ export class AsistenciaDePersonalIDB {
   // ========================================================================================
   // MÉTODOS DE CONSULTA Y VERIFICACIÓN
   // ========================================================================================
+
+  /**
+   * ✅ NUEVO: Consulta y sincroniza asistencias desde Redis
+   */
+  public async consultarYSincronizarAsistenciasRedis(
+    rol: RolesSistema,
+    modoRegistro: ModoRegistro
+  ): Promise<{
+    exitoso: boolean;
+    datos?: any;
+    estadisticasSincronizacion?: SincronizacionStats;
+    mensaje: string;
+  }> {
+    try {
+      this.errorHandler.setLoading(true);
+      this.errorHandler.clearErrors();
+
+      // Mapear rol a actor
+      const actor = this.mapper.obtenerActorDesdeRol(rol);
+
+      console.log(
+        `🔍 Consultando asistencias Redis para ${actor} - ${modoRegistro}`
+      );
+
+      // Consultar Redis via API
+      const datosRedis =
+        await this.apiClient.consultarAsistenciasTomadasEnRedis(
+          TipoAsistencia.ParaPersonal,
+          actor,
+          modoRegistro
+        );
+
+      // Sincronizar con IndexedDB
+      const statsSync = await this.syncService.sincronizarAsistenciasDesdeRedis(
+        datosRedis
+      );
+
+      console.log("📊 Estadísticas de sincronización:", statsSync);
+
+      return {
+        exitoso: true,
+        datos: datosRedis,
+        estadisticasSincronizacion: statsSync,
+        mensaje: `Sincronización completada: ${statsSync.registrosNuevos} nuevos registros`,
+      };
+    } catch (error) {
+      console.error("❌ Error al consultar y sincronizar desde Redis:", error);
+      this.errorHandler.handleErrorWithRecovery(
+        error,
+        "consultar asistencias Redis"
+      );
+
+      return {
+        exitoso: false,
+        mensaje: "Error al consultar asistencias desde Redis",
+      };
+    } finally {
+      this.errorHandler.setLoading(false);
+    }
+  }
 
   /**
    * Verifica si una asistencia existe para hoy

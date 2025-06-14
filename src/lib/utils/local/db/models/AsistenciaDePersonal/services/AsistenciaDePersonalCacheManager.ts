@@ -36,7 +36,7 @@ export class AsistenciaDePersonalCacheManager {
   ) {
     this.mapper = mapper;
     this.dateHelper = dateHelper;
-    this.cacheAsistenciasHoy = new AsistenciasTomadasHoyIDB();
+    this.cacheAsistenciasHoy = new AsistenciasTomadasHoyIDB(this.dateHelper);
 
     // Inicializar rutinas de mantenimiento del cache
     this.cacheAsistenciasHoy.inicializarMantenimiento();
@@ -133,7 +133,7 @@ export class AsistenciaDePersonalCacheManager {
         mes,
         ID_o_DNI_Personal: dni,
         registros: {},
-        ultima_fecha_actualizacion: this.dateHelper.obtenerTimestampPeruano()
+        ultima_fecha_actualizacion: this.dateHelper.obtenerTimestampPeruano(),
       };
     }
 

@@ -22,6 +22,7 @@ import { AsistenciaDePersonalDateHelper } from "./AsistenciaDePersonalDateHelper
  * - Operaciones de consulta y filtrado
  *
  * ✅ ACTUALIZADO: Soporta tanto IDs (directivos) como DNIs (otros roles)
+ * ✅ NUEVO: Timestamp automático en todos los registros guardados/actualizados
  */
 export class AsistenciaDePersonalRepository {
   private mapper: AsistenciaDePersonalMapper;
@@ -38,6 +39,7 @@ export class AsistenciaDePersonalRepository {
   /**
    * Guarda un registro mensual de asistencia usando el ID real de la API
    * ✅ ACTUALIZADO: Soporta ID_o_DNI_Personal
+   * ✅ NUEVO: Siempre incluye timestamp peruano actual
    */
   public async guardarRegistroMensual(
     tipoPersonal: TipoPersonal,
@@ -54,12 +56,23 @@ export class AsistenciaDePersonalRepository {
         modoRegistro
       );
 
+      // ✅ NUEVO: Obtener timestamp peruano actual SIEMPRE
+      const timestampPeruanoActual = this.dateHelper.obtenerTimestampPeruano();
+
+      console.log(
+        `💾 Guardando registro con timestamp peruano: ${timestampPeruanoActual} (${new Date(
+          timestampPeruanoActual
+        ).toLocaleString("es-PE")})`
+      );
+
       return new Promise((resolve, reject) => {
         try {
           const registroToSave: any = {
             [idField]: datos.Id_Registro_Mensual,
             Mes: datos.mes,
             [idFieldName]: datos.ID_o_DNI_Personal,
+            // ✅ NUEVO: SIEMPRE incluir timestamp peruano actual
+            ultima_fecha_actualizacion: timestampPeruanoActual,
           };
 
           if (modoRegistro === ModoRegistro.Entrada) {
@@ -68,9 +81,22 @@ export class AsistenciaDePersonalRepository {
             registroToSave.Salidas = datos.registros;
           }
 
+          console.log(`💾 Objeto a guardar en ${storeName}:`, {
+            ...registroToSave,
+            // Solo mostrar resumen de registros para no saturar el log
+            [modoRegistro === ModoRegistro.Entrada
+              ? "Entradas"
+              : "Salidas"]: `${
+              Object.keys(datos.registros).length
+            } días registrados`,
+          });
+
           const putRequest = store.put(registroToSave);
 
           putRequest.onsuccess = () => {
+            console.log(
+              `✅ Registro mensual guardado exitosamente en ${storeName} con timestamp ${timestampPeruanoActual}`
+            );
             resolve({
               exitoso: true,
               mensaje: "Registro mensual guardado exitosamente",
@@ -79,6 +105,10 @@ export class AsistenciaDePersonalRepository {
           };
 
           putRequest.onerror = (event) => {
+            console.error(
+              `❌ Error al guardar en ${storeName}:`,
+              (event.target as IDBRequest).error
+            );
             reject(
               new Error(
                 `Error al guardar registro mensual: ${
@@ -88,6 +118,7 @@ export class AsistenciaDePersonalRepository {
             );
           };
         } catch (error) {
+          console.error(`❌ Error en preparación de guardado:`, error);
           reject(error);
         }
       });
@@ -105,6 +136,7 @@ export class AsistenciaDePersonalRepository {
   /**
    * Obtiene el registro mensual de asistencia para un personal específico
    * ✅ ACTUALIZADO: Usa ID_o_DNI_Personal
+   * ✅ MEJORADO: Mejor logging para debugging
    */
   public async obtenerRegistroMensual(
     tipoPersonal: TipoPersonal,
@@ -132,8 +164,16 @@ export class AsistenciaDePersonalRepository {
                     tipoPersonal,
                     modoRegistro
                   );
+                console.log(
+                  `📖 Registro encontrado por ID: ${id_registro_mensual}, última actualización: ${new Date(
+                    registroMensual.ultima_fecha_actualizacion
+                  ).toLocaleString("es-PE")}`
+                );
                 resolve(registroMensual);
               } else {
+                console.log(
+                  `📖 No se encontró registro con ID: ${id_registro_mensual}`
+                );
                 resolve(null);
               }
             };
@@ -187,6 +227,12 @@ export class AsistenciaDePersonalRepository {
                   tipoPersonal,
                   modoRegistro
                 );
+
+              console.log(
+                `📖 Registro encontrado para ${tipoPersonal} - ${ID_o_DNI_Personal} - mes ${mes}, última actualización: ${new Date(
+                  registroMensual.ultima_fecha_actualizacion
+                ).toLocaleString("es-PE")}`
+              );
               resolve(registroMensual);
             } else {
               console.log(
@@ -269,7 +315,7 @@ export class AsistenciaDePersonalRepository {
   public async eliminarRegistroMensual(
     tipoPersonal: TipoPersonal,
     modoRegistro: ModoRegistro,
-    idODni: string, // ✅ ACTUALIZADO: Era dni
+    idODni: string,
     mes: number
   ): Promise<OperationResult> {
     try {
@@ -281,7 +327,7 @@ export class AsistenciaDePersonalRepository {
       return new Promise((resolve, reject) => {
         try {
           const index = store.index(indexName);
-          const keyValue = [idODni, mes]; // ✅ ACTUALIZADO
+          const keyValue = [idODni, mes];
           const request = index.get(keyValue);
 
           request.onsuccess = () => {
@@ -295,7 +341,7 @@ export class AsistenciaDePersonalRepository {
               const deleteRequest = store.delete(id);
               deleteRequest.onsuccess = () => {
                 console.log(
-                  `🗑️ Registro eliminado: ${storeName} - ${idODni} - mes ${mes}` // ✅ ACTUALIZADO
+                  `🗑️ Registro eliminado: ${storeName} - ${idODni} - mes ${mes}`
                 );
                 resolve({
                   exitoso: true,
@@ -350,7 +396,7 @@ export class AsistenciaDePersonalRepository {
   public async verificarExistenciaRegistroMensual(
     tipoPersonal: TipoPersonal,
     modoRegistro: ModoRegistro,
-    idODni: string, // ✅ ACTUALIZADO: Era dni
+    idODni: string,
     mes: number
   ): Promise<number | null> {
     try {
@@ -366,7 +412,7 @@ export class AsistenciaDePersonalRepository {
       return new Promise((resolve, reject) => {
         try {
           const index = store.index(indexName);
-          const keyValue = [idODni, mes]; // ✅ ACTUALIZADO
+          const keyValue = [idODni, mes];
           const request = index.get(keyValue);
 
           request.onsuccess = () => {
@@ -399,10 +445,6 @@ export class AsistenciaDePersonalRepository {
     }
   }
 
-  /**
-   * Verifica si ya existe un registro diario para un personal específico
-   * ✅ ACTUALIZADO: Usa idODni
-   */
   /**
    * Verifica si ya existe un registro diario para un personal específico
    * ✅ CORREGIDO: Aplica validaciones y conversiones
@@ -492,6 +534,7 @@ export class AsistenciaDePersonalRepository {
 
   /**
    * Obtiene todos los registros mensuales para un tipo de personal y un mes específico
+   * ✅ MEJORADO: Mejor logging y manejo de timestamp
    */
   public async obtenerTodosRegistrosMensuales(
     tipoPersonal: TipoPersonal,
@@ -516,20 +559,39 @@ export class AsistenciaDePersonalRepository {
           request.onsuccess = () => {
             if (request.result && request.result.length > 0) {
               const registrosMensuales: AsistenciaMensualPersonalLocal[] =
-                request.result.map((item) => ({
-                  Id_Registro_Mensual: item[idField],
-                  mes: item.Mes,
-                  ID_o_DNI_Personal: item[idFieldName], // ✅ ACTUALIZADO: Era Dni_Personal
-                  registros:
-                    modoRegistro === ModoRegistro.Entrada
-                      ? item.Entradas
-                      : item.Salidas,
-                  ultima_fecha_actualizacion:
-                    this.dateHelper.obtenerTimestampPeruano(),
-                }));
+                request.result.map((item) => {
+                  // ✅ NUEVO: Preservar timestamp original o usar timestamp actual si no existe
+                  const timestampOriginal = item.ultima_fecha_actualizacion;
+                  const timestampFinal =
+                    timestampOriginal ||
+                    this.dateHelper.obtenerTimestampPeruano();
 
+                  if (!timestampOriginal) {
+                    console.warn(
+                      `⚠️ Registro sin timestamp encontrado, usando timestamp actual: ${timestampFinal}`
+                    );
+                  }
+
+                  return {
+                    Id_Registro_Mensual: item[idField],
+                    mes: item.Mes,
+                    ID_o_DNI_Personal: item[idFieldName],
+                    registros:
+                      modoRegistro === ModoRegistro.Entrada
+                        ? item.Entradas
+                        : item.Salidas,
+                    ultima_fecha_actualizacion: timestampFinal,
+                  };
+                });
+
+              console.log(
+                `📊 Se obtuvieron ${registrosMensuales.length} registros mensuales para ${tipoPersonal} - mes ${mes}`
+              );
               resolve(registrosMensuales);
             } else {
+              console.log(
+                `📊 No se encontraron registros mensuales para ${tipoPersonal} - mes ${mes}`
+              );
               resolve([]);
             }
           };
@@ -555,28 +617,46 @@ export class AsistenciaDePersonalRepository {
 
   /**
    * Actualiza un registro existente agregando un nuevo día
-   * ✅ ACTUALIZADO: Usa idODni
+   * ✅ ACTUALIZADO: Usa idODni y garantiza timestamp actualizado
    */
   public async actualizarRegistroExistente(
     tipoPersonal: TipoPersonal,
     modoRegistro: ModoRegistro,
-    idODni: string, // ✅ ACTUALIZADO: Era dni
+    idODni: string,
     mes: number,
     dia: number,
     registro: RegistroEntradaSalida,
     idRegistroExistente: number
   ): Promise<OperationResult> {
     try {
+      console.log(
+        `🔄 Actualizando registro existente para ${tipoPersonal} - ${idODni} - mes ${mes} - día ${dia}`
+      );
+
       const registroActual = await this.obtenerRegistroMensual(
         tipoPersonal,
         modoRegistro,
-        idODni, // ✅ ACTUALIZADO
+        idODni,
         mes,
         idRegistroExistente
       );
 
       if (registroActual) {
+        // Actualizar el registro del día específico
         registroActual.registros[dia.toString()] = registro;
+
+        // ✅ NUEVO: SIEMPRE actualizar el timestamp cuando se modifica el registro
+        registroActual.ultima_fecha_actualizacion =
+          this.dateHelper.obtenerTimestampPeruano();
+
+        console.log(
+          `🔄 Actualizando timestamp a: ${
+            registroActual.ultima_fecha_actualizacion
+          } (${new Date(
+            registroActual.ultima_fecha_actualizacion
+          ).toLocaleString("es-PE")})`
+        );
+
         return await this.guardarRegistroMensual(
           tipoPersonal,
           modoRegistro,
@@ -601,7 +681,7 @@ export class AsistenciaDePersonalRepository {
 
   /**
    * Mapea un registro obtenido del store a la interfaz AsistenciaMensualPersonalLocal
-   * ✅ ACTUALIZADO: Usa ID_o_DNI_Personal
+   * ✅ ACTUALIZADO: Usa ID_o_DNI_Personal y maneja timestamp correctamente
    */
   private mapearRegistroMensualDesdeStore(
     registroStore: any,
@@ -611,42 +691,57 @@ export class AsistenciaDePersonalRepository {
     const idField = this.mapper.getIdFieldForStore(tipoPersonal, modoRegistro);
     const idPersonalField = this.mapper.getIdFieldName(tipoPersonal);
 
+    // ✅ NUEVO: Manejo robusto del timestamp
+    const timestampOriginal = registroStore.ultima_fecha_actualizacion;
+    const timestampFinal =
+      timestampOriginal || this.dateHelper.obtenerTimestampPeruano();
+
+    if (!timestampOriginal) {
+      console.warn(
+        `⚠️ Registro sin timestamp encontrado al mapear, usando timestamp actual: ${timestampFinal}`
+      );
+    }
+
     return {
       Id_Registro_Mensual: registroStore[idField],
       mes: registroStore.Mes,
-      ID_o_DNI_Personal: registroStore[idPersonalField], // ✅ ACTUALIZADO: Era Dni_Personal
+      ID_o_DNI_Personal: registroStore[idPersonalField],
       registros:
         modoRegistro === ModoRegistro.Entrada
           ? registroStore.Entradas
           : registroStore.Salidas,
-      ultima_fecha_actualizacion: this.dateHelper.obtenerTimestampPeruano(),
+      ultima_fecha_actualizacion: timestampFinal,
     };
   }
 
   /**
    * Elimina un día específico de un registro mensual
-   * ✅ ACTUALIZADO: Usa idODni
+   * ✅ ACTUALIZADO: Usa idODni y actualiza timestamp al modificar
    */
   public async eliminarDiaDeRegistroMensual(
     tipoPersonal: TipoPersonal,
     modoRegistro: ModoRegistro,
-    idODni: string, // ✅ ACTUALIZADO: Era dni
+    idODni: string,
     mes: number,
     dia: number
   ): Promise<OperationResult> {
     try {
+      console.log(
+        `🗑️ Eliminando día ${dia} del registro mensual para ${tipoPersonal} - ${idODni} - mes ${mes}`
+      );
+
       // Obtener el registro mensual actual
       const registroMensual = await this.obtenerRegistroMensual(
         tipoPersonal,
         modoRegistro,
-        idODni, // ✅ ACTUALIZADO
+        idODni,
         mes
       );
 
       if (!registroMensual) {
         return {
           exitoso: false,
-          mensaje: `No se encontró registro mensual para ID/DNI: ${idODni}, mes: ${mes}`, // ✅ ACTUALIZADO
+          mensaje: `No se encontró registro mensual para ID/DNI: ${idODni}, mes: ${mes}`,
         };
       }
 
@@ -670,7 +765,7 @@ export class AsistenciaDePersonalRepository {
         return await this.eliminarRegistroMensual(
           tipoPersonal,
           modoRegistro,
-          idODni, // ✅ ACTUALIZADO
+          idODni,
           mes
         );
       } else {
@@ -680,6 +775,14 @@ export class AsistenciaDePersonalRepository {
             Object.keys(registroMensual.registros).length
           } días)`
         );
+
+        // ✅ NUEVO: Actualizar timestamp al modificar el registro
+        registroMensual.ultima_fecha_actualizacion =
+          this.dateHelper.obtenerTimestampPeruano();
+        console.log(
+          `🔄 Actualizando timestamp tras eliminación de día: ${registroMensual.ultima_fecha_actualizacion}`
+        );
+
         return await this.guardarRegistroMensual(
           tipoPersonal,
           modoRegistro,
@@ -699,11 +802,11 @@ export class AsistenciaDePersonalRepository {
 
   /**
    * Valida la estructura de un registro antes de guardarlo
-   * ✅ ACTUALIZADO: Validación mejorada para ID_o_DNI_Personal
+   * ✅ ACTUALIZADO: Validación mejorada para ID_o_DNI_Personal y timestamp
    */
   public validarEstructuraAntesSalvar(
     datos: AsistenciaMensualPersonalLocal,
-    tipoPersonal?: TipoPersonal // ✅ NUEVO: Para validar según tipo
+    tipoPersonal?: TipoPersonal
   ): ValidacionResult {
     const errores: string[] = [];
 
@@ -715,7 +818,7 @@ export class AsistenciaDePersonalRepository {
       errores.push("El mes debe ser un número entre 1 y 12");
     }
 
-    // ✅ NUEVA VALIDACIÓN: Soporte para ID (directivos) y DNI (otros)
+    // ✅ VALIDACIÓN MEJORADA: Soporte para ID (directivos) y DNI (otros)
     if (
       typeof datos.ID_o_DNI_Personal !== "string" ||
       datos.ID_o_DNI_Personal.trim().length === 0
@@ -738,6 +841,15 @@ export class AsistenciaDePersonalRepository {
           );
         }
       }
+    }
+
+    // ✅ NUEVA VALIDACIÓN: Verificar timestamp
+    if (typeof datos.ultima_fecha_actualizacion !== "number") {
+      errores.push("ultima_fecha_actualizacion debe ser un número (timestamp)");
+    } else if (datos.ultima_fecha_actualizacion <= 0) {
+      errores.push(
+        "ultima_fecha_actualizacion debe ser un timestamp válido mayor a 0"
+      );
     }
 
     if (!datos.registros || typeof datos.registros !== "object") {
@@ -772,5 +884,122 @@ export class AsistenciaDePersonalRepository {
       valido: errores.length === 0,
       errores,
     };
+  }
+
+  /**
+   * ✅ NUEVO: Método para actualizar masivamente timestamps de registros antiguos
+   * Útil para migrar registros que no tenían el campo ultima_fecha_actualizacion
+   */
+  public async actualizarTimestampsRegistrosAntiguos(
+    tipoPersonal: TipoPersonal,
+    modoRegistro: ModoRegistro,
+    mes?: number
+  ): Promise<OperationResult> {
+    try {
+      console.log(
+        `🔄 Iniciando actualización masiva de timestamps para ${tipoPersonal} - ${modoRegistro}${
+          mes ? ` - mes ${mes}` : ""
+        }`
+      );
+
+      await IndexedDBConnection.init();
+      const storeName = this.mapper.getStoreName(tipoPersonal, modoRegistro);
+      const store = await IndexedDBConnection.getStore(storeName, "readwrite");
+
+      let registrosActualizados = 0;
+      const timestampActual = this.dateHelper.obtenerTimestampPeruano();
+
+      return new Promise((resolve, reject) => {
+        try {
+          const request = mes
+            ? store.index("por_mes").getAll(mes)
+            : store.getAll();
+
+          request.onsuccess = () => {
+            const registros = request.result;
+
+            if (!registros || registros.length === 0) {
+              resolve({
+                exitoso: true,
+                mensaje: `No se encontraron registros para actualizar en ${storeName}`,
+                datos: 0,
+              });
+              return;
+            }
+
+            const actualizaciones: Promise<void>[] = [];
+
+            registros.forEach((registro) => {
+              // Solo actualizar si no tiene timestamp o es inválido
+              if (
+                !registro.ultima_fecha_actualizacion ||
+                registro.ultima_fecha_actualizacion <= 0
+              ) {
+                registro.ultima_fecha_actualizacion = timestampActual;
+
+                const actualizacion = new Promise<void>(
+                  (resolveUpdate, rejectUpdate) => {
+                    const updateRequest = store.put(registro);
+                    updateRequest.onsuccess = () => {
+                      registrosActualizados++;
+                      resolveUpdate();
+                    };
+                    updateRequest.onerror = () =>
+                      rejectUpdate(updateRequest.error);
+                  }
+                );
+
+                actualizaciones.push(actualizacion);
+              }
+            });
+
+            if (actualizaciones.length === 0) {
+              resolve({
+                exitoso: true,
+                mensaje: `Todos los registros en ${storeName} ya tienen timestamps válidos`,
+                datos: 0,
+              });
+              return;
+            }
+
+            Promise.all(actualizaciones)
+              .then(() => {
+                console.log(
+                  `✅ Actualización masiva completada: ${registrosActualizados} registros actualizados en ${storeName}`
+                );
+                resolve({
+                  exitoso: true,
+                  mensaje: `Se actualizaron ${registrosActualizados} registros con timestamps`,
+                  datos: registrosActualizados,
+                });
+              })
+              .catch((error) => {
+                console.error(`❌ Error en actualización masiva:`, error);
+                reject(new Error(`Error al actualizar timestamps: ${error}`));
+              });
+          };
+
+          request.onerror = (event) => {
+            reject(
+              new Error(
+                `Error al obtener registros para actualización: ${
+                  (event.target as IDBRequest).error
+                }`
+              )
+            );
+          };
+        } catch (error) {
+          reject(error);
+        }
+      });
+    } catch (error) {
+      console.error("Error en actualizarTimestampsRegistrosAntiguos:", error);
+      return {
+        exitoso: false,
+        mensaje: `Error al actualizar timestamps: ${
+          error instanceof Error ? error.message : "Error desconocido"
+        }`,
+      };
+    }
   }
 }

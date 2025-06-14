@@ -444,4 +444,292 @@ export class AsistenciaDePersonalDateHelper {
       .toString()
       .padStart(2, "0")}`;
   }
+
+  /**
+   * ✅ NUEVO: Obtiene información completa de la fecha actual
+   * Reemplaza el acceso directo a Redux desde otras clases
+   */
+  public obtenerInfoFechaActual(): {
+    fechaActual: Date;
+    mesActual: number;
+    diaActual: number;
+    añoActual: number;
+    esHoy: boolean;
+  } | null {
+    try {
+      const fechaActual = this.obtenerFechaActualDesdeRedux();
+
+      if (!fechaActual) {
+        console.error(
+          "No se pudo obtener fecha desde Redux en obtenerInfoFechaActual"
+        );
+        return null;
+      }
+
+      return {
+        fechaActual,
+        mesActual: fechaActual.getMonth() + 1,
+        diaActual: fechaActual.getDate(),
+        añoActual: fechaActual.getFullYear(),
+        esHoy: true, // Siempre es "hoy" ya que viene de Redux tiempo real
+      };
+    } catch (error) {
+      console.error("Error al obtener información de fecha actual:", error);
+      return null;
+    }
+  }
+
+  /**
+   * ✅ NUEVO: Verifica si un timestamp es muy antiguo (más de 24 horas)
+   * Útil para detectar datos desactualizados
+   */
+  public esTimestampMuyAntiguo(
+    timestamp: number,
+    horasLimite: number = 24
+  ): boolean {
+    try {
+      const fechaActual = this.obtenerFechaActualDesdeRedux();
+      if (!fechaActual) {
+        console.warn(
+          "No se pudo obtener fecha actual para verificar timestamp antiguo"
+        );
+        return false;
+      }
+
+      const timestampActual = fechaActual.getTime();
+      const diferenciaMilisegundos = timestampActual - timestamp;
+      const diferenciaHoras = diferenciaMilisegundos / (1000 * 60 * 60);
+
+      const esAntiguo = diferenciaHoras > horasLimite;
+
+      if (esAntiguo) {
+        console.log(
+          `⏰ Timestamp antiguo detectado: ${diferenciaHoras.toFixed(
+            1
+          )} horas de diferencia (límite: ${horasLimite}h)`
+        );
+      }
+
+      return esAntiguo;
+    } catch (error) {
+      console.error("Error al verificar si timestamp es antiguo:", error);
+      return false;
+    }
+  }
+
+  /**
+   * ✅ NUEVO: Formatea un timestamp a texto legible en español-Perú
+   */
+  public formatearTimestampLegible(timestamp: number): string {
+    try {
+      const fecha = new Date(timestamp);
+      return fecha.toLocaleString("es-PE", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      });
+    } catch (error) {
+      console.error("Error al formatear timestamp:", error);
+      return "Fecha inválida";
+    }
+  }
+
+  /**
+   * ✅ NUEVO: Calcula diferencia entre dos timestamps en formato legible
+   */
+  public calcularDiferenciaTimestamps(
+    timestamp1: number,
+    timestamp2: number
+  ): {
+    milisegundos: number;
+    segundos: number;
+    minutos: number;
+    horas: number;
+    dias: number;
+    textoLegible: string;
+  } {
+    try {
+      const diferenciaMilisegundos = Math.abs(timestamp1 - timestamp2);
+      const segundos = Math.floor(diferenciaMilisegundos / 1000);
+      const minutos = Math.floor(segundos / 60);
+      const horas = Math.floor(minutos / 60);
+      const dias = Math.floor(horas / 24);
+
+      let textoLegible = "";
+      if (dias > 0) {
+        textoLegible = `${dias} día${dias > 1 ? "s" : ""}`;
+      } else if (horas > 0) {
+        textoLegible = `${horas} hora${horas > 1 ? "s" : ""}`;
+      } else if (minutos > 0) {
+        textoLegible = `${minutos} minuto${minutos > 1 ? "s" : ""}`;
+      } else {
+        textoLegible = `${segundos} segundo${segundos > 1 ? "s" : ""}`;
+      }
+
+      return {
+        milisegundos: diferenciaMilisegundos,
+        segundos,
+        minutos,
+        horas,
+        dias,
+        textoLegible,
+      };
+    } catch (error) {
+      console.error("Error al calcular diferencia de timestamps:", error);
+      return {
+        milisegundos: 0,
+        segundos: 0,
+        minutos: 0,
+        horas: 0,
+        dias: 0,
+        textoLegible: "Error en cálculo",
+      };
+    }
+  }
+
+  /**
+   * ✅ NUEVO: Obtiene información sobre el estado temporal del mes consultado
+   */
+  public obtenerEstadoTemporalMes(mes: number): {
+    tipo: "MES_FUTURO" | "MES_ANTERIOR" | "MES_ACTUAL";
+    descripcion: string;
+    debeLogout: boolean;
+    esConsultaValida: boolean;
+  } {
+    try {
+      const fechaActual = this.obtenerFechaActualDesdeRedux();
+
+      if (!fechaActual) {
+        return {
+          tipo: "MES_ACTUAL",
+          descripcion: "No se pudo obtener fecha desde Redux",
+          debeLogout: false,
+          esConsultaValida: false,
+        };
+      }
+
+      const mesActual = fechaActual.getMonth() + 1;
+
+      if (mes > mesActual) {
+        return {
+          tipo: "MES_FUTURO",
+          descripcion: `Consulta de mes futuro (${mes} > ${mesActual}) - No permitida`,
+          debeLogout: true,
+          esConsultaValida: false,
+        };
+      } else if (mes < mesActual) {
+        return {
+          tipo: "MES_ANTERIOR",
+          descripcion: `Consulta de mes anterior (${mes} < ${mesActual}) - Optimización IndexedDB aplicable`,
+          debeLogout: false,
+          esConsultaValida: true,
+        };
+      } else {
+        return {
+          tipo: "MES_ACTUAL",
+          descripcion: `Consulta del mes actual (${mes}) - Aplicar lógica de horarios`,
+          debeLogout: false,
+          esConsultaValida: true,
+        };
+      }
+    } catch (error) {
+      console.error("Error al obtener estado temporal del mes:", error);
+      return {
+        tipo: "MES_ACTUAL",
+        descripcion: "Error al determinar estado temporal",
+        debeLogout: false,
+        esConsultaValida: false,
+      };
+    }
+  }
+
+  /**
+   * ✅ NUEVO: Valida si una fecha está dentro del año académico actual
+   */
+  public esFechaDelAñoAcademico(timestamp: number): boolean {
+    try {
+      const fechaActual = this.obtenerFechaActualDesdeRedux();
+      if (!fechaActual) return false;
+
+      const fechaConsultada = new Date(timestamp);
+      const añoActual = fechaActual.getFullYear();
+      const añoConsultado = fechaConsultada.getFullYear();
+
+      // Año académico generalmente va de marzo de un año a febrero del siguiente
+      // Por simplicidad, validamos que esté dentro del año actual o el anterior
+      return añoConsultado === añoActual || añoConsultado === añoActual - 1;
+    } catch (error) {
+      console.error("Error al validar fecha del año académico:", error);
+      return false;
+    }
+  }
+
+  /**
+   * ✅ NUEVO: Obtiene rango de timestamps para un mes específico
+   */
+  public obtenerRangoTimestampsMes(
+    mes: number,
+    año?: number
+  ): {
+    inicioMes: number;
+    finMes: number;
+    diasEnMes: number;
+  } | null {
+    try {
+      const fechaActual = this.obtenerFechaActualDesdeRedux();
+      const añoFinal =
+        año || fechaActual?.getFullYear() || new Date().getFullYear();
+
+      // Primer día del mes a las 00:00:00
+      const inicioMes = new Date(añoFinal, mes - 1, 1, 0, 0, 0, 0).getTime();
+
+      // Último día del mes a las 23:59:59
+      const ultimoDia = new Date(añoFinal, mes, 0).getDate();
+      const finMes = new Date(
+        añoFinal,
+        mes - 1,
+        ultimoDia,
+        23,
+        59,
+        59,
+        999
+      ).getTime();
+
+      return {
+        inicioMes,
+        finMes,
+        diasEnMes: ultimoDia,
+      };
+    } catch (error) {
+      console.error("Error al obtener rango de timestamps del mes:", error);
+      return null;
+    }
+  }
+
+  /**
+   * ✅ NUEVO: Crear timestamp para un día específico del mes actual
+   */
+  public crearTimestampParaDia(
+    dia: number,
+    hora: number = 0,
+    minutos: number = 0
+  ): number | null {
+    try {
+      const fechaActual = this.obtenerFechaActualDesdeRedux();
+      if (!fechaActual) return null;
+
+      const nuevaFecha = new Date(fechaActual);
+      nuevaFecha.setDate(dia);
+      nuevaFecha.setHours(hora, minutos, 0, 0);
+
+      return nuevaFecha.getTime();
+    } catch (error) {
+      console.error("Error al crear timestamp para día específico:", error);
+      return null;
+    }
+  }
 }

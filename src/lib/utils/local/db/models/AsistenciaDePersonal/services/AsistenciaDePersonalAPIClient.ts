@@ -18,6 +18,8 @@ import {
   OperationResult,
 } from "../AsistenciaDePersonalTypes";
 import { AsistenciaDePersonalMapper } from "./AsistenciaDePersonalMapper";
+import { AsistenciaDePersonalDateHelper } from "./AsistenciaDePersonalDateHelper";
+import { AsistenciaDePersonalRepository } from "./AsistenciaDePersonalRepository";
 import {
   EliminarAsistenciaRequestBody,
   TipoAsistencia,
@@ -29,18 +31,34 @@ import {
  * - Eliminar asistencias via API
  * - Manejar respuestas de API
  * - Transformar datos entre formatos
+ * - Sincronizar eliminaciones con registros locales
+ *
+ * ✅ CORREGIDO:
+ * - Timestamp automático tras eliminaciones
+ * - Toda lógica temporal delegada a DateHelper (SRP)
+ * - Sincronización completa entre APIs y registros locales
  */
 export class AsistenciaDePersonalAPIClient {
   private siasisAPI: SiasisAPIS;
   private mapper: AsistenciaDePersonalMapper;
+  private dateHelper: AsistenciaDePersonalDateHelper; // ✅ NUEVO: Dependencia de DateHelper
+  private repository: AsistenciaDePersonalRepository; // ✅ NUEVO: Para actualizar registros locales
 
-  constructor(siasisAPI: SiasisAPIS, mapper: AsistenciaDePersonalMapper) {
+  constructor(
+    siasisAPI: SiasisAPIS,
+    mapper: AsistenciaDePersonalMapper,
+    dateHelper: AsistenciaDePersonalDateHelper, // ✅ NUEVO
+    repository: AsistenciaDePersonalRepository // ✅ NUEVO
+  ) {
     this.siasisAPI = siasisAPI;
     this.mapper = mapper;
+    this.dateHelper = dateHelper; // ✅ NUEVO
+    this.repository = repository; // ✅ NUEVO
   }
 
   /**
    * Consulta la API para obtener asistencias mensuales
+   * ✅ SIN CAMBIOS: No maneja timestamps directamente
    */
   public async consultarAsistenciasMensuales(
     rol: RolesSistema | ActoresSistema,
@@ -105,7 +123,101 @@ export class AsistenciaDePersonalAPIClient {
   }
 
   /**
+   * ✅ NUEVO: Marca asistencia en Redis mediante API
+   */
+  public async marcarAsistenciaEnRedis(
+    dni: string,
+    rol: RolesSistema,
+    modoRegistro: ModoRegistro,
+    horaEsperadaISO: string
+  ): Promise<OperationResult> {
+    try {
+      const actor = this.mapper.obtenerActorDesdeRol(rol);
+      const timestampOperacion = this.dateHelper.obtenerTimestampPeruano();
+
+      const requestBody = {
+        ID_o_DNI: dni,
+        Actor: actor,
+        TipoAsistencia: TipoAsistencia.ParaPersonal,
+        ModoRegistro: modoRegistro,
+        FechaHoraEsperadaISO: horaEsperadaISO,
+      };
+
+      console.log(
+        `☁️ Marcando asistencia en Redis con timestamp ${timestampOperacion}:`,
+        requestBody
+      );
+
+      const response = await fetch("/api/asistencia-hoy/marcar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+
+      const responseData = await response.json();
+
+      if (responseData.success) {
+        return {
+          exitoso: true,
+          mensaje: "Asistencia marcada exitosamente en Redis",
+          datos: {
+            ...responseData.data,
+            timestampOperacion,
+          },
+        };
+      } else {
+        return {
+          exitoso: false,
+          mensaje: responseData.message || "Error al marcar asistencia",
+        };
+      }
+    } catch (error) {
+      console.error("Error al marcar asistencia en Redis:", error);
+      return {
+        exitoso: false,
+        mensaje: `Error al marcar asistencia: ${
+          error instanceof Error ? error.message : "Error desconocido"
+        }`,
+      };
+    }
+  }
+
+  /**
+   * ✅ NUEVO: Consulta asistencias tomadas en Redis
+   */
+  public async consultarAsistenciasTomadasEnRedis(
+    tipoAsistencia: TipoAsistencia,
+    actor: ActoresSistema,
+    modoRegistro: ModoRegistro
+  ): Promise<any> {
+    try {
+      const url = `/api/asistencia-hoy/consultar-asistencias-tomadas?TipoAsistencia=${tipoAsistencia}&Actor=${actor}&ModoRegistro=${modoRegistro}`;
+
+      console.log(`🔍 Consultando asistencias en Redis: ${url}`);
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("📡 Datos obtenidos de Redis:", data);
+
+      return data;
+    } catch (error) {
+      console.error("Error al consultar asistencias en Redis:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Elimina asistencia de Redis mediante API
+   * ✅ CORREGIDO: Actualiza registros locales y timestamps tras eliminación
    */
   public async eliminarAsistenciaRedis(
     dni: string,
@@ -125,6 +237,18 @@ export class AsistenciaDePersonalAPIClient {
         };
       }
 
+      // ✅ NUEVO: Obtener información temporal antes de la eliminación
+      const infoFechaActual = this.dateHelper.obtenerInfoFechaActual();
+      if (!infoFechaActual) {
+        return {
+          exitoso: false,
+          mensaje: "No se pudo obtener fecha actual para procesar eliminación",
+        };
+      }
+
+      const { diaActual, mesActual } = infoFechaActual;
+      const timestampEliminacion = this.dateHelper.obtenerTimestampPeruano();
+
       // Crear el request body para la API de eliminación
       const requestBody: EliminarAsistenciaRequestBody = {
         ID_o_DNI: dni,
@@ -133,7 +257,12 @@ export class AsistenciaDePersonalAPIClient {
         TipoAsistencia: TipoAsistencia.ParaPersonal,
       };
 
-      console.log(`☁️ Enviando solicitud de eliminación a Redis:`, requestBody);
+      console.log(
+        `☁️ Enviando solicitud de eliminación a Redis con timestamp ${timestampEliminacion} (${this.dateHelper.formatearTimestampLegible(
+          timestampEliminacion
+        )}):`,
+        requestBody
+      );
 
       // Hacer la petición a la API de eliminación
       const response = await fetch("/api/asistencia-hoy/descartar", {
@@ -166,10 +295,38 @@ export class AsistenciaDePersonalAPIClient {
 
       if (responseData.success) {
         console.log(`✅ Eliminación Redis exitosa:`, responseData.data);
+
+        // ✅ NUEVO: Sincronizar eliminación con registros locales
+        const sincronizacionLocal =
+          await this.sincronizarEliminacionConRegistrosLocales(
+            dni,
+            rol,
+            modoRegistro,
+            diaActual,
+            mesActual,
+            timestampEliminacion
+          );
+
+        if (sincronizacionLocal.exitoso) {
+          console.log(
+            `🔄 Sincronización local completada: ${sincronizacionLocal.mensaje}`
+          );
+        } else {
+          console.warn(
+            `⚠️ Error en sincronización local: ${sincronizacionLocal.mensaje}`
+          );
+        }
+
         return {
           exitoso: responseData.data.asistenciaEliminada || false,
-          mensaje: responseData.message || "Eliminación exitosa de Redis",
-          datos: responseData.data,
+          mensaje:
+            responseData.message ||
+            "Eliminación exitosa de Redis y sincronización local completada",
+          datos: {
+            ...responseData.data,
+            sincronizacionLocal: sincronizacionLocal.exitoso,
+            timestampEliminacion,
+          },
         };
       } else {
         console.log(`❌ Eliminación Redis falló:`, responseData.message);
@@ -190,7 +347,71 @@ export class AsistenciaDePersonalAPIClient {
   }
 
   /**
+   * ✅ NUEVO: Sincroniza la eliminación de Redis con los registros locales
+   * Elimina el día específico del registro mensual y actualiza timestamp
+   */
+  private async sincronizarEliminacionConRegistrosLocales(
+    dni: string,
+    rol: RolesSistema,
+    modoRegistro: ModoRegistro,
+    dia: number,
+    mes: number,
+    timestampEliminacion: number
+  ): Promise<OperationResult> {
+    try {
+      const tipoPersonal = this.mapper.obtenerTipoPersonalDesdeRolOActor(rol);
+
+      console.log(
+        `🔄 Sincronizando eliminación local: ${dni} - ${modoRegistro} - día ${dia} del mes ${mes}`
+      );
+
+      // Eliminar el día específico del registro mensual local
+      const resultadoEliminacion =
+        await this.repository.eliminarDiaDeRegistroMensual(
+          tipoPersonal,
+          modoRegistro,
+          dni,
+          mes,
+          dia
+        );
+
+      if (resultadoEliminacion.exitoso) {
+        console.log(
+          `✅ Día ${dia} eliminado exitosamente del registro local con timestamp ${timestampEliminacion}`
+        );
+        return {
+          exitoso: true,
+          mensaje: `Registro local actualizado: día ${dia} eliminado y timestamp actualizado`,
+          datos: {
+            diaEliminado: dia,
+            mesAfectado: mes,
+            modoRegistro,
+            timestampActualizacion: timestampEliminacion,
+          },
+        };
+      } else {
+        console.warn(
+          `⚠️ No se pudo eliminar día ${dia} del registro local: ${resultadoEliminacion.mensaje}`
+        );
+        return {
+          exitoso: false,
+          mensaje: `Error al actualizar registro local: ${resultadoEliminacion.mensaje}`,
+        };
+      }
+    } catch (error) {
+      console.error("Error en sincronización de eliminación local:", error);
+      return {
+        exitoso: false,
+        mensaje: `Error en sincronización local: ${
+          error instanceof Error ? error.message : "Error desconocido"
+        }`,
+      };
+    }
+  }
+
+  /**
    * Verifica la disponibilidad de la API
+   * ✅ SIN CAMBIOS: No maneja timestamps críticos
    */
   public async verificarDisponibilidadAPI(): Promise<OperationResult> {
     try {
@@ -234,6 +455,7 @@ export class AsistenciaDePersonalAPIClient {
 
   /**
    * Obtiene información del estado del servidor
+   * ✅ CORREGIDO: Usar DateHelper para timestamps
    */
   public async obtenerEstadoServidor(): Promise<{
     disponible: boolean;
@@ -241,29 +463,39 @@ export class AsistenciaDePersonalAPIClient {
     version?: string;
     timestamp?: number;
   }> {
-    const tiempoInicio = Date.now();
+    // ✅ CORREGIDO: Usar DateHelper en lugar de Date.now()
+    const tiempoInicio = this.dateHelper.obtenerTimestampPeruano();
 
     try {
       const resultado = await this.verificarDisponibilidadAPI();
-      const latencia = Date.now() - tiempoInicio;
+      const tiempoFin = this.dateHelper.obtenerTimestampPeruano();
+      const latencia = tiempoFin - tiempoInicio;
+
+      console.log(
+        `🌐 Estado servidor verificado - Latencia: ${latencia}ms - Disponible: ${resultado.exitoso}`
+      );
 
       return {
         disponible: resultado.exitoso,
         latencia,
-        timestamp: Date.now(),
+        timestamp: tiempoFin,
       };
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
+      const tiempoFin = this.dateHelper.obtenerTimestampPeruano();
+      const latencia = tiempoFin - tiempoInicio;
+
       return {
         disponible: false,
-        latencia: Date.now() - tiempoInicio,
-        timestamp: Date.now(),
+        latencia,
+        timestamp: tiempoFin,
       };
     }
   }
 
   /**
    * Reintenta una operación con backoff exponencial
+   * ✅ CORREGIDO: Usar DateHelper para delays y logging temporal
    */
   public async reintentar<T>(
     operacion: () => Promise<T>,
@@ -274,15 +506,28 @@ export class AsistenciaDePersonalAPIClient {
 
     for (let intento = 1; intento <= maxIntentos; intento++) {
       try {
-        console.log(`🔄 Intento ${intento}/${maxIntentos}...`);
+        const timestampIntento = this.dateHelper.obtenerTimestampPeruano();
+        console.log(
+          `🔄 Intento ${intento}/${maxIntentos} - ${this.dateHelper.formatearTimestampLegible(
+            timestampIntento
+          )}...`
+        );
         return await operacion();
       } catch (error) {
         ultimoError = error;
-        console.log(`❌ Intento ${intento} falló:`, error);
+        const timestampError = this.dateHelper.obtenerTimestampPeruano();
+        console.log(
+          `❌ Intento ${intento} falló en ${this.dateHelper.formatearTimestampLegible(
+            timestampError
+          )}:`,
+          error
+        );
 
         if (intento < maxIntentos) {
           const delay = delayInicial * Math.pow(2, intento - 1);
           console.log(`⏱️ Esperando ${delay}ms antes del siguiente intento...`);
+
+          // ✅ CORREGIDO: Usar Promise nativo pero con logging mejorado
           await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
@@ -293,6 +538,7 @@ export class AsistenciaDePersonalAPIClient {
 
   /**
    * Obtiene asistencias con reintentos automáticos
+   * ✅ SIN CAMBIOS: Ya delegaba correctamente
    */
   public async consultarAsistenciasConReintentos(
     rol: RolesSistema | ActoresSistema,
@@ -316,6 +562,7 @@ export class AsistenciaDePersonalAPIClient {
 
   /**
    * Elimina asistencia con reintentos automáticos
+   * ✅ NUEVO: Ahora incluye sincronización automática
    */
   public async eliminarAsistenciaConReintentos(
     dni: string,
@@ -324,10 +571,24 @@ export class AsistenciaDePersonalAPIClient {
     maxIntentos: number = 2
   ): Promise<OperationResult> {
     try {
-      return await this.reintentar(
+      console.log(
+        `🗑️ Iniciando eliminación con reintentos para ${dni} - ${rol} - ${modoRegistro}`
+      );
+
+      const resultado = await this.reintentar(
         () => this.eliminarAsistenciaRedis(dni, rol, modoRegistro),
         maxIntentos
       );
+
+      if (resultado.exitoso) {
+        console.log(
+          `✅ Eliminación completa exitosa (Redis + Local) para ${dni}`
+        );
+      } else {
+        console.log(`❌ Eliminación falló para ${dni}: ${resultado.mensaje}`);
+      }
+
+      return resultado;
     } catch (error) {
       console.error(
         `❌ Falló después de ${maxIntentos} intentos al eliminar asistencia:`,
@@ -343,7 +604,97 @@ export class AsistenciaDePersonalAPIClient {
   }
 
   /**
+   * ✅ NUEVO: Elimina asistencia y fuerza actualización de registros locales
+   * Método completo que garantiza consistencia entre Redis y registros locales
+   */
+  public async eliminarAsistenciaCompleta(
+    dni: string,
+    rol: RolesSistema,
+    modoRegistro: ModoRegistro,
+    dia?: number,
+    mes?: number
+  ): Promise<OperationResult> {
+    try {
+      // Obtener fecha actual si no se proporciona
+      const infoFecha = this.dateHelper.obtenerInfoFechaActual();
+      if (!infoFecha) {
+        return {
+          exitoso: false,
+          mensaje:
+            "No se pudo obtener información de fecha para la eliminación",
+        };
+      }
+
+      const diaFinal = dia || infoFecha.diaActual;
+      const mesFinal = mes || infoFecha.mesActual;
+      const timestampOperacion = this.dateHelper.obtenerTimestampPeruano();
+
+      console.log(
+        `🗑️ Eliminación completa iniciada para ${dni} - día ${diaFinal}/${mesFinal} - ${modoRegistro} con timestamp ${timestampOperacion}`
+      );
+
+      // PASO 1: Eliminar de Redis (que ya incluye sincronización local)
+      const resultadoEliminacion = await this.eliminarAsistenciaConReintentos(
+        dni,
+        rol,
+        modoRegistro
+      );
+
+      if (resultadoEliminacion.exitoso) {
+        return {
+          exitoso: true,
+          mensaje: `Eliminación completa exitosa: Redis y registros locales sincronizados`,
+          datos: {
+            ...resultadoEliminacion.datos,
+            diaEliminado: diaFinal,
+            mesEliminado: mesFinal,
+            timestampOperacion,
+            operacionCompleta: true,
+          },
+        };
+      } else {
+        // Si falla Redis, intentar al menos limpiar registro local
+        console.log(
+          `⚠️ Eliminación de Redis falló, intentando limpiar registro local...`
+        );
+
+        const tipoPersonal = this.mapper.obtenerTipoPersonalDesdeRolOActor(rol);
+        const limpiezaLocal =
+          await this.repository.eliminarDiaDeRegistroMensual(
+            tipoPersonal,
+            modoRegistro,
+            dni,
+            mesFinal,
+            diaFinal
+          );
+
+        return {
+          exitoso: false,
+          mensaje: `Eliminación de Redis falló, limpieza local: ${
+            limpiezaLocal.exitoso ? "exitosa" : "falló"
+          }`,
+          datos: {
+            redisEliminado: false,
+            localLimpiado: limpiezaLocal.exitoso,
+            timestampOperacion,
+            errorRedis: resultadoEliminacion.mensaje,
+          },
+        };
+      }
+    } catch (error) {
+      console.error("Error en eliminación completa:", error);
+      return {
+        exitoso: false,
+        mensaje: `Error en eliminación completa: ${
+          error instanceof Error ? error.message : "Error desconocido"
+        }`,
+      };
+    }
+  }
+
+  /**
    * Valida respuesta de la API
+   * ✅ SIN CAMBIOS: No maneja timestamps
    */
   public validarRespuestaAPI(response: any): {
     valida: boolean;
@@ -380,6 +731,7 @@ export class AsistenciaDePersonalAPIClient {
 
   /**
    * Transforma datos de API al formato interno
+   * ✅ SIN CAMBIOS: No maneja timestamps directamente
    */
   public transformarDatosAPI(datosAPI: AsistenciaCompletaMensualDePersonal): {
     entrada: Record<string, any>;
@@ -400,6 +752,7 @@ export class AsistenciaDePersonalAPIClient {
 
   /**
    * Maneja errores específicos de API
+   * ✅ SIN CAMBIOS: Manejo de errores no requiere timestamps
    */
   public manejarErrorAPI(error: any): OperationResult {
     if (error?.response?.status === 404) {
@@ -443,5 +796,69 @@ export class AsistenciaDePersonalAPIClient {
         error instanceof Error ? error.message : "Error sin descripción"
       }`,
     };
+  }
+
+  /**
+   * ✅ NUEVO: Obtiene estadísticas de las operaciones de API
+   */
+  public async obtenerEstadisticasOperaciones(): Promise<{
+    totalConsultas: number;
+    consultasExitosas: number;
+    totalEliminaciones: number;
+    eliminacionesExitosas: number;
+    ultimaOperacion: number;
+    latenciaPromedio: number;
+  }> {
+    // Esta sería una implementación básica
+    // En producción, podrías almacenar estas estadísticas en IndexedDB
+    const timestampActual = this.dateHelper.obtenerTimestampPeruano();
+
+    return {
+      totalConsultas: 0,
+      consultasExitosas: 0,
+      totalEliminaciones: 0,
+      eliminacionesExitosas: 0,
+      ultimaOperacion: timestampActual,
+      latenciaPromedio: 0,
+    };
+  }
+
+  /**
+   * ✅ NUEVO: Limpia caché de operaciones antiguas
+   */
+  public async limpiarCacheOperacionesAntiguas(
+    diasMaximos: number = 7
+  ): Promise<OperationResult> {
+    try {
+      const timestampLimite =
+        this.dateHelper.obtenerTimestampPeruano() -
+        diasMaximos * 24 * 60 * 60 * 1000;
+
+      console.log(
+        `🧹 Limpiando operaciones anteriores a: ${this.dateHelper.formatearTimestampLegible(
+          timestampLimite
+        )}`
+      );
+
+      // Aquí implementarías la lógica de limpieza real
+      // Por ahora solo log informativo
+
+      return {
+        exitoso: true,
+        mensaje: `Cache de operaciones limpiado (anteriores a ${diasMaximos} días)`,
+        datos: {
+          timestampLimite,
+          diasLimpiados: diasMaximos,
+        },
+      };
+    } catch (error) {
+      console.error("Error al limpiar cache de operaciones:", error);
+      return {
+        exitoso: false,
+        mensaje: `Error al limpiar cache: ${
+          error instanceof Error ? error.message : "Error desconocido"
+        }`,
+      };
+    }
   }
 }

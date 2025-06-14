@@ -9,20 +9,12 @@ import {
 import { HandlerDirectivoAsistenciaResponse } from "@/lib/utils/local/db/models/DatosAsistenciaHoy/handlers/HandlerDirectivoAsistenciaResponse";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import {
-  RegistrarAsistenciaIndividualRequestBody,
-  RegistrarAsistenciaIndividualSuccessResponse,
-} from "@/interfaces/shared/apis/api01/asistencia/types";
+
 import { AsistenciaDePersonalIDB } from "../../lib/utils/local/db/models/AsistenciaDePersonal/AsistenciaDePersonalIDB";
 import { FechaHoraActualRealState } from "@/global/state/others/fechaHoraActualReal";
 import { RolesSistema } from "@/interfaces/shared/RolesSistema";
-import { ActoresSistema } from "@/interfaces/shared/ActoresSistema";
 import { Loader2 } from "lucide-react";
-import {
-  AsistenciaDiariaResultado,
-  ConsultarAsistenciasTomadasPorActorEnRedisResponseBody,
-  TipoAsistencia,
-} from "@/interfaces/shared/AsistenciaRequests";
+import { AsistenciaDiariaResultado } from "@/interfaces/shared/AsistenciaRequests";
 import { ErrorResponseAPIBase } from "@/interfaces/shared/apis/types";
 import { useSelector } from "react-redux";
 import { RootState } from "@/global/store";
@@ -176,61 +168,32 @@ export const ListaPersonal = ({
   };
 
   // ✅ MODIFICADO: Cargar las asistencias ya registradas
+
   useEffect(() => {
     const cargarAsistenciasRegistradas = async () => {
       try {
         setCargandoAsistencias(true);
 
-        // Mapear el rol de RolesSistema a ActoresSistema
-        let actorParam: ActoresSistema;
-        switch (rol) {
-          case RolesSistema.ProfesorPrimaria:
-            actorParam = ActoresSistema.ProfesorPrimaria;
-            break;
-          case RolesSistema.ProfesorSecundaria:
-          case RolesSistema.Tutor:
-            actorParam = ActoresSistema.ProfesorSecundaria;
-            break;
-          case RolesSistema.Auxiliar:
-            actorParam = ActoresSistema.Auxiliar;
-            break;
-          case RolesSistema.PersonalAdministrativo:
-            actorParam = ActoresSistema.PersonalAdministrativo;
-            break;
-          default:
-            actorParam = ActoresSistema.Auxiliar;
-        }
+        console.log(`🔍 Cargando asistencias para ${rol} - ${modoRegistro}`);
 
-        // Consultar las asistencias ya registradas
-        const response = await fetch(
-          `/api/asistencia-hoy/consultar-asistencias-tomadas?TipoAsistencia=${TipoAsistencia.ParaPersonal}&Actor=${actorParam}&ModoRegistro=${modoRegistro}`
-        );
+        // ✅ USAR ORQUESTADOR en lugar de fetch directo
+        const resultado =
+          await asistenciaDePersonalIDB.consultarYSincronizarAsistenciasRedis(
+            rol,
+            modoRegistro
+          );
 
-        if (response.ok) {
-          const data =
-            (await response.json()) as ConsultarAsistenciasTomadasPorActorEnRedisResponseBody;
-
-          console.log("🔍 Datos obtenidos de la API:", data);
-
-          // Sincronizar con IndexedDB usando la nueva instancia
-          const statsSync =
-            await asistenciaDePersonalIDB.sincronizarAsistenciasDesdeRedis(
-              data
-            );
-
-          console.log("📊 Estadísticas de sincronización:", statsSync);
-
-          // ✅ CORREGIDO: Crear mapa de asistencias por DNI con validación
+        if (resultado.exitoso && resultado.datos) {
+          // Crear mapa de asistencias por DNI
           const mapaAsistencias = new Map<string, AsistenciaDiariaResultado>();
 
-          // Validar si Resultados es un array o un objeto único
-          const resultados = Array.isArray(data.Resultados)
-            ? data.Resultados
-            : [data.Resultados];
+          const resultados = Array.isArray(resultado.datos.Resultados)
+            ? resultado.datos.Resultados
+            : [resultado.datos.Resultados];
 
-          resultados.forEach((resultado) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          resultados.forEach((resultado: any) => {
             if (resultado && resultado.ID_o_DNI) {
-              console.log("📝 Agregando al mapa:", resultado);
               mapaAsistencias.set(resultado.ID_o_DNI, resultado);
             }
           });
@@ -238,10 +201,12 @@ export const ListaPersonal = ({
           console.log("🗺️ Mapa final de asistencias:", mapaAsistencias);
           setAsistenciasRegistradas(mapaAsistencias);
         } else {
-          console.error(
-            "❌ Error al cargar asistencias:",
-            await response.text()
-          );
+          console.error("❌ Error al cargar asistencias:", resultado.mensaje);
+          toast({
+            title: "Error",
+            description: "No se pudieron cargar las asistencias registradas",
+            variant: "destructive",
+          });
         }
       } catch (error) {
         console.error("❌ Error al consultar asistencias registradas:", error);
@@ -269,7 +234,7 @@ export const ListaPersonal = ({
     setProcesando(personal.ID_o_DNI);
 
     try {
-      // Obtener la hora esperada como string ISO directamente del JSON
+      // Obtener la hora esperada
       const horaEsperadaISO =
         handlerDatosAsistenciaHoyDirectivo.obtenerHorarioPersonalISO(
           rol!,
@@ -277,7 +242,18 @@ export const ListaPersonal = ({
           modoRegistro
         );
 
-      console.log("🕐 Hora esperada ISO (directa del JSON):", horaEsperadaISO);
+      // ✅ USAR ORQUESTADOR en lugar de fetch directo
+      await asistenciaDePersonalIDB.marcarAsistencia(
+        {
+          datos: {
+            ModoRegistro: modoRegistro,
+            DNI: personal.ID_o_DNI,
+            Rol: rol!,
+            Dia: fechaHoraActual.utilidades!.diaMes,
+          },
+        },
+        horaEsperadaISO // ✅ PASAR hora esperada
+      );
 
       // Feedback por voz
       const speaker = Speaker.getInstance();
@@ -289,92 +265,34 @@ export const ListaPersonal = ({
         ).shift()} ${personal.Apellidos.split(" ").shift()}`
       );
 
-      // Llamar a la API para registrar en Redis
-      const response = await fetch("/api/asistencia-hoy/marcar", {
-        method: "POST",
-        body: JSON.stringify({
-          ID_o_DNI: personal.ID_o_DNI,
-          Actor: rol,
-          TipoAsistencia: TipoAsistencia.ParaPersonal,
-          ModoRegistro: modoRegistro,
-          FechaHoraEsperadaISO: horaEsperadaISO,
-        } as RegistrarAsistenciaIndividualRequestBody),
+      // ✅ ACTUALIZAR estado local (simulando respuesta exitosa)
+      const timestampActual =
+        fechaHoraRedux.utilidades?.timestamp || Date.now();
+      const nuevoRegistro: AsistenciaDiariaResultado = {
+        ID_o_DNI: personal.ID_o_DNI,
+        AsistenciaMarcada: true,
+        Detalles: {
+          Timestamp: timestampActual,
+          DesfaseSegundos: 0, // El servidor calculará el valor real
+        },
+      };
+
+      setAsistenciasRegistradas((prev) => {
+        const nuevo = new Map(prev);
+        nuevo.set(personal.ID_o_DNI, nuevoRegistro);
+        return nuevo;
       });
-
-
-      if (!response.ok) {
-        throw new Error(`Error HTTP: ${response.status}`);
-      }
-
-      const data =
-        (await response.json()) as RegistrarAsistenciaIndividualSuccessResponse;
-
-      console.log("Respuesta de la API:", data);
-
-      if (data.success) {
-        // ✅ NUEVO: Crear objeto AsistenciaDiariaResultado y agregarlo al mapa
-        const nuevoRegistro: AsistenciaDiariaResultado = {
-          ID_o_DNI: personal.ID_o_DNI,
-          AsistenciaMarcada: true,
-          Detalles: {
-            Timestamp: data.data.timestamp,
-            DesfaseSegundos: data.data.desfaseSegundos,
-          },
-        };
-
-        // Actualizar el mapa de asistencias registradas
-        setAsistenciasRegistradas((prev) => {
-          const nuevo = new Map(prev);
-          nuevo.set(personal.ID_o_DNI, nuevoRegistro);
-          return nuevo;
-        });
-
-        // Guardar en IndexedDB
-        await asistenciaDePersonalIDB.marcarAsistencia({
-          datos: {
-            Rol: rol!,
-            Dia: fechaHoraActual.utilidades!.diaMes,
-            DNI: personal.ID_o_DNI,
-            esNuevoRegistro: data.data.esNuevoRegistro,
-            ModoRegistro: modoRegistro,
-            Detalles: {
-              DesfaseSegundos: data.data.desfaseSegundos,
-              Timestamp: data.data.timestamp,
-            },
-          },
-        });
-
-        toast({
-          title: "Asistencia registrada",
-          description: `${modoRegistro} registrada correctamente`,
-          variant: "default",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: data.message || "No se pudo registrar la asistencia",
-          variant: "destructive",
-        });
-      }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      console.error("Error al registrar asistencia:", error);
-
-      let errorMessage = "Ocurrió un error al procesar la solicitud";
-
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      // El orquestador ya manejó el error, solo dar feedback por voz
+      const speaker = Speaker.getInstance();
+      speaker.start(
+        `Error al registrar ${modoRegistroTextos[modoRegistro].toLowerCase()}`
+      );
     } finally {
       setProcesando(null);
     }
   };
-
   const textoRol = obtenerTextoRol(rol);
 
   // Mostrar error si existe
@@ -448,14 +366,14 @@ export const ListaPersonal = ({
               );
 
               // 🐛 DEBUG: Log para verificar datos
-              console.log(`🔍 Debug persona ${persona.ID_o_DNI}:`, {
-                asistenciaPersona,
-                tieneDatos: !!asistenciaPersona,
-                asistenciaMarcada: asistenciaPersona?.AsistenciaMarcada,
-                detalles: asistenciaPersona?.Detalles,
-                timestampActual,
-                mapaCompleto: asistenciasRegistradas,
-              });
+              // console.log(`🔍 Debug persona ${persona.ID_o_DNI}:`, {
+              //   asistenciaPersona,
+              //   tieneDatos: !!asistenciaPersona,
+              //   asistenciaMarcada: asistenciaPersona?.AsistenciaMarcada,
+              //   detalles: asistenciaPersona?.Detalles,
+              //   timestampActual,
+              //   mapaCompleto: asistenciasRegistradas,
+              // });
 
               return (
                 <ItemTomaAsistencia
