@@ -88,6 +88,23 @@ export class AsistenciaDePersonalMapper {
     }
   }
 
+  public obtenerRolDesdeActor(actor: ActoresSistema): RolesSistema {
+    switch (actor) {
+      case ActoresSistema.Directivo:
+        return RolesSistema.Directivo;
+      case ActoresSistema.ProfesorPrimaria:
+        return RolesSistema.ProfesorPrimaria;
+      case ActoresSistema.ProfesorSecundaria:
+        return RolesSistema.ProfesorSecundaria;
+      case ActoresSistema.Auxiliar:
+        return RolesSistema.Auxiliar;
+      case ActoresSistema.PersonalAdministrativo:
+        return RolesSistema.PersonalAdministrativo;
+      default:
+        throw new Error(`Actor no válido: ${actor}`);
+    }
+  }
+
   /**
    * Obtiene el nombre del almacén según el tipo de personal y el modo de registro
    */

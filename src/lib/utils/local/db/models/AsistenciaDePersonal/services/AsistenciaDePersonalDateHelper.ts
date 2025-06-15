@@ -421,9 +421,12 @@ export class AsistenciaDePersonalDateHelper {
    */
   public obtenerFechaStringActual(): string | null {
     const fechaActual = this.obtenerFechaActualDesdeRedux();
-    return fechaActual ? fechaActual.toISOString().split("T")[0] : null;
-  }
+    if (!fechaActual) return null;
 
+    // ✅ CORREGIDO: No modificar la fecha original, crear una copia
+    const fechaPeruana = new Date(fechaActual.getTime() - 5 * 60 * 60 * 1000);
+    return fechaPeruana.toISOString().split("T")[0];
+  }
   /**
    * Convierte una fecha específica a string formato YYYY-MM-DD
    */

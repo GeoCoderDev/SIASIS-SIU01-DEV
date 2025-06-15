@@ -486,6 +486,95 @@ export class AsistenciasTomadasHoyIDB {
   }
 
   /**
+   * ✅ LIMPIAR todas las asistencias con fecha anterior a la especificada
+   * 🗓️ ÚTIL: Para limpiar todos los días anteriores de una vez
+   */
+public async limpiarAsistenciasAnterioresA(
+  fechaLimite: string
+): Promise<number> {
+  try {
+    // 🔍 DEBUG TEMPORAL
+    console.log("🔍 DEBUG limpiarAsistenciasAnterioresA:");
+    console.log("- fechaLimite recibida:", fechaLimite);
+    
+    await IndexedDBConnection.init();
+    const store = await IndexedDBConnection.getStore(
+      this.nombreTabla,
+      "readwrite"
+    );
+
+    // ✅ CONVERTIR fechaLimite a timestamp para comparación confiable
+    const fechaLimiteObj = new Date(fechaLimite + 'T00:00:00.000Z');
+    const timestampLimite = fechaLimiteObj.getTime();
+    
+    console.log("- fechaLimite como Date:", fechaLimiteObj);
+    console.log("- timestampLimite:", timestampLimite);
+
+    return new Promise<number>((resolve, reject) => {
+      const request = store.openCursor();
+      let eliminadas = 0;
+
+      request.onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest)
+          .result as IDBCursorWithValue;
+
+        if (cursor) {
+          const asistencia = cursor.value as AsistenciaHoy;
+
+          // ✅ COMPARACIÓN CONFIABLE: Convertir fecha de asistencia a timestamp
+          const fechaAsistenciaObj = new Date(asistencia.fecha + 'T00:00:00.000Z');
+          const timestampAsistencia = fechaAsistenciaObj.getTime();
+          
+          const debeEliminar = timestampAsistencia < timestampLimite;
+
+          // 🔍 DEBUG TEMPORAL
+          console.log(`🔍 Comparando asistencia:`);
+          console.log(`  - Fecha: "${asistencia.fecha}" -> timestamp: ${timestampAsistencia}`);
+          console.log(`  - Es anterior? ${debeEliminar}`);
+          console.log(`  - Clave: ${asistencia.clave}`);
+
+          if (debeEliminar) {
+            cursor.delete();
+            eliminadas++;
+            console.log(
+              `🗑️ Asistencia ELIMINADA: ${asistencia.clave} (fecha: ${asistencia.fecha})`
+            );
+          } else {
+            console.log(
+              `✅ Asistencia CONSERVADA: ${asistencia.clave} (fecha: ${asistencia.fecha})`
+            );
+          }
+
+          cursor.continue();
+        } else {
+          console.log(
+            `🧹 Limpieza completada: ${eliminadas} asistencias anteriores a ${fechaLimite} eliminadas`
+          );
+          resolve(eliminadas);
+        }
+      };
+
+      request.onerror = () => {
+        console.error(
+          `❌ Error al limpiar asistencias anteriores: ${request.error}`
+        );
+        reject(request.error);
+      };
+    });
+  } catch (error) {
+    console.error(
+      `❌ Error al limpiar asistencias anteriores a ${fechaLimite}:`,
+      error
+    );
+    return 0;
+  }
+}
+
+
+
+  
+
+  /**
    * ✅ GUARDAR asistencia en cache local
    * 💾 ALMACENA: Los datos de asistencia con timestamp de consulta actual
    * ✅ CORREGIDO: Usar timestamp peruano para timestampConsulta

@@ -24,11 +24,13 @@ import IndexedDBConnection from "../../../IndexedDBConnection";
  * - Integrar datos del cache con registros mensuales
  * - Consultar y actualizar cache
  * - Limpiar cache obsoleto
+ * - 🆕 ELIMINAR AUTOMÁTICAMENTE registros del día anterior en cada operación CRUD
  */
 export class AsistenciaDePersonalCacheManager {
   private cacheAsistenciasHoy: AsistenciasTomadasHoyIDB;
   private mapper: AsistenciaDePersonalMapper;
   private dateHelper: AsistenciaDePersonalDateHelper;
+  private ultimaLimpiezaDiaAnterior: string | null = null; // 🆕 Evita limpiezas duplicadas
 
   constructor(
     mapper: AsistenciaDePersonalMapper,
@@ -39,11 +41,53 @@ export class AsistenciaDePersonalCacheManager {
     this.cacheAsistenciasHoy = new AsistenciasTomadasHoyIDB(this.dateHelper);
 
     // Inicializar rutinas de mantenimiento del cache
-    this.cacheAsistenciasHoy.inicializarMantenimiento();
+    // this.cacheAsistenciasHoy.inicializarMantenimiento();
+  }
+
+  private async limpiarDiasAnterioresAutomaticamente(): Promise<void> {
+    try {
+      const fechaHoy = this.dateHelper.obtenerFechaStringActual();
+
+      if (!fechaHoy) {
+        console.warn(
+          "⚠️ No se pudo obtener la fecha actual para limpieza automática"
+        );
+        return;
+      }
+
+      // 🚀 OPTIMIZACIÓN: Evitar limpiezas duplicadas el mismo día
+      if (this.ultimaLimpiezaDiaAnterior === fechaHoy) {
+        console.log(
+          `⏭️ Limpieza de días anteriores ya ejecutada hoy: ${fechaHoy}`
+        );
+        return;
+      }
+
+      console.log(
+        `🧹 Limpiando TODAS las asistencias anteriores a: ${fechaHoy}`
+      );
+
+      // ✅ UNA SOLA LLAMADA elimina todo lo anterior al día de hoy
+      const eliminadas =
+        await this.cacheAsistenciasHoy.limpiarAsistenciasAnterioresA(fechaHoy);
+
+      // 📝 MARCAR como ejecutada para evitar duplicados
+      this.ultimaLimpiezaDiaAnterior = fechaHoy;
+
+      console.log(
+        `✅ Limpieza automática completada: ${eliminadas} registros eliminados`
+      );
+    } catch (error) {
+      console.error(
+        "❌ Error en limpieza automática de días anteriores:",
+        error
+      );
+    }
   }
 
   /**
    * Consulta cache de asistencias para el día actual
+   * 🆕 INCLUYE limpieza automática del día anterior
    */
   public async consultarCacheAsistenciaHoy(
     actor: ActoresSistema,
@@ -52,6 +96,9 @@ export class AsistenciaDePersonalCacheManager {
     fecha: string
   ): Promise<AsistenciaPersonalHoy | null> {
     try {
+      // 🆕 LIMPIAR día anterior automáticamente
+      await this.limpiarDiasAnterioresAutomaticamente();
+
       const consulta: ConsultaAsistenciaHoy = {
         dni,
         actor,
@@ -87,11 +134,15 @@ export class AsistenciaDePersonalCacheManager {
 
   /**
    * Guarda asistencia en el cache
+   * 🆕 INCLUYE limpieza automática del día anterior
    */
   public async guardarAsistenciaEnCache(
     asistencia: AsistenciaPersonalHoy
   ): Promise<OperationResult> {
     try {
+      // 🆕 LIMPIAR día anterior automáticamente
+      await this.limpiarDiasAnterioresAutomaticamente();
+
       await this.cacheAsistenciasHoy.guardarAsistencia(asistencia);
 
       return {
@@ -112,6 +163,7 @@ export class AsistenciaDePersonalCacheManager {
 
   /**
    * Integra datos del cache en el registro mensual
+   * ✅ SIN CAMBIOS: No requiere limpieza adicional
    */
   public integrarDatosDeCacheEnRegistroMensual(
     registroMensual: AsistenciaMensualPersonalLocal | null,
@@ -155,6 +207,7 @@ export class AsistenciaDePersonalCacheManager {
 
   /**
    * Combina datos históricos (IndexedDB) con datos del día actual (cache Redis)
+   * 🆕 INCLUYE limpieza automática del día anterior
    */
   public async combinarDatosHistoricosYActuales(
     registroEntrada: AsistenciaMensualPersonalLocal | null,
@@ -170,6 +223,9 @@ export class AsistenciaDePersonalCacheManager {
     encontrado: boolean;
     mensaje: string;
   }> {
+    // 🆕 LIMPIAR día anterior automáticamente
+    await this.limpiarDiasAnterioresAutomaticamente();
+
     let entradaFinal = registroEntrada;
     let salidaFinal = registroSalida;
     let encontradoEnCache = false;
@@ -186,13 +242,13 @@ export class AsistenciaDePersonalCacheManager {
       if (fechaHoy) {
         // Consultar cache para entrada y salida del día actual
         const [entradaCache, salidaCache] = await Promise.all([
-          this.consultarCacheAsistenciaHoy(
+          this.consultarCacheAsistenciaHoyDirecto(
             actor,
             ModoRegistro.Entrada,
             dni,
             fechaHoy
           ),
-          this.consultarCacheAsistenciaHoy(
+          this.consultarCacheAsistenciaHoyDirecto(
             actor,
             ModoRegistro.Salida,
             dni,
@@ -246,7 +302,41 @@ export class AsistenciaDePersonalCacheManager {
   }
 
   /**
+   * 🆕 MÉTODO DIRECTO de consulta al cache sin limpieza automática
+   * 🎯 PROPÓSITO: Evitar llamadas recursivas de limpieza
+   */
+  private async consultarCacheAsistenciaHoyDirecto(
+    actor: ActoresSistema,
+    modoRegistro: ModoRegistro,
+    dni: string,
+    fecha: string
+  ): Promise<AsistenciaPersonalHoy | null> {
+    try {
+      const consulta: ConsultaAsistenciaHoy = {
+        dni,
+        actor,
+        modoRegistro,
+        tipoAsistencia: TipoAsistencia.ParaPersonal,
+        fecha,
+      };
+
+      const resultado = await this.cacheAsistenciasHoy.consultarAsistencia(
+        consulta
+      );
+
+      return resultado as AsistenciaPersonalHoy | null;
+    } catch (error) {
+      console.error(
+        "Error al consultar cache de asistencias (directo):",
+        error
+      );
+      return null;
+    }
+  }
+
+  /**
    * Obtiene solo datos del día actual cuando no hay datos históricos
+   * 🆕 INCLUYE limpieza automática del día anterior
    */
   public async obtenerSoloDatosDelDiaActual(
     rol: RolesSistema,
@@ -258,6 +348,9 @@ export class AsistenciaDePersonalCacheManager {
     encontrado: boolean;
     mensaje: string;
   }> {
+    // 🆕 LIMPIAR día anterior automáticamente
+    await this.limpiarDiasAnterioresAutomaticamente();
+
     const actor = this.mapper.obtenerActorDesdeRol(rol);
     const fechaHoy = this.dateHelper.obtenerFechaStringActual();
 
@@ -273,13 +366,13 @@ export class AsistenciaDePersonalCacheManager {
     );
 
     const [entradaCache, salidaCache] = await Promise.all([
-      this.consultarCacheAsistenciaHoy(
+      this.consultarCacheAsistenciaHoyDirecto(
         actor,
         ModoRegistro.Entrada,
         dni,
         fechaHoy
       ),
-      this.consultarCacheAsistenciaHoy(
+      this.consultarCacheAsistenciaHoyDirecto(
         actor,
         ModoRegistro.Salida,
         dni,
@@ -342,6 +435,7 @@ export class AsistenciaDePersonalCacheManager {
 
   /**
    * Crea asistencia para el cache a partir de datos de registro
+   * ✅ SIN CAMBIOS: No requiere limpieza adicional
    */
   public crearAsistenciaParaCache(
     dni: string,
@@ -369,12 +463,13 @@ export class AsistenciaDePersonalCacheManager {
       desfaseSegundos,
       estado,
       fecha,
-      timestampConsulta: Date.now(),
+      timestampConsulta: this.dateHelper.obtenerTimestampPeruano(),
     };
   }
 
   /**
    * Elimina asistencia del cache de asistencias de hoy
+   * 🆕 INCLUYE limpieza automática del día anterior
    */
   public async eliminarAsistenciaDelCache(
     dni: string,
@@ -383,6 +478,9 @@ export class AsistenciaDePersonalCacheManager {
     fecha: string
   ): Promise<OperationResult> {
     try {
+      // 🆕 LIMPIAR día anterior automáticamente
+      await this.limpiarDiasAnterioresAutomaticamente();
+
       const actor = this.mapper.obtenerActorDesdeRol(rol);
       const consulta: ConsultaAsistenciaHoy = {
         dni,
@@ -434,6 +532,7 @@ export class AsistenciaDePersonalCacheManager {
 
   /**
    * Elimina una asistencia específica del cache por clave
+   * ✅ SIN CAMBIOS: Método auxiliar que no requiere limpieza
    */
   private async eliminarAsistenciaEspecificaDelCache(
     clave: string
@@ -474,9 +573,13 @@ export class AsistenciaDePersonalCacheManager {
 
   /**
    * Limpia el cache de asistencias vencidas
+   * 🆕 INCLUYE limpieza automática del día anterior
    */
   public async limpiarCacheVencido(): Promise<OperationResult> {
     try {
+      // 🆕 LIMPIAR día anterior automáticamente
+      await this.limpiarDiasAnterioresAutomaticamente();
+
       // El cache se auto-limpia, pero podemos forzar la limpieza
       const ahora = Date.now();
       const TIEMPO_EXPIRACION = 24 * 60 * 60 * 1000; // 24 horas
@@ -540,6 +643,7 @@ export class AsistenciaDePersonalCacheManager {
 
   /**
    * Obtiene estadísticas del cache
+   * 🆕 INCLUYE limpieza automática del día anterior
    */
   public async obtenerEstadisticasCache(): Promise<{
     totalRegistros: number;
@@ -547,6 +651,9 @@ export class AsistenciaDePersonalCacheManager {
     registrosVencidos: number;
   }> {
     try {
+      // 🆕 LIMPIAR día anterior automáticamente
+      await this.limpiarDiasAnterioresAutomaticamente();
+
       await IndexedDBConnection.init();
       const store = await IndexedDBConnection.getStore(
         "asistencias_tomadas_hoy",
@@ -601,5 +708,69 @@ export class AsistenciaDePersonalCacheManager {
         registrosVencidos: 0,
       };
     }
+  }
+
+  /**
+   * 🆕 MÉTODO PÚBLICO para forzar limpieza del día anterior
+   * 🎯 ÚTIL: Para casos donde se necesite limpiar manualmente
+   */
+  public async forzarLimpiezaDiaAnterior(): Promise<OperationResult> {
+    try {
+      const fechaHoy = this.dateHelper.obtenerFechaStringActual();
+      if (!fechaHoy) {
+        return {
+          exitoso: false,
+          mensaje: "No se pudo obtener la fecha actual",
+        };
+      }
+
+      const fechaHoyObj = new Date(fechaHoy);
+      const fechaAyer = new Date(fechaHoyObj);
+      fechaAyer.setDate(fechaHoyObj.getDate() - 1);
+
+      const fechaAyerString = fechaAyer.toISOString().split("T")[0];
+
+      console.log(`🧹 Forzando limpieza del día anterior: ${fechaAyerString}`);
+
+      await this.cacheAsistenciasHoy.limpiarAsistenciasPorFecha(
+        fechaAyerString
+      );
+
+      // Resetear el control de limpieza para permitir la próxima automática
+      this.ultimaLimpiezaDiaAnterior = null;
+
+      return {
+        exitoso: true,
+        mensaje: `Limpieza forzada completada para: ${fechaAyerString}`,
+        datos: { fechaLimpiada: fechaAyerString },
+      };
+    } catch (error) {
+      console.error("Error al forzar limpieza del día anterior:", error);
+      return {
+        exitoso: false,
+        mensaje: `Error al forzar limpieza: ${
+          error instanceof Error ? error.message : "Error desconocido"
+        }`,
+      };
+    }
+  }
+
+  /**
+   * 🆕 MÉTODO PÚBLICO para obtener información de limpieza
+   * 📊 PROPÓSITO: Monitoreo y depuración del sistema de limpieza automática
+   */
+  public obtenerInfoLimpiezaAutomatica(): {
+    ultimaLimpiezaDiaAnterior: string | null;
+    fechaHoy: string | null;
+    requiereLimpieza: boolean;
+  } {
+    const fechaHoy = this.dateHelper.obtenerFechaStringActual();
+    const requiereLimpieza = this.ultimaLimpiezaDiaAnterior !== fechaHoy;
+
+    return {
+      ultimaLimpiezaDiaAnterior: this.ultimaLimpiezaDiaAnterior,
+      fechaHoy,
+      requiereLimpieza,
+    };
   }
 }

@@ -14,6 +14,7 @@ import {
   ParametrosMarcadoAsistencia,
   ParametrosEliminacionAsistencia,
   ParametrosConsultaAsistencia,
+  RegistroEntradaSalida,
 } from "./AsistenciaDePersonalTypes";
 import { Meses } from "@/interfaces/shared/Meses";
 
@@ -115,7 +116,7 @@ export class AsistenciaDePersonalIDB {
    */
   public async marcarAsistencia(
     params: ParametrosMarcadoAsistencia,
-    horaEsperadaISO: string // ✅ NUEVO parámetro
+    horaEsperadaISO: string
   ): Promise<void> {
     try {
       this.errorHandler.setLoading(true);
@@ -124,9 +125,16 @@ export class AsistenciaDePersonalIDB {
       const { datos } = params;
       const { ModoRegistro: modoRegistro, DNI: dni, Rol: rol } = datos;
 
-      console.log(`🚀 Marcando asistencia vía API: ${dni} - ${modoRegistro}`);
+      // 🎯 NUEVO: Obtener información de fecha ANTES de marcar en Redis
+      const infoFecha = this.dateHelper.obtenerInfoFechaActual();
+      if (!infoFecha) {
+        throw new Error("No se pudo obtener información de fecha");
+      }
 
-      // ✅ USAR API CLIENT en lugar de cache directo
+      const { diaActual, mesActual } = infoFecha;
+
+      // ✅ PASO 1: Marcar en Redis (como antes)
+      console.log(`🚀 Marcando asistencia vía API: ${dni} - ${modoRegistro}`);
       const resultadoMarcado = await this.apiClient.marcarAsistenciaEnRedis(
         dni,
         rol,
@@ -135,8 +143,18 @@ export class AsistenciaDePersonalIDB {
       );
 
       if (resultadoMarcado.exitoso) {
+        // ✅ PASO 2: NUEVO - Sincronizar con registro mensual
+        await this.sincronizarMarcadoConRegistroMensual(
+          dni,
+          rol,
+          modoRegistro,
+          diaActual,
+          mesActual,
+          resultadoMarcado.datos
+        );
+
         console.log(
-          `✅ Asistencia marcada exitosamente: ${resultadoMarcado.mensaje}`
+          `✅ Asistencia marcada y sincronizada: ${resultadoMarcado.mensaje}`
         );
         this.errorHandler.handleSuccess("Asistencia registrada exitosamente");
       } else {
@@ -148,6 +166,89 @@ export class AsistenciaDePersonalIDB {
       throw error;
     } finally {
       this.errorHandler.setLoading(false);
+    }
+  }
+
+  /**
+   * 🆕 NUEVO: Sincroniza el marcado de Redis con el registro mensual
+   */
+  private async sincronizarMarcadoConRegistroMensual(
+    dni: string,
+    rol: RolesSistema,
+    modoRegistro: ModoRegistro,
+    dia: number,
+    mes: number,
+    datosRedis: any
+  ): Promise<void> {
+    try {
+      const tipoPersonal = this.mapper.obtenerTipoPersonalDesdeRolOActor(rol);
+
+      // Extraer datos de la respuesta de Redis
+      const timestamp =
+        datosRedis.timestamp || this.dateHelper.obtenerTimestampPeruano();
+      const desfaseSegundos = datosRedis.desfaseSegundos || 0;
+      const estado = this.mapper.determinarEstadoAsistencia(
+        desfaseSegundos,
+        modoRegistro
+      );
+
+      // Crear el registro para el día
+      const registroDia: RegistroEntradaSalida = {
+        timestamp,
+        desfaseSegundos,
+        estado,
+      };
+
+      // Verificar si ya existe un registro mensual
+      const registroExistente = await this.repository.obtenerRegistroMensual(
+        tipoPersonal,
+        modoRegistro,
+        dni,
+        mes
+      );
+
+      if (registroExistente) {
+        // Actualizar registro existente
+        console.log(
+          `🔄 Actualizando registro mensual existente para día ${dia}`
+        );
+        await this.repository.actualizarRegistroExistente(
+          tipoPersonal,
+          modoRegistro,
+          dni,
+          mes,
+          dia,
+          registroDia,
+          registroExistente.Id_Registro_Mensual
+        );
+      } else {
+        // No existe registro mensual → Guardar como asistencia huérfana
+        console.log(
+          `📝 Guardando asistencia huérfana en cache temporal para día ${dia}`
+        );
+
+        const actor = this.mapper.obtenerActorDesdeRol(rol);
+        const fechaString = this.dateHelper.generarFechaString(mes, dia);
+
+        const asistenciaHuerfana = this.cacheManager.crearAsistenciaParaCache(
+          dni,
+          actor,
+          modoRegistro,
+          timestamp,
+          desfaseSegundos,
+          estado,
+          fechaString
+        );
+
+        await this.cacheManager.guardarAsistenciaEnCache(asistenciaHuerfana);
+      }
+
+      console.log(
+        `✅ Registro mensual sincronizado para ${dni} - día ${dia}/${mes}`
+      );
+    } catch (error) {
+      console.error("❌ Error al sincronizar con registro mensual:", error);
+      // No lanzar error para no afectar el flujo principal
     }
   }
 
@@ -355,14 +456,13 @@ export class AsistenciaDePersonalIDB {
       this.errorHandler.setLoading(true);
       this.errorHandler.clearErrors();
 
-      // Mapear rol a actor
       const actor = this.mapper.obtenerActorDesdeRol(rol);
 
       console.log(
         `🔍 Consultando asistencias Redis para ${actor} - ${modoRegistro}`
       );
 
-      // Consultar Redis via API
+      // PASO 1: Consultar Redis via API
       const datosRedis =
         await this.apiClient.consultarAsistenciasTomadasEnRedis(
           TipoAsistencia.ParaPersonal,
@@ -370,18 +470,31 @@ export class AsistenciaDePersonalIDB {
           modoRegistro
         );
 
-      // Sincronizar con IndexedDB
+      // PASO 2: Sincronizar con IndexedDB (cache temporal)
       const statsSync = await this.syncService.sincronizarAsistenciasDesdeRedis(
         datosRedis
       );
 
-      console.log("📊 Estadísticas de sincronización:", statsSync);
+      // 🆕 PASO 3: NUEVO - Sincronizar con registros mensuales
+      const statsMensuales =
+        await this.sincronizarAsistenciasConRegistrosMensuales(
+          datosRedis,
+          rol,
+          modoRegistro
+        );
+
+      console.log("📊 Estadísticas sincronización cache:", statsSync);
+      console.log("📊 Estadísticas sincronización mensual:", statsMensuales);
 
       return {
         exitoso: true,
         datos: datosRedis,
-        estadisticasSincronizacion: statsSync,
-        mensaje: `Sincronización completada: ${statsSync.registrosNuevos} nuevos registros`,
+        estadisticasSincronizacion: {
+          ...statsSync,
+          registrosNuevos:
+            statsSync.registrosNuevos + statsMensuales.registrosActualizados,
+        },
+        mensaje: `Sincronización completa: ${statsSync.registrosNuevos} cache + ${statsMensuales.registrosActualizados} mensuales`,
       };
     } catch (error) {
       console.error("❌ Error al consultar y sincronizar desde Redis:", error);
@@ -396,6 +509,145 @@ export class AsistenciaDePersonalIDB {
       };
     } finally {
       this.errorHandler.setLoading(false);
+    }
+  }
+
+  /**
+   * 🆕 NUEVO: Sincroniza datos de Redis con registros mensuales en IndexedDB
+   */
+  private async sincronizarAsistenciasConRegistrosMensuales(
+    datosRedis: any,
+    rol: RolesSistema,
+    modoRegistro: ModoRegistro
+  ): Promise<{
+    registrosActualizados: number;
+    registrosCreados: number;
+    errores: number;
+  }> {
+    const stats = {
+      registrosActualizados: 0,
+      registrosCreados: 0,
+      errores: 0,
+    };
+
+    try {
+      if (!datosRedis.Resultados || datosRedis.Resultados.length === 0) {
+        console.log("📭 No hay resultados de Redis para sincronizar");
+        return stats;
+      }
+
+      const tipoPersonal = this.mapper.obtenerTipoPersonalDesdeRolOActor(rol);
+      const mes = datosRedis.Mes;
+      const dia = datosRedis.Dia;
+
+      console.log(
+        `🔄 Sincronizando ${datosRedis.Resultados.length} registros con tablas mensuales`
+      );
+
+      for (const resultado of datosRedis.Resultados) {
+        try {
+          const dni = resultado.ID_o_DNI;
+
+          // Verificar si ya existe registro para este día
+          const yaExiste =
+            await this.repository.verificarSiExisteRegistroDiario(
+              tipoPersonal,
+              modoRegistro,
+              dni,
+              mes,
+              dia
+            );
+
+          if (yaExiste) {
+            console.log(`⏭️ Registro ya existe: ${dni} - día ${dia}/${mes}`);
+            continue;
+          }
+
+          // Extraer datos del resultado de Redis
+          const timestamp =
+            resultado.Detalles?.Timestamp ||
+            this.dateHelper.obtenerTimestampPeruano();
+          const desfaseSegundos = resultado.Detalles?.DesfaseSegundos || 0;
+          const estado = this.mapper.determinarEstadoAsistencia(
+            desfaseSegundos,
+            modoRegistro
+          );
+
+          const registroDia: RegistroEntradaSalida = {
+            timestamp,
+            desfaseSegundos,
+            estado,
+          };
+
+          // Verificar si existe registro mensual
+          const registroMensual = await this.repository.obtenerRegistroMensual(
+            tipoPersonal,
+            modoRegistro,
+            dni,
+            mes
+          );
+
+          if (registroMensual) {
+            // Actualizar registro existente
+            await this.repository.actualizarRegistroExistente(
+              tipoPersonal,
+              modoRegistro,
+              dni,
+              mes,
+              dia,
+              registroDia,
+              registroMensual.Id_Registro_Mensual
+            );
+            stats.registrosActualizados++;
+            console.log(
+              `✅ Registro mensual actualizado: ${dni} - día ${dia}/${mes}`
+            );
+          } else {
+            // No existe registro mensual → Guardar como asistencia huérfana
+            console.log(
+              `📝 Guardando como asistencia huérfana: ${dni} - día ${dia}/${mes}`
+            );
+
+            const actor = this.mapper.obtenerActorDesdeRol(rol);
+            const fechaString = this.dateHelper.generarFechaString(mes, dia);
+
+            const asistenciaHuerfana =
+              this.cacheManager.crearAsistenciaParaCache(
+                dni,
+                actor,
+                modoRegistro,
+                timestamp,
+                desfaseSegundos,
+                estado,
+                fechaString
+              );
+
+            await this.cacheManager.guardarAsistenciaEnCache(
+              asistenciaHuerfana
+            );
+            stats.registrosCreados++; // Cuenta como "creado" en cache temporal
+            console.log(
+              `✅ Asistencia huérfana guardada en cache: ${dni} - ${modoRegistro}`
+            );
+          }
+          console.log(
+            `✅ Sincronizado: ${dni} - día ${dia}/${mes} (${estado})`
+          );
+        } catch (error) {
+          console.error(`❌ Error sincronizando ${resultado.ID_o_DNI}:`, error);
+          stats.errores++;
+        }
+      }
+
+      console.log(`🎯 Sincronización mensual completada:`, stats);
+      return stats;
+    } catch (error) {
+      console.error("❌ Error en sincronización mensual:", error);
+      return {
+        registrosActualizados: 0,
+        registrosCreados: 0,
+        errores: 1,
+      };
     }
   }
 

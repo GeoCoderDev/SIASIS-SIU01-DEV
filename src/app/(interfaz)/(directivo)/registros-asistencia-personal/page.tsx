@@ -22,6 +22,8 @@ import {
 } from "@/lib/utils/local/db/models/EventosIDB";
 import { RegistroEntradaSalida } from "@/interfaces/shared/AsistenciaRequests";
 import { AsistenciaMensualPersonalLocal } from "@/lib/utils/local/db/models/AsistenciaDePersonal/AsistenciaDePersonalTypes";
+import { RootState } from "@/global/store";
+import { useSelector } from "react-redux";
 
 // 🔧 CONSTANTE DE CONFIGURACIÓN PARA DESARROLLO
 const CONSIDERAR_DIAS_NO_ESCOLARES = true; // false = solo días laborales, true = incluir sábados y domingos
@@ -53,11 +55,48 @@ const RegistrosAsistenciaDePersonal = () => {
   const [error, setError] = useState<ErrorResponseAPIBase | null>(null);
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Obtener fecha actual
-  const fechaActual = new Date();
-  const mesActual = fechaActual.getMonth() + 1; // getMonth() devuelve 0-11
-  const diaActual = fechaActual.getDate();
-  const añoActual = fechaActual.getFullYear();
+  // ✅ MEJORADO: Usar useSelector para obtener fecha de Redux reactivamente
+  const fechaHoraRedux = useSelector(
+    (state: RootState) => state.others.fechaHoraActualReal.fechaHora
+  );
+
+  // ✅ MEJORADO: Función helper para obtener fecha Redux con manejo de errores
+  const obtenerFechaRedux = () => {
+    if (!fechaHoraRedux) {
+      return null;
+    }
+
+    try {
+      const fechaObj = new Date(fechaHoraRedux);
+
+      // Validar que la fecha sea válida
+      if (isNaN(fechaObj.getTime())) {
+        console.error("❌ Fecha inválida desde Redux:", fechaHoraRedux);
+        return null;
+      }
+
+      return {
+        fechaActual: fechaObj,
+        mesActual: fechaObj.getMonth() + 1,
+        diaActual: fechaObj.getDate(),
+        añoActual: fechaObj.getFullYear(),
+        timestamp: fechaObj.getTime(),
+        esHoy: true,
+      };
+    } catch (error) {
+      console.error("❌ Error al procesar fecha de Redux:", error);
+      return null;
+    }
+  };
+
+  // ✅ MEJORADO: Obtener fecha una vez y manejar el caso de error
+  const fechaRedux = obtenerFechaRedux();
+
+  // ✅ MEJORADO: Si no hay fecha de Redux, mostrar error en lugar de fallback
+
+  const mesActual = fechaRedux?.mesActual || new Date().getMonth() + 1; // fallback solo si Redux falla
+  const diaActual = fechaRedux?.diaActual || new Date().getDate();
+  const añoActual = fechaRedux?.añoActual || new Date().getFullYear();
 
   // Función para obtener meses disponibles (hasta mayo o mes actual)
   const getMesesDisponibles = () => {

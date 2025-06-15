@@ -16,7 +16,10 @@ import { ErrorResponseAPIBase } from "@/interfaces/shared/apis/types";
 import { RolesSistema } from "@/interfaces/shared/RolesSistema";
 import { TipoAsistencia } from "@/interfaces/shared/AsistenciaRequests";
 import { HORA_MAXIMA_EXPIRACION_PARA_REGISTROS_EN_REDIS } from "@/constants/expirations";
-import { obtenerFechaActualPeru } from "../../_helpers/obtenerFechaActualPeru";
+import {
+  obtenerFechaActualPeru,
+  obtenerFechaHoraActualPeru,
+} from "../../_helpers/obtenerFechaActualPeru";
 import { verifyAuthToken } from "@/lib/utils/backend/auth/functions/jwtComprobations";
 
 // Constantes de configuración
@@ -224,8 +227,8 @@ const validarPermisosRegistro = (
 };
 
 const calcularSegundosHastaExpiracion = (): number => {
-  const fechaActualPeru = new Date();
-  fechaActualPeru.setHours(fechaActualPeru.getHours() - 5); // Ajustar a hora de Perú (UTC-5)
+  // ✅ Usar la nueva función que maneja todos los offsets
+  const fechaActualPeru = obtenerFechaHoraActualPeru();
 
   // Crear fecha objetivo a las 20:00 del mismo día
   const fechaExpiracion = new Date(fechaActualPeru);
@@ -486,9 +489,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Obtener timestamp actual (en Perú, UTC-5)
-    const fechaActualPeru = new Date();
-    fechaActualPeru.setHours(fechaActualPeru.getHours() - 5);
+    // ✅ Usar la nueva función que maneja todos los offsets para obtener timestamp actual
+    const fechaActualPeru = obtenerFechaHoraActualPeru();
     const timestampActual = fechaActualPeru.getTime();
 
     // Calcular desfase en segundos
@@ -496,7 +498,7 @@ export async function POST(req: NextRequest) {
       (timestampActual - new Date(FechaHoraEsperadaISO).getTime()) / 1000
     );
 
-    // Crear clave para Redis
+    // Crear clave para Redis usando la función original (mantiene retrocompatibilidad)
     const fechaHoy = obtenerFechaActualPeru();
     let clave: string;
 

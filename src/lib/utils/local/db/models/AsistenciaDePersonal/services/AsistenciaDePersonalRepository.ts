@@ -152,11 +152,11 @@ export class AsistenciaDePersonalRepository {
 
       // Si se proporciona ID del registro, buscar directamente
       if (id_registro_mensual) {
+        const request = store.get(id_registro_mensual);
+
         return new Promise((resolve, reject) => {
           try {
-            const request = store.get(id_registro_mensual);
-
-            request.onsuccess = () => {
+            request.onsuccess = async () => {
               if (request.result) {
                 const registroMensual: AsistenciaMensualPersonalLocal =
                   this.mapearRegistroMensualDesdeStore(
@@ -169,6 +169,7 @@ export class AsistenciaDePersonalRepository {
                     registroMensual.ultima_fecha_actualizacion
                   ).toLocaleString("es-PE")}`
                 );
+
                 resolve(registroMensual);
               } else {
                 console.log(
