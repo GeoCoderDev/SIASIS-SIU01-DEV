@@ -92,7 +92,7 @@ export class AsistenciaDePersonalCacheManager {
   public async consultarCacheAsistenciaHoy(
     actor: ActoresSistema,
     modoRegistro: ModoRegistro,
-    dni: string,
+    id_o_dni: string,
     fecha: string
   ): Promise<AsistenciaPersonalHoy | null> {
     try {
@@ -100,7 +100,7 @@ export class AsistenciaDePersonalCacheManager {
       await this.limpiarDiasAnterioresAutomaticamente();
 
       const consulta: ConsultaAsistenciaHoy = {
-        dni,
+        id_o_dni,
         actor,
         modoRegistro,
         tipoAsistencia: TipoAsistencia.ParaPersonal,
@@ -108,7 +108,7 @@ export class AsistenciaDePersonalCacheManager {
       };
 
       console.log(
-        `🔍 Consultando cache: ${actor} - ${modoRegistro} - ${dni} - ${fecha}`
+        `🔍 Consultando cache: ${actor} - ${modoRegistro} - ${id_o_dni} - ${fecha}`
       );
 
       const resultado = await this.cacheAsistenciasHoy.consultarAsistencia(
@@ -117,12 +117,12 @@ export class AsistenciaDePersonalCacheManager {
 
       if (resultado) {
         console.log(
-          `✅ Encontrado en cache: ${dni} - ${modoRegistro} - ${
+          `✅ Encontrado en cache: ${id_o_dni} - ${modoRegistro} - ${
             (resultado as AsistenciaPersonalHoy).estado
           }`
         );
       } else {
-        console.log(`❌ No encontrado en cache: ${dni} - ${modoRegistro}`);
+        console.log(`❌ No encontrado en cache: ${id_o_dni} - ${modoRegistro}`);
       }
 
       return resultado as AsistenciaPersonalHoy | null;
@@ -170,7 +170,7 @@ export class AsistenciaDePersonalCacheManager {
     datosCache: AsistenciaPersonalHoy,
     diaActual: number,
     modoRegistro: ModoRegistro,
-    dni: string,
+    id_o_dni: string | number,
     fecha: string
   ): AsistenciaMensualPersonalLocal {
     // Si no existe registro mensual, crear uno nuevo
@@ -178,12 +178,14 @@ export class AsistenciaDePersonalCacheManager {
       const fechaObj = new Date(fecha);
       const mes = (fechaObj.getMonth() + 1) as Meses;
 
-      console.log(`📝 Creando nuevo registro mensual para ${dni} - mes ${mes}`);
+      console.log(
+        `📝 Creando nuevo registro mensual para ${id_o_dni} - mes ${mes}`
+      );
 
       registroMensual = {
         Id_Registro_Mensual: 0, // ID temporal
         mes,
-        ID_o_DNI_Personal: dni,
+        ID_o_DNI_Personal: String(id_o_dni),
         registros: {},
         ultima_fecha_actualizacion: this.dateHelper.obtenerTimestampPeruano(),
       };
@@ -213,7 +215,7 @@ export class AsistenciaDePersonalCacheManager {
     registroEntrada: AsistenciaMensualPersonalLocal | null,
     registroSalida: AsistenciaMensualPersonalLocal | null,
     rol: RolesSistema,
-    dni: string,
+    id_o_dni: string | number,
     esConsultaMesActual: boolean,
     diaActual: number,
     mensajeBase: string
@@ -245,13 +247,13 @@ export class AsistenciaDePersonalCacheManager {
           this.consultarCacheAsistenciaHoyDirecto(
             actor,
             ModoRegistro.Entrada,
-            dni,
+            id_o_dni,
             fechaHoy
           ),
           this.consultarCacheAsistenciaHoyDirecto(
             actor,
             ModoRegistro.Salida,
-            dni,
+            id_o_dni,
             fechaHoy
           ),
         ]);
@@ -264,7 +266,7 @@ export class AsistenciaDePersonalCacheManager {
             entradaCache,
             diaActual,
             ModoRegistro.Entrada,
-            dni,
+            id_o_dni,
             fechaHoy
           );
           encontradoEnCache = true;
@@ -278,7 +280,7 @@ export class AsistenciaDePersonalCacheManager {
             salidaCache,
             diaActual,
             ModoRegistro.Salida,
-            dni,
+            id_o_dni,
             fechaHoy
           );
           encontradoEnCache = true;
@@ -308,12 +310,12 @@ export class AsistenciaDePersonalCacheManager {
   private async consultarCacheAsistenciaHoyDirecto(
     actor: ActoresSistema,
     modoRegistro: ModoRegistro,
-    dni: string,
+    id_o_dni: string | number,
     fecha: string
   ): Promise<AsistenciaPersonalHoy | null> {
     try {
       const consulta: ConsultaAsistenciaHoy = {
-        dni,
+        id_o_dni,
         actor,
         modoRegistro,
         tipoAsistencia: TipoAsistencia.ParaPersonal,
@@ -340,7 +342,7 @@ export class AsistenciaDePersonalCacheManager {
    */
   public async obtenerSoloDatosDelDiaActual(
     rol: RolesSistema,
-    dni: string,
+    id_o_dni: string | number,
     diaActual: number
   ): Promise<{
     entrada?: AsistenciaMensualPersonalLocal;
@@ -362,20 +364,20 @@ export class AsistenciaDePersonalCacheManager {
     }
 
     console.log(
-      `🔍 Buscando datos del día actual en cache para ${dni} - ${fechaHoy}`
+      `🔍 Buscando datos del día actual en cache para ${id_o_dni} - ${fechaHoy}`
     );
 
     const [entradaCache, salidaCache] = await Promise.all([
       this.consultarCacheAsistenciaHoyDirecto(
         actor,
         ModoRegistro.Entrada,
-        dni,
+        id_o_dni,
         fechaHoy
       ),
       this.consultarCacheAsistenciaHoyDirecto(
         actor,
         ModoRegistro.Salida,
-        dni,
+        id_o_dni,
         fechaHoy
       ),
     ]);
@@ -389,7 +391,7 @@ export class AsistenciaDePersonalCacheManager {
         entradaCache,
         diaActual,
         ModoRegistro.Entrada,
-        dni,
+        id_o_dni,
         fechaHoy
       );
       console.log(
@@ -403,7 +405,7 @@ export class AsistenciaDePersonalCacheManager {
         salidaCache,
         diaActual,
         ModoRegistro.Salida,
-        dni,
+        id_o_dni,
         fechaHoy
       );
       console.log(
@@ -419,7 +421,7 @@ export class AsistenciaDePersonalCacheManager {
       );
     } else {
       console.log(
-        `❌ No se encontraron datos del día actual en cache para ${dni}`
+        `❌ No se encontraron datos del día actual en cache para ${id_o_dni}`
       );
     }
 
@@ -472,7 +474,7 @@ export class AsistenciaDePersonalCacheManager {
    * 🆕 INCLUYE limpieza automática del día anterior
    */
   public async eliminarAsistenciaDelCache(
-    dni: string,
+    id_o_dni: string | number,
     rol: RolesSistema,
     modoRegistro: ModoRegistro,
     fecha: string
@@ -483,7 +485,7 @@ export class AsistenciaDePersonalCacheManager {
 
       const actor = this.mapper.obtenerActorDesdeRol(rol);
       const consulta: ConsultaAsistenciaHoy = {
-        dni,
+        id_o_dni,
         actor,
         modoRegistro,
         tipoAsistencia: TipoAsistencia.ParaPersonal,
@@ -496,7 +498,7 @@ export class AsistenciaDePersonalCacheManager {
 
       if (!asistenciaCache) {
         console.log(
-          `🗄️ No se encontró asistencia en cache para ${dni} - ${modoRegistro} - ${fecha}`
+          `🗄️ No se encontró asistencia en cache para ${id_o_dni} - ${modoRegistro} - ${fecha}`
         );
         return {
           exitoso: false,
@@ -508,7 +510,7 @@ export class AsistenciaDePersonalCacheManager {
       const clave = this.mapper.generarClaveCache(
         actor,
         modoRegistro,
-        dni,
+        id_o_dni,
         fecha
       );
       await this.eliminarAsistenciaEspecificaDelCache(clave);

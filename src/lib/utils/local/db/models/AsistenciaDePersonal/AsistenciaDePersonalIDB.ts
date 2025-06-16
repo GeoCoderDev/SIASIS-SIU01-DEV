@@ -259,19 +259,19 @@ export class AsistenciaDePersonalIDB {
     params: ParametrosConsultaAsistencia
   ): Promise<ConsultaAsistenciaResult> {
     try {
-      this.errorHandler.setLoading(true);
       this.errorHandler.clearErrors();
+      this.errorHandler.setLoading(true);
 
-      const { rol, dni, mes } = params;
+      const { rol, id_o_dni, mes } = params;
 
       const resultado = await this.syncService.obtenerAsistenciaMensualConAPI(
         rol,
-        dni,
+        id_o_dni,
         mes
       );
 
       console.log(
-        `📊 Consulta completada para ${dni} - mes ${mes}: ${resultado.mensaje}`
+        `📊 Consulta completada para DNI o ID ${id_o_dni} - mes ${mes}: ${resultado.mensaje}`
       );
 
       return resultado;
@@ -301,7 +301,7 @@ export class AsistenciaDePersonalIDB {
       this.errorHandler.setLoading(true);
       this.errorHandler.clearErrors();
 
-      const { dni, rol, modoRegistro, dia, mes } = params;
+      const { id_o_dni, rol, modoRegistro, dia, mes } = params;
 
       // Usar fecha Redux si no se proporcionan día/mes
       const fechaActualRedux = this.dateHelper.obtenerFechaActualDesdeRedux();
@@ -318,7 +318,7 @@ export class AsistenciaDePersonalIDB {
         this.dateHelper.generarFechaString(mesActual, diaActual);
 
       console.log(
-        `🗑️ Iniciando eliminación COMPLETA para DNI: ${dni}, Día: ${diaActual}, Mes: ${mesActual}`
+        `🗑️ Iniciando eliminación COMPLETA para DNI: ${id_o_dni}, Día: ${diaActual}, Mes: ${mesActual}`
       );
 
       let eliminadoLocal = false;
@@ -329,7 +329,7 @@ export class AsistenciaDePersonalIDB {
       try {
         const resultadoRedis =
           await this.apiClient.eliminarAsistenciaConReintentos(
-            dni,
+            id_o_dni,
             rol,
             modoRegistro
           );
@@ -347,7 +347,7 @@ export class AsistenciaDePersonalIDB {
       try {
         const resultadoCache =
           await this.cacheManager.eliminarAsistenciaDelCache(
-            dni,
+            id_o_dni,
             rol,
             modoRegistro,
             fechaString
@@ -369,7 +369,7 @@ export class AsistenciaDePersonalIDB {
           await this.repository.eliminarDiaDeRegistroMensual(
             tipoPersonal,
             modoRegistro,
-            dni,
+            id_o_dni,
             mesActual,
             diaActual
           );

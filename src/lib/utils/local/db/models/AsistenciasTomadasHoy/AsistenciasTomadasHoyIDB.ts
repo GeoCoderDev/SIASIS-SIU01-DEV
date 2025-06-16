@@ -39,7 +39,7 @@ export type AsistenciaHoy = AsistenciaPersonalHoy | AsistenciaEstudianteHoy;
 
 // ✅ INTERFAZ: Para consultas específicas
 export interface ConsultaAsistenciaHoy {
-  dni: string;
+  id_o_dni: string | number;
   actor: ActoresSistema;
   modoRegistro: ModoRegistro;
   tipoAsistencia: TipoAsistencia;
@@ -84,7 +84,7 @@ export class AsistenciasTomadasHoyIDB {
       consulta.fecha ||
       this.dateHelper.obtenerFechaStringActual() ||
       this.obtenerFechaHoyFallback();
-    const base = `${fecha}:${consulta.modoRegistro}:${consulta.actor}:${consulta.dni}`;
+    const base = `${fecha}:${consulta.modoRegistro}:${consulta.actor}:${consulta.id_o_dni}`;
 
     // ✅ FORMATO ESTUDIANTE: Siempre incluir nivel, grado y sección
     if (consulta.actor === ActoresSistema.Estudiante) {
@@ -489,90 +489,90 @@ export class AsistenciasTomadasHoyIDB {
    * ✅ LIMPIAR todas las asistencias con fecha anterior a la especificada
    * 🗓️ ÚTIL: Para limpiar todos los días anteriores de una vez
    */
-public async limpiarAsistenciasAnterioresA(
-  fechaLimite: string
-): Promise<number> {
-  try {
-    // 🔍 DEBUG TEMPORAL
-    console.log("🔍 DEBUG limpiarAsistenciasAnterioresA:");
-    console.log("- fechaLimite recibida:", fechaLimite);
-    
-    await IndexedDBConnection.init();
-    const store = await IndexedDBConnection.getStore(
-      this.nombreTabla,
-      "readwrite"
-    );
+  public async limpiarAsistenciasAnterioresA(
+    fechaLimite: string
+  ): Promise<number> {
+    try {
+      // 🔍 DEBUG TEMPORAL
+      console.log("🔍 DEBUG limpiarAsistenciasAnterioresA:");
+      console.log("- fechaLimite recibida:", fechaLimite);
 
-    // ✅ CONVERTIR fechaLimite a timestamp para comparación confiable
-    const fechaLimiteObj = new Date(fechaLimite + 'T00:00:00.000Z');
-    const timestampLimite = fechaLimiteObj.getTime();
-    
-    console.log("- fechaLimite como Date:", fechaLimiteObj);
-    console.log("- timestampLimite:", timestampLimite);
+      await IndexedDBConnection.init();
+      const store = await IndexedDBConnection.getStore(
+        this.nombreTabla,
+        "readwrite"
+      );
 
-    return new Promise<number>((resolve, reject) => {
-      const request = store.openCursor();
-      let eliminadas = 0;
+      // ✅ CONVERTIR fechaLimite a timestamp para comparación confiable
+      const fechaLimiteObj = new Date(fechaLimite + "T00:00:00.000Z");
+      const timestampLimite = fechaLimiteObj.getTime();
 
-      request.onsuccess = (event) => {
-        const cursor = (event.target as IDBRequest)
-          .result as IDBCursorWithValue;
+      console.log("- fechaLimite como Date:", fechaLimiteObj);
+      console.log("- timestampLimite:", timestampLimite);
 
-        if (cursor) {
-          const asistencia = cursor.value as AsistenciaHoy;
+      return new Promise<number>((resolve, reject) => {
+        const request = store.openCursor();
+        let eliminadas = 0;
 
-          // ✅ COMPARACIÓN CONFIABLE: Convertir fecha de asistencia a timestamp
-          const fechaAsistenciaObj = new Date(asistencia.fecha + 'T00:00:00.000Z');
-          const timestampAsistencia = fechaAsistenciaObj.getTime();
-          
-          const debeEliminar = timestampAsistencia < timestampLimite;
+        request.onsuccess = (event) => {
+          const cursor = (event.target as IDBRequest)
+            .result as IDBCursorWithValue;
 
-          // 🔍 DEBUG TEMPORAL
-          console.log(`🔍 Comparando asistencia:`);
-          console.log(`  - Fecha: "${asistencia.fecha}" -> timestamp: ${timestampAsistencia}`);
-          console.log(`  - Es anterior? ${debeEliminar}`);
-          console.log(`  - Clave: ${asistencia.clave}`);
+          if (cursor) {
+            const asistencia = cursor.value as AsistenciaHoy;
 
-          if (debeEliminar) {
-            cursor.delete();
-            eliminadas++;
-            console.log(
-              `🗑️ Asistencia ELIMINADA: ${asistencia.clave} (fecha: ${asistencia.fecha})`
+            // ✅ COMPARACIÓN CONFIABLE: Convertir fecha de asistencia a timestamp
+            const fechaAsistenciaObj = new Date(
+              asistencia.fecha + "T00:00:00.000Z"
             );
+            const timestampAsistencia = fechaAsistenciaObj.getTime();
+
+            const debeEliminar = timestampAsistencia < timestampLimite;
+
+            // 🔍 DEBUG TEMPORAL
+            console.log(`🔍 Comparando asistencia:`);
+            console.log(
+              `  - Fecha: "${asistencia.fecha}" -> timestamp: ${timestampAsistencia}`
+            );
+            console.log(`  - Es anterior? ${debeEliminar}`);
+            console.log(`  - Clave: ${asistencia.clave}`);
+
+            if (debeEliminar) {
+              cursor.delete();
+              eliminadas++;
+              console.log(
+                `🗑️ Asistencia ELIMINADA: ${asistencia.clave} (fecha: ${asistencia.fecha})`
+              );
+            } else {
+              console.log(
+                `✅ Asistencia CONSERVADA: ${asistencia.clave} (fecha: ${asistencia.fecha})`
+              );
+            }
+
+            cursor.continue();
           } else {
             console.log(
-              `✅ Asistencia CONSERVADA: ${asistencia.clave} (fecha: ${asistencia.fecha})`
+              `🧹 Limpieza completada: ${eliminadas} asistencias anteriores a ${fechaLimite} eliminadas`
             );
+            resolve(eliminadas);
           }
+        };
 
-          cursor.continue();
-        } else {
-          console.log(
-            `🧹 Limpieza completada: ${eliminadas} asistencias anteriores a ${fechaLimite} eliminadas`
+        request.onerror = () => {
+          console.error(
+            `❌ Error al limpiar asistencias anteriores: ${request.error}`
           );
-          resolve(eliminadas);
-        }
-      };
-
-      request.onerror = () => {
-        console.error(
-          `❌ Error al limpiar asistencias anteriores: ${request.error}`
-        );
-        reject(request.error);
-      };
-    });
-  } catch (error) {
-    console.error(
-      `❌ Error al limpiar asistencias anteriores a ${fechaLimite}:`,
-      error
-    );
-    return 0;
+          reject(request.error);
+        };
+      });
+    } catch (error) {
+      console.error(
+        `❌ Error al limpiar asistencias anteriores a ${fechaLimite}:`,
+        error
+      );
+      return 0;
+    }
   }
-}
-
-
-
-  
 
   /**
    * ✅ GUARDAR asistencia en cache local

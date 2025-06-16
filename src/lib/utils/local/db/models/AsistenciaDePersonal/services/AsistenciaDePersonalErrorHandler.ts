@@ -360,14 +360,19 @@ export class AsistenciaDePersonalErrorHandler {
     });
   }
 
-  /**
-   * Limpia mensajes de error y loading
-   */
+  // ✅ CORREGIDO - AsistenciaDePersonalErrorHandler.ts
   public clearErrors(): void {
+    this.setError?.(null);
+    // ❌ NO terminar loading aquí
+    // this.setIsSomethingLoading?.(false);
+  }
+
+  // ✅ NUEVO método separado si necesitas limpiar loading
+  public clearErrorsAndLoading(): void {
     this.setError?.(null);
     this.setIsSomethingLoading?.(false);
   }
-
+  
   /**
    * Establece estado de loading
    */

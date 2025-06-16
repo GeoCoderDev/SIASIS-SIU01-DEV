@@ -7,7 +7,7 @@ import {
   modoRegistroTextos,
 } from "@/interfaces/shared/ModoRegistroPersonal";
 import { HandlerDirectivoAsistenciaResponse } from "@/lib/utils/local/db/models/DatosAsistenciaHoy/handlers/HandlerDirectivoAsistenciaResponse";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 import { AsistenciaDePersonalIDB } from "../../lib/utils/local/db/models/AsistenciaDePersonal/AsistenciaDePersonalIDB";
@@ -168,8 +168,18 @@ export const ListaPersonal = ({
   };
 
   // ✅ MODIFICADO: Cargar las asistencias ya registradas
+  const ultimaConsultaRef = useRef<string>("");
 
   useEffect(() => {
+    const claveConsulta = `${rol}-${modoRegistro}`;
+
+    // ✅ Evitar consulta si es la misma que la anterior
+    if (ultimaConsultaRef.current === claveConsulta) {
+      console.log("🚫 Consulta duplicada evitada:", claveConsulta);
+      return;
+    }
+
+    ultimaConsultaRef.current = claveConsulta;
     const cargarAsistenciasRegistradas = async () => {
       try {
         setCargandoAsistencias(true);

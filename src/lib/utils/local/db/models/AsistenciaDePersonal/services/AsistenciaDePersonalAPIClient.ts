@@ -62,14 +62,14 @@ export class AsistenciaDePersonalAPIClient {
    */
   public async consultarAsistenciasMensuales(
     rol: RolesSistema | ActoresSistema,
-    dni: string,
+    id_o_dni: string | number,
     mes: number
   ): Promise<AsistenciaCompletaMensualDePersonal | null> {
     try {
       const { fetchSiasisAPI } = fetchSiasisApiGenerator(this.siasisAPI);
 
       const fetchCancelable = await fetchSiasisAPI({
-        endpoint: `/api/personal/asistencias-mensuales?Rol=${rol}&ID_O_DNI=${dni}&Mes=${mes}`,
+        endpoint: `/api/personal/asistencias-mensuales?Rol=${rol}&ID_O_DNI=${id_o_dni}&Mes=${mes}`,
         method: "GET",
       });
 
@@ -84,7 +84,7 @@ export class AsistenciaDePersonalAPIClient {
       if (!response.ok) {
         if (response.status === 404) {
           console.log(
-            `📡 API devuelve 404 para ${dni} - mes ${mes} (sin datos)`
+            `📡 API devuelve 404 para ${id_o_dni} - mes ${mes} (sin datos)`
           );
           return null;
         }
@@ -99,7 +99,7 @@ export class AsistenciaDePersonalAPIClient {
           DataErrorTypes.NO_DATA_AVAILABLE
         ) {
           console.log(
-            `📡 API devuelve NO_DATA_AVAILABLE para ${dni} - mes ${mes}`
+            `📡 API devuelve NO_DATA_AVAILABLE para ${id_o_dni} - mes ${mes}`
           );
           return null;
         }
@@ -110,7 +110,7 @@ export class AsistenciaDePersonalAPIClient {
         objectResponse as GetAsistenciaMensualDePersonalSuccessResponse;
 
       console.log(
-        `📡 API devuelve datos exitosamente para ${dni} - mes ${mes}`
+        `📡 API devuelve datos exitosamente para ${id_o_dni} - mes ${mes}`
       );
       return data;
     } catch (error) {
@@ -220,7 +220,7 @@ export class AsistenciaDePersonalAPIClient {
    * ✅ CORREGIDO: Actualiza registros locales y timestamps tras eliminación
    */
   public async eliminarAsistenciaRedis(
-    dni: string,
+    id_o_dni: string | number,
     rol: RolesSistema,
     modoRegistro: ModoRegistro
   ): Promise<OperationResult> {
@@ -251,7 +251,7 @@ export class AsistenciaDePersonalAPIClient {
 
       // Crear el request body para la API de eliminación
       const requestBody: EliminarAsistenciaRequestBody = {
-        ID_o_DNI: dni,
+        ID_o_DNI: String(id_o_dni),
         Actor: actor,
         ModoRegistro: modoRegistro,
         TipoAsistencia: TipoAsistencia.ParaPersonal,
@@ -299,7 +299,7 @@ export class AsistenciaDePersonalAPIClient {
         // ✅ NUEVO: Sincronizar eliminación con registros locales
         const sincronizacionLocal =
           await this.sincronizarEliminacionConRegistrosLocales(
-            dni,
+            id_o_dni,
             rol,
             modoRegistro,
             diaActual,
@@ -351,7 +351,7 @@ export class AsistenciaDePersonalAPIClient {
    * Elimina el día específico del registro mensual y actualiza timestamp
    */
   private async sincronizarEliminacionConRegistrosLocales(
-    dni: string,
+    id_o_dni: string | number,
     rol: RolesSistema,
     modoRegistro: ModoRegistro,
     dia: number,
@@ -362,7 +362,7 @@ export class AsistenciaDePersonalAPIClient {
       const tipoPersonal = this.mapper.obtenerTipoPersonalDesdeRolOActor(rol);
 
       console.log(
-        `🔄 Sincronizando eliminación local: ${dni} - ${modoRegistro} - día ${dia} del mes ${mes}`
+        `🔄 Sincronizando eliminación local: ${id_o_dni} - ${modoRegistro} - día ${dia} del mes ${mes}`
       );
 
       // Eliminar el día específico del registro mensual local
@@ -370,7 +370,7 @@ export class AsistenciaDePersonalAPIClient {
         await this.repository.eliminarDiaDeRegistroMensual(
           tipoPersonal,
           modoRegistro,
-          dni,
+          id_o_dni,
           mes,
           dia
         );
@@ -542,13 +542,13 @@ export class AsistenciaDePersonalAPIClient {
    */
   public async consultarAsistenciasConReintentos(
     rol: RolesSistema | ActoresSistema,
-    dni: string,
+    id_o_dni: string | number,
     mes: number,
     maxIntentos: number = 2
   ): Promise<AsistenciaCompletaMensualDePersonal | null> {
     try {
       return await this.reintentar(
-        () => this.consultarAsistenciasMensuales(rol, dni, mes),
+        () => this.consultarAsistenciasMensuales(rol, id_o_dni, mes),
         maxIntentos
       );
     } catch (error) {
@@ -565,27 +565,29 @@ export class AsistenciaDePersonalAPIClient {
    * ✅ NUEVO: Ahora incluye sincronización automática
    */
   public async eliminarAsistenciaConReintentos(
-    dni: string,
+    id_o_dni: string | number,
     rol: RolesSistema,
     modoRegistro: ModoRegistro,
     maxIntentos: number = 2
   ): Promise<OperationResult> {
     try {
       console.log(
-        `🗑️ Iniciando eliminación con reintentos para ${dni} - ${rol} - ${modoRegistro}`
+        `🗑️ Iniciando eliminación con reintentos para ${id_o_dni} - ${rol} - ${modoRegistro}`
       );
 
       const resultado = await this.reintentar(
-        () => this.eliminarAsistenciaRedis(dni, rol, modoRegistro),
+        () => this.eliminarAsistenciaRedis(id_o_dni, rol, modoRegistro),
         maxIntentos
       );
 
       if (resultado.exitoso) {
         console.log(
-          `✅ Eliminación completa exitosa (Redis + Local) para ${dni}`
+          `✅ Eliminación completa exitosa (Redis + Local) para ${id_o_dni}`
         );
       } else {
-        console.log(`❌ Eliminación falló para ${dni}: ${resultado.mensaje}`);
+        console.log(
+          `❌ Eliminación falló para ${id_o_dni}: ${resultado.mensaje}`
+        );
       }
 
       return resultado;
@@ -608,7 +610,7 @@ export class AsistenciaDePersonalAPIClient {
    * Método completo que garantiza consistencia entre Redis y registros locales
    */
   public async eliminarAsistenciaCompleta(
-    dni: string,
+    id_o_dni: string,
     rol: RolesSistema,
     modoRegistro: ModoRegistro,
     dia?: number,
@@ -630,12 +632,12 @@ export class AsistenciaDePersonalAPIClient {
       const timestampOperacion = this.dateHelper.obtenerTimestampPeruano();
 
       console.log(
-        `🗑️ Eliminación completa iniciada para ${dni} - día ${diaFinal}/${mesFinal} - ${modoRegistro} con timestamp ${timestampOperacion}`
+        `🗑️ Eliminación completa iniciada para ${id_o_dni} - día ${diaFinal}/${mesFinal} - ${modoRegistro} con timestamp ${timestampOperacion}`
       );
 
       // PASO 1: Eliminar de Redis (que ya incluye sincronización local)
       const resultadoEliminacion = await this.eliminarAsistenciaConReintentos(
-        dni,
+        id_o_dni,
         rol,
         modoRegistro
       );
@@ -663,7 +665,7 @@ export class AsistenciaDePersonalAPIClient {
           await this.repository.eliminarDiaDeRegistroMensual(
             tipoPersonal,
             modoRegistro,
-            dni,
+            id_o_dni,
             mesFinal,
             diaFinal
           );

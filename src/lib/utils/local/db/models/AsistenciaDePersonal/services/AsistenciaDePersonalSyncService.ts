@@ -68,7 +68,7 @@ export class AsistenciaPersonalSyncService {
    */
   public async forzarSincronizacionCompleta(
     rol: RolesSistema,
-    dni: string,
+    id_o_dni: string | number,
     mes: number
   ): Promise<{
     entrada?: AsistenciaMensualPersonalLocal;
@@ -80,7 +80,7 @@ export class AsistenciaPersonalSyncService {
       const tipoPersonal = this.mapper.obtenerTipoPersonalDesdeRolOActor(rol);
 
       console.log(
-        `🔄 FORZANDO SINCRONIZACIÓN COMPLETA para ${dni} - mes ${mes}`
+        `🔄 FORZANDO SINCRONIZACIÓN COMPLETA para ${id_o_dni} - mes ${mes}`
       );
 
       // PASO 1: Eliminar ambos registros locales (entrada y salida)
@@ -89,13 +89,13 @@ export class AsistenciaPersonalSyncService {
         this.repository.eliminarRegistroMensual(
           tipoPersonal,
           ModoRegistro.Entrada,
-          dni,
+          id_o_dni,
           mes
         ),
         this.repository.eliminarRegistroMensual(
           tipoPersonal,
           ModoRegistro.Salida,
-          dni,
+          id_o_dni,
           mes
         ),
       ]);
@@ -103,7 +103,11 @@ export class AsistenciaPersonalSyncService {
       // PASO 2: Consultar API para obtener datos frescos
       console.log("📡 Consultando API para datos frescos...");
       const asistenciaAPI =
-        await this.apiClient.consultarAsistenciasConReintentos(rol, dni, mes);
+        await this.apiClient.consultarAsistenciasConReintentos(
+          rol,
+          id_o_dni,
+          mes
+        );
 
       if (!asistenciaAPI) {
         console.log(
@@ -125,14 +129,14 @@ export class AsistenciaPersonalSyncService {
         this.repository.obtenerRegistroMensual(
           tipoPersonal,
           ModoRegistro.Entrada,
-          dni,
+          id_o_dni,
           mes,
           asistenciaAPI.Id_Registro_Mensual_Entrada
         ),
         this.repository.obtenerRegistroMensual(
           tipoPersonal,
           ModoRegistro.Salida,
-          dni,
+          id_o_dni,
           mes,
           asistenciaAPI.Id_Registro_Mensual_Salida
         ),
@@ -290,7 +294,7 @@ export class AsistenciaPersonalSyncService {
   private async consultarCacheTemporalParaIntegracion(
     actor: ActoresSistema,
     modoRegistro: ModoRegistro,
-    dni: string,
+    id_o_dni: string | number,
     fecha: string
   ): Promise<any> {
     try {
@@ -301,7 +305,7 @@ export class AsistenciaPersonalSyncService {
       const cacheAsistenciasHoy = new AsistenciasTomadasHoyIDB(this.dateHelper);
 
       return await cacheAsistenciasHoy.consultarAsistencia({
-        dni,
+        id_o_dni,
         actor,
         modoRegistro,
         tipoAsistencia: TipoAsistencia.ParaPersonal,
@@ -495,7 +499,7 @@ export class AsistenciaPersonalSyncService {
    */
   public async obtenerAsistenciaMensualConAPI(
     rol: RolesSistema,
-    dni: string,
+    id_o_dni: string | number,
     mes: number
   ): Promise<ConsultaAsistenciaResult> {
     try {
@@ -513,7 +517,7 @@ export class AsistenciaPersonalSyncService {
       const esConsultaMesActual = this.dateHelper.esConsultaMesActual(mes);
 
       console.log(
-        `🎯 Iniciando consulta para ${dni} - mes ${mes} (actual: ${mesActual})`
+        `🎯 Iniciando consulta para ${id_o_dni} - mes ${mes} (actual: ${mesActual})`
       );
       console.log(
         `📅 Es consulta del mes actual: ${esConsultaMesActual ? "SÍ" : "NO"}`
@@ -524,13 +528,13 @@ export class AsistenciaPersonalSyncService {
         this.repository.obtenerRegistroMensual(
           tipoPersonal,
           ModoRegistro.Entrada,
-          dni,
+          id_o_dni,
           mes
         ),
         this.repository.obtenerRegistroMensual(
           tipoPersonal,
           ModoRegistro.Salida,
-          dni,
+          id_o_dni,
           mes
         ),
       ]);
@@ -548,7 +552,7 @@ export class AsistenciaPersonalSyncService {
 
         const resultadoSincronizacion = await this.forzarSincronizacionCompleta(
           rol,
-          dni,
+          id_o_dni,
           mes
         );
 
@@ -558,7 +562,7 @@ export class AsistenciaPersonalSyncService {
             resultadoSincronizacion.entrada || null,
             resultadoSincronizacion.salida || null,
             rol,
-            dni,
+            id_o_dni,
             esConsultaMesActual,
             diaActual,
             `🔄 ${resultadoSincronizacion.mensaje}`
@@ -571,7 +575,7 @@ export class AsistenciaPersonalSyncService {
             );
             return await this.cacheManager.obtenerSoloDatosDelDiaActual(
               rol,
-              dni,
+              id_o_dni,
               diaActual
             );
           } else {
@@ -594,7 +598,11 @@ export class AsistenciaPersonalSyncService {
         );
 
         const asistenciaAPI =
-          await this.apiClient.consultarAsistenciasConReintentos(rol, dni, mes);
+          await this.apiClient.consultarAsistenciasConReintentos(
+            rol,
+            id_o_dni,
+            mes
+          );
 
         if (asistenciaAPI) {
           console.log("✅ API devolvió datos históricos, guardando...");
@@ -604,14 +612,14 @@ export class AsistenciaPersonalSyncService {
             this.repository.obtenerRegistroMensual(
               tipoPersonal,
               ModoRegistro.Entrada,
-              dni,
+              id_o_dni,
               mes,
               asistenciaAPI.Id_Registro_Mensual_Entrada
             ),
             this.repository.obtenerRegistroMensual(
               tipoPersonal,
               ModoRegistro.Salida,
-              dni,
+              id_o_dni,
               mes,
               asistenciaAPI.Id_Registro_Mensual_Salida
             ),
@@ -621,7 +629,7 @@ export class AsistenciaPersonalSyncService {
             nuevaEntrada,
             nuevaSalida,
             rol,
-            dni,
+            id_o_dni,
             esConsultaMesActual,
             diaActual,
             "Datos obtenidos y guardados desde la API"
@@ -637,7 +645,7 @@ export class AsistenciaPersonalSyncService {
             const resultadoCache =
               await this.cacheManager.obtenerSoloDatosDelDiaActual(
                 rol,
-                dni,
+                id_o_dni,
                 diaActual
               );
 
@@ -680,7 +688,7 @@ export class AsistenciaPersonalSyncService {
         entradaFinal,
         salidaFinal,
         rol,
-        dni,
+        id_o_dni,
         esConsultaMesActual,
         diaActual,
         `Datos sincronizados obtenidos desde IndexedDB: ${verificacion.diasEscolaresEntrada} días escolares históricos`
@@ -703,7 +711,7 @@ export class AsistenciaPersonalSyncService {
           const fallbackCache =
             await this.cacheManager.obtenerSoloDatosDelDiaActual(
               rol,
-              dni,
+              id_o_dni,
               diaActualInfo
             );
 

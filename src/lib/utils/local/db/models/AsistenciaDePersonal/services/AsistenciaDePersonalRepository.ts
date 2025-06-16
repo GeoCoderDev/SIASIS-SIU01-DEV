@@ -141,7 +141,7 @@ export class AsistenciaDePersonalRepository {
   public async obtenerRegistroMensual(
     tipoPersonal: TipoPersonal,
     modoRegistro: ModoRegistro,
-    ID_o_DNI_Personal: string,
+    ID_o_DNI_Personal: string | number,
     mes: number,
     id_registro_mensual?: number
   ): Promise<AsistenciaMensualPersonalLocal | null> {
@@ -268,18 +268,21 @@ export class AsistenciaDePersonalRepository {
    */
   private convertirIdentificadorParaDB(
     tipoPersonal: TipoPersonal,
-    idODni: string
+    id_o_dni: string | number
   ): string | number {
-    if (tipoPersonal === TipoPersonal.DIRECTIVO) {
+    if (
+      tipoPersonal === TipoPersonal.DIRECTIVO &&
+      typeof id_o_dni === "string"
+    ) {
       // Para directivos: convertir a número (Id_Directivo es INT en la BD)
-      const id = parseInt(idODni, 10);
+      const id = parseInt(id_o_dni, 10);
       if (isNaN(id)) {
-        throw new Error(`ID de directivo inválido: ${idODni}`);
+        throw new Error(`ID de directivo inválido: ${id_o_dni}`);
       }
       return id;
     } else {
       // Para otros roles: mantener como string (DNI)
-      return idODni;
+      return id_o_dni;
     }
   }
 
@@ -287,11 +290,11 @@ export class AsistenciaDePersonalRepository {
    * ✅ CORREGIDO: Validar valores antes de usar en índices
    */
   private validarValoresParaIndice(
-    idODni: string,
+    id_o_dni: string | number,
     mes: number,
     tipoPersonal: TipoPersonal
   ): void {
-    if (!idODni || idODni.trim() === "") {
+    if (!id_o_dni || String(id_o_dni).trim() === "") {
       throw new Error(`ID/DNI no puede estar vacío para ${tipoPersonal}`);
     }
 
@@ -300,11 +303,13 @@ export class AsistenciaDePersonalRepository {
     }
 
     // Validar formato específico
-    if (!this.mapper.validarFormatoIdentificador(tipoPersonal, idODni)) {
+    if (
+      !this.mapper.validarFormatoIdentificador(tipoPersonal, String(id_o_dni))
+    ) {
       const tipoEsperado =
         this.mapper.getTipoIdentificadorLegible(tipoPersonal);
       throw new Error(
-        `Formato de ${tipoEsperado} inválido para ${tipoPersonal}: ${idODni}`
+        `Formato de ${tipoEsperado} inválido para ${tipoPersonal}: ${id_o_dni}`
       );
     }
   }
@@ -316,7 +321,7 @@ export class AsistenciaDePersonalRepository {
   public async eliminarRegistroMensual(
     tipoPersonal: TipoPersonal,
     modoRegistro: ModoRegistro,
-    idODni: string,
+    id_o_dni: string | number,
     mes: number
   ): Promise<OperationResult> {
     try {
@@ -328,7 +333,7 @@ export class AsistenciaDePersonalRepository {
       return new Promise((resolve, reject) => {
         try {
           const index = store.index(indexName);
-          const keyValue = [idODni, mes];
+          const keyValue = [id_o_dni, mes];
           const request = index.get(keyValue);
 
           request.onsuccess = () => {
@@ -342,7 +347,7 @@ export class AsistenciaDePersonalRepository {
               const deleteRequest = store.delete(id);
               deleteRequest.onsuccess = () => {
                 console.log(
-                  `🗑️ Registro eliminado: ${storeName} - ${idODni} - mes ${mes}`
+                  `🗑️ Registro eliminado: ${storeName} - ${id_o_dni} - mes ${mes}`
                 );
                 resolve({
                   exitoso: true,
@@ -722,27 +727,27 @@ export class AsistenciaDePersonalRepository {
   public async eliminarDiaDeRegistroMensual(
     tipoPersonal: TipoPersonal,
     modoRegistro: ModoRegistro,
-    idODni: string,
+    id_o_dni: string | number,
     mes: number,
     dia: number
   ): Promise<OperationResult> {
     try {
       console.log(
-        `🗑️ Eliminando día ${dia} del registro mensual para ${tipoPersonal} - ${idODni} - mes ${mes}`
+        `🗑️ Eliminando día ${dia} del registro mensual para ${tipoPersonal} - ${id_o_dni} - mes ${mes}`
       );
 
       // Obtener el registro mensual actual
       const registroMensual = await this.obtenerRegistroMensual(
         tipoPersonal,
         modoRegistro,
-        idODni,
+        id_o_dni,
         mes
       );
 
       if (!registroMensual) {
         return {
           exitoso: false,
-          mensaje: `No se encontró registro mensual para ID/DNI: ${idODni}, mes: ${mes}`,
+          mensaje: `No se encontró registro mensual para ID/DNI: ${id_o_dni}, mes: ${mes}`,
         };
       }
 
@@ -766,7 +771,7 @@ export class AsistenciaDePersonalRepository {
         return await this.eliminarRegistroMensual(
           tipoPersonal,
           modoRegistro,
-          idODni,
+          id_o_dni,
           mes
         );
       } else {

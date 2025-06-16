@@ -467,10 +467,10 @@ export class AsistenciaDePersonalMapper {
   public generarClaveCache(
     actor: ActoresSistema,
     modoRegistro: ModoRegistro,
-    dni: string,
+    id_o_dni: string | number,
     fecha: string
   ): string {
-    return `${fecha}:${modoRegistro}:${actor}:${dni}`;
+    return `${fecha}:${modoRegistro}:${actor}:${id_o_dni}`;
   }
 
   // ========================================================================================

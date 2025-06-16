@@ -187,7 +187,7 @@ export interface ParametrosMarcadoAsistencia {
 
 // Interface para parámetros de eliminación
 export interface ParametrosEliminacionAsistencia {
-  dni: string;
+  id_o_dni: string | number;
   rol: RolesSistema;
   modoRegistro: ModoRegistro;
   dia?: number;
@@ -198,7 +198,7 @@ export interface ParametrosEliminacionAsistencia {
 // ✅ INTERFAZ ACTUALIZADA: Consulta con opciones de optimización
 export interface ParametrosConsultaAsistencia {
   rol: RolesSistema;
-  dni: string;
+  id_o_dni: string | number;
   mes: number;
   // ✅ NUEVOS PARÁMETROS OPCIONALES para flujo inteligente
   forzarActualizacion?: boolean;
